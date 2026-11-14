@@ -18,11 +18,13 @@ import { afterAll, test, expect } from "bun:test"
 import fs from "node:fs"
 import path from "node:path"
 import { cleanUpTempScratch, freshTempScratch } from "../support/temp-scratch.ts"
+import { parseSexpr, type SNode } from "../../lib/kicad/sexpr.ts"
 import { outlineBounds } from "../../tools/pcb/resolve-intent-zones.ts"
 import { resolveToFile } from "../../tools/pcb/resolved-intent.ts"
 import { placedCourtyards } from "../../tools/pcb/board-outline.ts"
 import {
-  CENTRE_TOLERANCE_MM, MOUNTING_FOOTPRINT, derivedHardware, mountingHoleRule, mountingHoles, placedMountingHoles,
+  CENTRE_TOLERANCE_MM, MOUNTING_FOOTPRINT, derivedHardware, isMountingHoleFootprint,
+  isOurMountingHole, mountingHoleRule, mountingHoles, placedMountingHoles,
 } from "../../tools/pcb/mounting-hardware.ts"
 import {
   inwardLabelOffsetY, readMountingFootprint, referenceLabelOffsetY,
@@ -203,4 +205,51 @@ test("each hole's reference label points INWARD, which is what stops the silkscr
   const clipped = holes.filter((h) => h.y + offset <= bounds.y0 || h.y + offset >= bounds.y1)
   console.log(`  holes whose label the library would clip: ${clipped.map((h) => h.corner).join(", ")}`)
   expect(clipped.length).toBeGreaterThan(0)
+})
+
+test("on the COMMITTED board, every shape-hole IS one of this tool's holes", () => {
+  // **THIS RESTORES COVERAGE THAT A FIX TOOK AWAY, and that is why it exists.**
+  // Before the identity predicate landed, `derivedHardware` refused any
+  // mounting hole not at a derived centre - so a foreign hole hand-added to the
+  // board failed at grade time with "NOT at a centre this rule derives".
+  // `placedMountingHoles` is identity-based now, which is right (all four of
+  // its callers wanted identity, and under the shape test a legitimate heatsink
+  // was refused as a stray hole) - but the refusal no longer SEES a foreign
+  // hole, so that coverage went with it and nothing replaced it. This task's
+  // second re-reviewer measured the consequence: a `board_only` stock
+  // mounting hole placed in free space passes both the grader and schematic
+  // parity, and the only mention of it is a `LEFT ALONE` line that prints when
+  // the placer runs and never at grade time.
+  //
+  // **IT AUTHORS NO NEW CRITERION, which is the whole reason it takes this
+  // form.** It enforces the owner's own approved `anchors.mounting_holes.count`
+  // and nothing else: on THIS board, the footprints that are holes by SHAPE are
+  // exactly the footprints that are holes by IDENTITY, and there are `count` of
+  // them. It says nothing about envelopes, about what a foreign hole would be
+  // entitled to, or about any board but this one. Giving a foreign hole an
+  // envelope keepout WOULD author a washer criterion for hardware the owner's
+  // rule says nothing about, and is deliberately not done.
+  //
+  // IF THE OWNER EVER WANTS A HEATSINK ON pt2399-core, this test trips and he
+  // decides - which is the correct place for that decision to surface.
+  const rule = mountingHoleRule(rules(), RULES)
+  const text = boardText()
+  const footprints = parseSexpr(text).nodes.filter((n) => n.name === "footprint")
+  const label = (node: SNode): string =>
+    `${node.nodes.find((c) => c.name === "property" && c.atoms[0] === "Reference")?.atoms[1] ?? "?"} ` +
+    `(${node.atoms[0] ?? "?"})`
+
+  const byShape = footprints.filter((n) => isMountingHoleFootprint(n)).map(label).sort()
+  const byIdentity = footprints.filter((n) => isOurMountingHole(n)).map(label).sort()
+  console.log(`  ${footprints.length} footprints; ${byShape.length} are holes by shape, ${byIdentity.length} by identity`)
+  for (const name of byShape) console.log(`    ${name}`)
+
+  // The two sets are equal, so there is nothing on this board that the shape
+  // test would call hardware and the identity test would not.
+  expect(byShape).toEqual(byIdentity)
+  // And there are exactly as many as the approved rule declares.
+  expect(byShape.length).toBe(rule.count)
+  expect(byIdentity.sort()).toEqual(
+    [...REFERENCES].sort().map((ref) => `${ref} (pt2399-core:${MOUNTING_FOOTPRINT})`),
+  )
 })

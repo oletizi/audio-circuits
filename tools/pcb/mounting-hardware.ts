@@ -222,8 +222,14 @@ const OUR_REFERENCE = /^MH\d+$/
  * them and left the WIDTH: all-NPTH is true of 87 footprints in the installed
  * libraries, and **49 of them are not mounting holes at all** -
  * `Heatsink:Heatsink_125x35x50mm_3xFixationM3`,
- * `MountingEquipment:DINRailAdapter_3xM3_PhoenixContact_1201578`, eighteen
- * `OptoDevice:Lightpipe_*`, the `Panelization:*` break lines and mouse bites.
+ * `MountingEquipment:DINRailAdapter_3xM3_PhoenixContact_1201578`, 17
+ * `OptoDevice:Lightpipe_*`, 27 `Panelization:*` break lines and mouse bites and
+ * 2 `Relay_THT:*`. Re-measured for this comment rather than copied: 87 all-NPTH
+ * in total, 38 named `MountingHole*`, 49 not, and
+ * `tests/pcb/mounting-hole-placement.test.ts` re-derives the breakdown on every
+ * run so these figures are checkable rather than remembered - an earlier draft
+ * said "eighteen lightpipes" in three places, repeated from a review without
+ * remeasuring.
  * This task's reviewer placed three on a board, ran the tool, and watched a
  * heatsink, a lightpipe and a DIN-rail adapter leave it with
  * `removedFootprints 4`, nothing in the output naming them, the read-back

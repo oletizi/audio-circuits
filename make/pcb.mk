@@ -91,7 +91,7 @@ drc-pt2399-core: courtyard-rule-pt2399-core
 # SEEDING is not, and needs the pinned engine's venv by hand.
 #
 # THIS COMMENT SAID "SEEDING AND GRADING ARE NOT TARGETS HERE ... a later task's
-# to wire up" WHILE grade-pt2399-core WAS DEFINED FIFTY LINES BELOW IT, added in
+# to wire up" WHILE grade-pt2399-core WAS ALREADY DEFINED BELOW IT, added in
 # the same change that wrote the sentence. The stale half is not the problem;
 # where it sent the reader is. It handed them a raw `check_floorplan.py --intent
 # <resolved>` line, which BYPASSES the board binding - so after the outline
@@ -101,6 +101,12 @@ drc-pt2399-core: courtyard-rule-pt2399-core
 # grade-cli.ts write one. The old zone rect and the old keepout circles would
 # then grade the new board and could report a pass. The guard that makes that
 # unreachable was already here and this comment denied it existed.
+#
+# (This sentence carried a line count - "fifty lines below" - which was
+# already wrong by about forty when it was written, as was the review that
+# first said "forty". A line number in prose rots exactly as the
+# <pre-placement commit> placeholder below did, so it names the target
+# instead of where the target sits.)
 #
 # THE STEP ORDER, which the rest of this block left to be inferred:
 #

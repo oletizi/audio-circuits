@@ -33,6 +33,7 @@ import fs from "node:fs"
 import path from "node:path"
 import { assertStillParses, withoutTopLevelForms, withTopLevelForms } from "./board-forms.ts"
 import { parseSexpr } from "../../lib/kicad/sexpr.ts"
+import { footprintsOf, verifyFootprintAccounting } from "./footprint-accounting.ts"
 import { outlineBounds } from "./resolve-intent-zones.ts"
 import { describeBounds } from "./board-outline.ts"
 import {
@@ -67,6 +68,8 @@ function uuidFor(kind: "fp" | "zone", index: number): string {
 export interface RemovedFootprint {
   readonly reference: string
   readonly library: string
+  /** Its own uuid, which is what `./footprint-accounting.ts` keys the check on. */
+  readonly uuid: string
   readonly why: "project library id" | "MH-shaped reference on an all-NPTH footprint"
 }
 
@@ -115,8 +118,10 @@ export function withMountingHardware(
   // second made the removal test identical to the DETECTION test, which closed
   // the drift between them and left the width: all-NPTH is true of 87 installed
   // footprints and **49 of them are not mounting holes** - a heatsink, a
-  // DIN-rail adapter, eighteen lightpipes - and all three of those were measured
-  // leaving a board with nothing in the output naming them.
+  // DIN-rail adapter, 17 lightpipes, 27 panelization break lines - and three of
+  // those were measured leaving a board with nothing in the output naming them.
+  // The per-library breakdown is re-derived by
+  // `tests/pcb/mounting-hole-placement.test.ts` rather than transcribed here.
   //
   // `isOurMountingHole` is the identity test: this project's own library id, or
   // an `MH<n>` reference on an all-NPTH footprint. A heatsink satisfies neither.
@@ -134,6 +139,7 @@ export function withMountingHardware(
       reference:
         node.nodes.find((n) => n.name === "property" && n.atoms[0] === "Reference")?.atoms[1] ?? "?",
       library,
+      uuid: node.nodes.find((n) => n.name === "uuid")?.atoms[0] ?? "",
       why:
         library === `${PROJECT_LIBRARY}:${MOUNTING_FOOTPRINT}`
           ? "project library id"
@@ -234,13 +240,27 @@ export function withMountingHardware(
         "holes, so it keeps its place and gets no envelope keepout",
     )
   }
-  if (withoutHoles.removed !== removed.length) {
-    throw new Error(
-      `${boardWhere}: ${withoutHoles.removed} footprint(s) were removed but only ` +
-        `${removed.length} were named. The predicate and the record of what it matched have come ` +
-        "apart, and an unnamed deletion is the thing this record exists to make impossible.",
-    )
-  }
+  // THE ACCOUNTING, over the board's own bytes both sides of the edit:
+  // after === before - removed + added, with every discrepancy named.
+  //
+  // **THIS REPLACED A COUNT COMPARISON THAT WAS NEARLY TAUTOLOGICAL.** It
+  // checked `withoutHoles.removed !== removed.length` - a number the removal
+  // callback produces against a number pushed on the line above it - so it
+  // caught the next `return true` added without a matching push and nothing
+  // else, not a wrong predicate, which is the defect that actually happened
+  // twice. And no test could reach its throw without editing this file, so its
+  // only evidence was a mutation in a transcript. `./footprint-accounting.ts`
+  // is a pure function over four arguments, it compares SETS rather than the
+  // editing mechanism's own bookkeeping - so a footprint dropped by a path
+  // nobody instrumented is still caught - and
+  // `tests/pcb/footprint-accounting.test.ts` drives every one of its refusals.
+  verifyFootprintAccounting({
+    before: footprintsOf(boardText, `${boardWhere} before`),
+    after: footprintsOf(text, `${boardWhere} after`),
+    removed: removed.map((gone) => gone.uuid),
+    added: holes.map((_hole, index) => uuidFor("fp", index)),
+    where: boardWhere,
+  })
 
   return {
     text,

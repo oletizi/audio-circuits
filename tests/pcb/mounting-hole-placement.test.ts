@@ -313,10 +313,17 @@ test("the scratch directories these tests make are registered, not leaked", () =
  * `npth === pads.length`, so its 2215 are mixed-pad only and this class was
  * never asked. The installed libraries hold 87 all-NPTH footprints and 49 of
  * them are not holes: a heatsink with three M3 fixation holes, a DIN-rail
- * adapter, eighteen lightpipes, the panelization break lines and mouse bites.
+ * adapter, lightpipes, relays, the panelization break lines and mouse bites.
  * `isMountingHoleFootprint` is true of every one, which is the engine's
  * classification and is fine for grading - and was, for one fix round, the test
  * this tool DELETED on.
+ *
+ * **NO PER-LIBRARY COUNT IS WRITTEN HERE, DELIBERATELY.** The test below PRINTS
+ * the breakdown it measured, so the figures are re-derived on every run instead
+ * of transcribed. An earlier draft of this comment said "eighteen lightpipes"
+ * in three files - repeated from a review without remeasuring, and the real
+ * count is 17. A figure in prose is a transcription with a date on it, and three
+ * copies of one is three dates.
  */
 function allNpthFootprints(): readonly MixedPad[] {
   const out: MixedPad[] = []
@@ -351,7 +358,16 @@ function allNpthFootprints(): readonly MixedPad[] {
 test("an all-NPTH footprint is a HOLE BY SHAPE and NOT one of this tool's holes", () => {
   const all = allNpthFootprints()
   console.log(`  ${all.length} all-NPTH footprints that are not mounting holes by name`)
-  for (const part of all.slice(0, 4)) console.log(`    ${part.name}: ${part.pads} pads, all NPTH`)
+  // THE BREAKDOWN, MEASURED AND PRINTED rather than written into a comment -
+  // this is where the figures in the module docstrings come from.
+  const byLibrary = new Map<string, number>()
+  for (const part of all) {
+    const library = part.name.split(":")[0] as string
+    byLibrary.set(library, (byLibrary.get(library) ?? 0) + 1)
+  }
+  for (const [library, count] of [...byLibrary].sort((a, b) => b[1] - a[1])) {
+    console.log(`    ${library}: ${count}`)
+  }
 
   const claimed: string[] = []
   for (const part of all) {
