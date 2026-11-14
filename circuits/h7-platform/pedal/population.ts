@@ -130,9 +130,14 @@ function codecFindings(n: Network): string[] {
         `[${onMode.map((m) => `${m.component.id}.${m.pin}`).join(", ")}]. CODEC-06's 0 ohm is not fitted (schematic-checklist.md:98, CR-PEDAL-POPULATION)`,
     )
   }
-  // DEMP meets the 4.7 kOhm pull-down and no resistor to VDD.
+  // DEMP meets the 4.7 kOhm pull-down, whose one far end is DGND, and no resistor to VDD. The far end is
+  // required to exist: a resistor with both ends on DEMP has no other net, and an `every` over that empty
+  // list would pass it as a pull-down (GitHub issue 33, the review of 5156513).
   const onDemp = members(n, demp).filter((m) => m.component !== codec)
-  const pullDown = onDemp.some((m) => ohms(m.component) === PCM3060_VALUES.dempToGndOhm && otherNets(m.component, demp).every((x) => x === gnd))
+  const pullDown = onDemp.some((m) => {
+    const far = otherNets(m.component, demp)
+    return ohms(m.component) === PCM3060_VALUES.dempToGndOhm && far.length === 1 && far[0] === gnd
+  })
   const pullUps = onDemp.filter((m) => ohms(m.component) !== undefined && otherNets(m.component, demp).includes(vdd))
   if (!pullDown || pullUps.length > 0) {
     findings.push(

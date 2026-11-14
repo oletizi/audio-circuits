@@ -53,6 +53,18 @@ describe("checkDefaultPopulation (CR-PEDAL-POPULATION)", () => {
     expect(findings).toEqual([expect.stringContaining("EXP_I2C_SCL")])
     expect(findings[0]).toContain("test_only_scl_link")
   })
+  test("control: the 4.7 kohm with both ends on DEMP (no far end on DGND) is rejected", () => {
+    const block = codecBlock()
+    const shorted = block.components.map((c): Component =>
+      c.id !== "r_demp" ? c : { ...c, units: [{ name: "MAIN", pins: { a: n("CODEC_DEMP"), b: n("CODEC_DEMP") } }] })
+    const findings = checkDefaultPopulation({ ...block, components: shorted })
+    expect(findings).toEqual([expect.stringContaining("the pull-down is missing")])
+  })
+  test("control: the 4.7 kohm removed from DEMP is rejected", () => {
+    const block = codecBlock()
+    expect(checkDefaultPopulation({ ...block, components: block.components.filter((c) => c.id !== "r_demp") }))
+      .toEqual([expect.stringContaining("the pull-down is missing")])
+  })
   test("control: the 220 kohm removed from MODE is rejected", () => {
     const block = codecBlock()
     expect(checkDefaultPopulation({ ...block, components: block.components.filter((c) => c.id !== "r_mode") }))
