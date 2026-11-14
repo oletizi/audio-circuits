@@ -595,6 +595,8 @@ Not by the agent that drafted it.
 
 The spec's decision, and the revision review issue 34 point 2 forced: **the geometry is final before a track is laid.**
 
+**BEFORE STEP 1: `make update-pt2399-core` WILL REFUSE, AND THAT IS NOT A FAULT.** Task 6b ran it for real, so `circuits/pt2399-core/pt2399-core.kicad_pcb` now carries 24 footprints, committed. The tool does not do incremental updates and refuses a board holding any footprint (`board-not-empty`). Re-placing from the schematic means putting an empty board back first: `cp tests/fixtures/pcb/pt2399-core-empty/pt2399-core.kicad_pcb circuits/pt2399-core/pt2399-core.kicad_pcb`. That fixture is the board's own bytes before it was populated, and `tests/pcb/empty-board-fixture.test.ts` is the authority on its provenance and on whether it has drifted from the committed board. The same sentence is in `make/pcb.mk` above the target, because that is the other place a reader stands when they hit this.
+
 - [ ] **Step 1: Pass 1 - a generous rectangle, placement only**
 
 Place against the approved intent to discover the extent the parts and their hardware actually need. Nothing is routed. Nothing is adopted.
