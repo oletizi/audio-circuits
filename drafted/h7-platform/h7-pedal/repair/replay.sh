@@ -62,7 +62,7 @@ draft_sha() {
   esac
 }
 # The intents committed so far: a block's intent is committed with its page.
-REPAIRED="interface entry pf modsw prail ldo_vmid usb midi_i2c fsw_led controls_a controls_b expr_ref codec_sup sai_iso codec jacks_byp"
+REPAIRED="interface entry pf modsw prail ldo_vmid usb midi_i2c fsw_led controls_a controls_b expr_ref codec_sup sai_iso codec jacks_byp in_fe"
 PAGE_INTERFACE=963777f3bf9df9c3b5d966ce48c71bf76071f902c716f88a65b07c621b88822a
 PAGE_ENTRY=5352fd5b917c96520681efa8421b8b63d9a0f92345156c776044f48708af0736
 PAGE_PF=7096a9befaf2e62b42218a2153a34fa317fc9cad0a1ad5e1ae9c0d198a4b2385
@@ -79,6 +79,7 @@ PAGE_CODEC_SUP=9f98870190e4b1207c005494b73ec8fb75f2f48857df9723e612a96902ce3147
 PAGE_SAI_ISO=ffc831855bd99856e6c84610169623a34f99ca50e15a834fccb0b23251cff9c8
 PAGE_CODEC=1c17ed164ce98f749cb2db3a88f815e59d10ed82d92b5ca5a924952f4c414588
 PAGE_JACKS_BYP=2ad7be98ed45efb192ccd5dc4a56f892bc009c6b3c98beb4d3d3a0de7565c489
+PAGE_IN_FE=37049f7c8c5bb7894936c2ae6df4e62d10ef8aceaa6d7e939ad224e11bb196d2
 
 [ "$#" -eq 1 ] || fail "expected one argument, a new or empty work directory; got $#"
 mkdir -p "$1"
@@ -193,6 +194,7 @@ repair_block sai_iso "$PAGE_SAI_ISO"
 repair_block codec "$PAGE_CODEC"
 # Task 11a.
 repair_block jacks_byp "$PAGE_JACKS_BYP"
+repair_block in_fe "$PAGE_IN_FE"
 
 # 3. The committed sym-lib-table names the project symbol library IN PLACE in the repository (one
 #    copy of each symbol), where a draft's names a copy in its own directory (TOOLING.md C4). Make

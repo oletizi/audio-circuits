@@ -1,0 +1,72 @@
+[
+ {
+  "name": "FX_IN_L",
+  "pins": [
+   "R95.1"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "FX_IN_R",
+  "pins": [
+   "R99.1"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "GND",
+  "pins": [
+   "C62.2",
+   "C65.2",
+   "C66.2",
+   "C69.2",
+   "C70.2",
+   "C71.2",
+   "R100.2",
+   "R96.2",
+   "TP10.1",
+   "TP8.1",
+   "U17.4"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "IN_FOLLOW_L",
+  "pins": [
+   "U17.1",
+   "U17.2"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "IN_FOLLOW_R",
+  "pins": [
+   "U17.6",
+   "U17.7"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "VIN_A",
+  "pins": [
+   "C70.1",
+   "C71.1",
+   "U17.8"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "VMID_L",
+  "pins": [
+   "R98.2"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "VMID_R",
+  "pins": [
+   "R102.2"
+  ],
+  "drafted": false
+ }
+]

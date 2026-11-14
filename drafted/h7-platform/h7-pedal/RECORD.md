@@ -50,6 +50,7 @@ below says which it is.** A verdict is bound to the sha256 in the table below;
 | `sai_iso.kicad_sch` | block sai_iso | `ffc831855bd99856e6c84610169623a34f99ca50e15a834fccb0b23251cff9c8` |
 | `codec.kicad_sch` | block codec | `1c17ed164ce98f749cb2db3a88f815e59d10ed82d92b5ca5a924952f4c414588` |
 | `jacks_byp.kicad_sch` | block jacks_byp | `2ad7be98ed45efb192ccd5dc4a56f892bc009c6b3c98beb4d3d3a0de7565c489` |
+| `in_fe.kicad_sch` | block in_fe | `37049f7c8c5bb7894936c2ae6df4e62d10ef8aceaa6d7e939ad224e11bb196d2` |
 
 Each committed `.svg` beside a sheet is `draughting/pages/render.sh`'s render of that sheet's
 committed bytes, with the pinned kicad-cli.
@@ -72,6 +73,7 @@ committed bytes, with the pinned kicad-cli.
 | sai_iso | UNREVIEWED (Task 9c); `verify.sh` exits 0 | `sai_iso.svg` |
 | codec | UNREVIEWED (Task 9c); `verify.sh` exits 0 | `codec.svg` |
 | jacks_byp | UNREVIEWED (Task 11a); `verify.sh` exits 0 | `jacks_byp.svg` |
+| in_fe | UNREVIEWED (Task 11a); `verify.sh` exits 0 | `in_fe.svg` |
 
 ## The drafts every repair starts from
 
@@ -2791,3 +2793,139 @@ over their bodies to the outer GND verticals rather than across their tips.
   relays' above their bodies; the jacks' under theirs; R125's Reference above it and Value below.
 - Renders: the first had Q10's fields 3.81 mm east of its origin, over its drain's pin number; they
   moved to 6.35 mm.
+
+## in_fe: the input front ends (Task 11a)
+
+**Status: UNREVIEWED.** sha256 `37049f7c8c5bb7894936c2ae6df4e62d10ef8aceaa6d7e939ad224e11bb196d2`.
+Render: `in_fe.svg` beside it.
+
+The block: `circuits/h7-platform/pedal/in-fe.ts`, 23 parts. Per channel, left then right: R95 and
+R99 (`r_rf_x`, 1.0 kOhm) from FX_IN_x to IN_RF_x; on IN_RF_x, C62 and C66 (`c_rf_x`, 100 pF) and R96
+and R100 (`r_pd_x`, 22 MOhm) to GND, and the input pads TP7 and TP9 (`tp_in_x`); C63 and C67
+(`c_in_x`, 47 nF) from IN_RF_x to IN_AC_x; R97 and R101 (`r_div1_x`, 1.50 MOhm) from IN_AC_x to
+IN_T_x, with C64 and C68 (`c_comp_x`, 110 pF) across them; R98 and R102 (`r_div2_x`, 1.00 MOhm) from
+IN_T_x to VMID_x; C65 and C69 (`c_t_x`, 160 pF) from IN_T_x to GND; the GND pads TP8 and TP10
+(`tp_in_x_gnd`). U17 (`u_in`, OPA1688, `h7-platform:OPA1688xD`, three units): unit A the left
+follower, unit B the right (+IN on IN_T_x, OUT and -IN on IN_FOLLOW_x), unit C V+ on VIN_A and V- on
+GND, with C70 (`c_uin_hf`, 100 nF) and C71 (`c_uin_bulk`, 10 uF) from VIN_A to GND. Ports FX_IN_L,
+FX_IN_R, GND, IN_FOLLOW_L, IN_FOLLOW_R, VIN_A, VMID_L and VMID_R; four reach one pin each (R95's and
+R99's pin 1, R98's and R102's pin 2). IN_RF_x, IN_AC_x and IN_T_x are private to the page and drawn as
+wire, with no label. No no-connects.
+
+### The rulings this page rests on
+
+- [CR-PEDAL-BLOCKS](../../../docs/h7-platform/decisions.md#cr-pedal-blocks): `in_fe` is one of the
+  pedal's blocks: each channel from the input relay's NO contact to its follower.
+- [CR-PEDAL-ANALOG-READINGS](../../../docs/h7-platform/decisions.md#cr-pedal-analog-readings): the
+  private names IN_AC_x and IN_T_x (the documents' "node T"); the input test pads and their GND pads
+  drawn on this page.
+- [CR-PEDAL-TEST-PADS](../../../docs/h7-platform/decisions.md#cr-pedal-test-pads): the input pad on
+  IN_RF_x and the GND pad beside it, each a `Connector:TestPoint`.
+- [CR-PEDAL-SYMBOL-OPA1688](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-opa1688): U17's
+  project symbol, numbered unit by unit from `part.symbolPins` (A 1 OUT, 2 -IN, 3 +IN; B 5 +IN, 6
+  -IN, 7 OUT; C 8 V+, 4 V-).
+- [CR-PEDAL-KINDS](../../../docs/h7-platform/decisions.md#cr-pedal-kinds) (the OPA1688 `opamp`) and
+  [CR-PEDAL-PIN-MATCH](../../../docs/h7-platform/decisions.md#cr-pedal-pin-match).
+- [CR-PEDAL-NETS](../../../docs/h7-platform/decisions.md#cr-pedal-nets): FX_IN_x, IN_FOLLOW_x and
+  VMID_x as shared nets.
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): VIN_A and GND
+  are wires ending in hierarchical labels; no power symbol on the page.
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
+  this page; VIN_A's and GND's flags are homed on the root (Tasks 7c and 7b), and the one-block root
+  puts them on its stubs, which clears U17's V+ and V-.
+- [CR-MODULE-PORT-LABEL-CHECK](../../../docs/h7-platform/decisions.md#cr-module-port-label-check):
+  0 of 8 ports on the wrong net.
+- Sources, not rulings: schematic-checklist.md AIO-02 to AIO-07 (lines 152 to 157), PWR-11 (line
+  132), line 149 (A = L, B = R); analog.md lines 124 to 126, 163, 167, 168 and 172; parts.md lines 57
+  and 105, which the block cites part by part.
+- Drawing choices, not transcriptions: two channel rows, left above right, read west to east from
+  FX_IN_x's label to IN_FOLLOW_x's; one GND row between them, the left channel's shunt parts hanging
+  down to it and the right channel's rising to it (the right channel's C_RF, R_PD and C_T 100 mil east
+  of the left's, so no point on the row takes four wires); each C_COMP on a loop beside its R_DIV1, on
+  the side away from the GND row; each R_DIV2's far end west to VMID_x's label; U17's units at
+  rotation 0 (`page.place_ops` refuses a turned or mirrored unit), each follower loop under its body;
+  the supply unit and its two capacitors east of the outputs, between a VIN_A row and the GND row.
+  FX_IN_x and VMID_x, which the draft drew no wire for, take the default stroke (`in_fe/layout.py`,
+  `UNDRAWN_STROKES`, says why). Fields and the supply section moved after the renders listed below.
+
+### The tables after this page
+
+Unchanged. `verify.sh` read 6 flag homes, 9 cross-page drivers and 1 ERC allowance. No pin on this
+page needs a cross-page driver: the only `input` pins, U17's +IN and -IN, sit on IN_T_x and
+IN_FOLLOW_x, which the page's own parts drive (`R_DIV1`'s and `R_DIV2`'s passive pins, U17's OUT). No
+allowance is used.
+
+### Measurements, before (the draft) and after (this page)
+
+Both columns with the tables as this page leaves them. The draft columns were measured on the draft
+copied beside the committed `sym-lib-table`.
+
+| measure | draft | page |
+| --- | --- | --- |
+| netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
+| footprints; footprints undeclared | 0; 23 (the model declares none) | 0; 23 |
+| exported components, nets, net members | 23, 14, 48 | 23, 14, 48 |
+| exported nets carrying a model net name | 10 of 14 | 8 of 14 (the eight ports; the other six are the six private nets, unlabelled) |
+| ports whose label is on the wrong net | 5 of 8 | 0 of 8 |
+| ERC, the sheet alone | 6 errors (`pin_not_connected` 4, R95 pin 1, R99 pin 1, R98 pin 2, R102 pin 2; `power_pin_not_driven` 2, U17's V+ and V-), 3 warnings (`lib_symbol_issues` 3) | 10 errors (`pin_not_connected` 8: each hierarchical label has no parent sheet; `power_pin_not_driven` 2, U17's V+ and V-), 7 warnings (`isolated_pin_label` 4, the four one-pin ports' labels; `lib_symbol_issues` 3) |
+| ERC under a one-block root, `/in_fe/` | 6 errors (`pin_not_connected` 4, `power_pin_not_driven` 2), 1 warning (`same_local_global_label` 1) | **0 errors, 0 warnings** |
+| ERC under a one-block root, `/` | 14 errors (`hier_label_mismatch` 8, `label_dangling` 6), 5 warnings (`isolated_pin_label` 2, `lib_symbol_issues` 3) | 2 errors (`label_dangling` 2, the IN_FOLLOW_L and IN_FOLLOW_R stubs' labels, alone with one block; `erc_sheets.py` admits them), 11 warnings (`isolated_pin_label` 8, the stub and sheet labels of the four one-pin ports; `lib_symbol_issues` 3) |
+| parenthesis depth at end, lowest | 0, 0 | 0, 0 |
+| true wire crossings, T-meetings | 1, 2 | 0, 0 |
+| orphan junctions, of total | 0 of 7 | 0 of 28 |
+| wire-to-wire tees without a dot; collinear overlapping pairs | 2; 0 | 0; 0 |
+| labels | 24 on 10 nets (19 global, 5 local) | 8 on 8 nets, all hierarchical |
+| paper fit (US Letter) | fits | fits |
+| wire groups with more than one stroke | 0 of 24 | 0 of 14 |
+| symbols (part instances, power symbols, PWR_FLAGs) | 25 (25: 23 parts, U17 in three units; 0, 0) | 25 (25, 0, 0) |
+| placed pins | 48 | 48 |
+| wires, total length | 79, 581.66 mm | 68, 640.08 mm |
+| wire corners | 31 | 11 |
+| junctions | 7 | 28 |
+| no-connects | 0 | 0 |
+
+The selftest ran first on both: 10 controls, every one moved or fired.
+
+**`power_pin_not_driven` 2 on the sheet alone**: U17's V+ (pin 8, VIN_A) and V- (pin 4, GND), both
+`power_in`; VIN_A's and GND's flags are on the root, and under the one-block root the stubs' flags
+clear both.
+
+**`lib_symbol_issues` 3**, on U17's three units: *"The current configuration does not include the
+symbol library 'h7-platform'"*, the pf page's U1 warning: a block page has no `.kicad_pro`, and
+kicad-cli 10.0.5 does not take the committed `sym-lib-table` without one. The symbol is embedded in the
+sheet. No `lib_symbol_mismatch`: `Device:R`, `Device:C` and `Connector:TestPoint` match their installed
+copies.
+
+**`isolated_pin_label` 4**, on the sheet alone: the four one-pin ports' labels; FX_IN_x's other end is
+on jacks_byp (K1's NO pins) and VMID_x's on ldo_vmid (U5's outputs).
+
+### Why the page has no crossing, as the layout records it
+
+Observations, not a judgement of the page: each channel's nets follow one another along its row, so
+no net has to pass another to reach its next part; the shunt parts of both channels meet one GND row
+from opposite sides; each C_COMP's loop and each follower loop lies on the side of its row away from
+that GND row; VMID_x leaves R_DIV2's far end on the GND row's side of the channel row, west, in a span
+no other wire uses.
+
+### What the page shows, as observations
+
+- The left channel's row, west to east: FX_IN_L's label (pointing west), R95, the IN_RF_L node with
+  TP7 rising from it and C62 and R96 hanging to the GND row, C63, the IN_AC_L node, R97 with C64 on a
+  loop above it, the IN_T_L node with R98 (its foot west to VMID_L's label, pointing west) and C65
+  (down to the GND row), and U17A's +IN. U17A's OUT runs east to IN_FOLLOW_L's label (pointing east)
+  and loops under the body into -IN.
+- The right channel's row the same, below the GND row: TP9 hangs below it, C66, R100, R102 and C69
+  rise from it (R102's top west to VMID_R's label), C68's loop is below R101, U17B's loop under its
+  body.
+- The GND row between the channels, from GND's label at the west (pointing west), past TP8 (its circle
+  up) and TP10 (its circle down), the six shunt drops, U17C's V- and C70 and C71, which hang from the
+  VIN_A row; VIN_A's label at that row's east end, pointing east.
+- IN_RF_x, IN_AC_x, IN_T_x and IN_FOLLOW_x carry copperhead's blue; GND, VIN_A, FX_IN_x and VMID_x
+  the default.
+- The horizontal parts' fields over the left row and under the right row (R97's and R101's on the side
+  facing their C_COMP); the hanging parts' east of their bodies; U17A's and U17B's centred above the
+  body; U17C's, C70's and C71's east of their bodies.
+- Renders: the first had the horizontal capacitors' fields on their plates, TP10's Reference on the
+  GND row, TP8's Value beside GND's label and U17C's fields over C70; the capacitors' fields moved
+  0.889 mm out, TP8's and TP10's 1.27 mm off the row, and C70, C71 and VIN_A's label 400 mil east. The
+  second had TP7's Value on the IN_RF_L row; TP7's fields moved 1.27 mm up.

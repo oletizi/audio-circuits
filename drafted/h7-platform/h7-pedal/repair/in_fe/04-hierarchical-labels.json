@@ -1,0 +1,119 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "in_fe.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "070698e2-5e8f-5b58-a619-1a40cc8b455f"
+  },
+  {
+   "op": "add_net_label",
+   "name": "FX_IN_L",
+   "at": [
+    1300,
+    2300
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "85dec410-e7b4-5a60-8e74-b2ac4251c20e"
+  },
+  {
+   "op": "add_net_label",
+   "name": "FX_IN_R",
+   "at": [
+    1300,
+    3500
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "2c94fbb3-0eca-5ac8-805a-11eff058cf65"
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    1600,
+    2900
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "24380ab7-3ca8-50fa-b16c-cc1c0d5fc301"
+  },
+  {
+   "op": "add_net_label",
+   "name": "IN_FOLLOW_L",
+   "at": [
+    6900,
+    2400
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "d1708bf1-7d5a-5d1e-9ff4-e3c958b2441e"
+  },
+  {
+   "op": "add_net_label",
+   "name": "IN_FOLLOW_R",
+   "at": [
+    6900,
+    3600
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "b22c89d2-4514-5729-8bb0-0773d4a7d616"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VIN_A",
+   "at": [
+    9500,
+    2300
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "513662cc-b736-5fdf-9415-c7a66354e224"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VMID_L",
+   "at": [
+    4350,
+    2600
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "1027e296-5e6d-515d-bafa-47cd9387b76c"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VMID_R",
+   "at": [
+    4350,
+    3200
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  }
+ ]
+}
