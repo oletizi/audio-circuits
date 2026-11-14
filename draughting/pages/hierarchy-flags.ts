@@ -27,6 +27,7 @@ import { readFileSync } from "node:fs"
 import { basename } from "node:path"
 import { pinNumberFor } from "../../lib/kicad/from-network.ts"
 import { importNetlist } from "../../lib/kicad/netlist.ts"
+import { pinKey } from "../../lib/kicad/unit-pins.ts"
 import { boardFromArgs, type PageBoard } from "./board.ts"
 import { flagHomes, type FlagHomes } from "./flag-homes.ts"
 
@@ -40,10 +41,13 @@ export function modelPinNets(board: PageBoard): ReadonlyMap<string, string> {
   for (const c of board.network.components) {
     const ref = board.designators[c.id]
     if (ref === undefined) throw new Error(`${c.id} has no designator in DESIGNATORS (${basename(board.circuitRel)})`)
-    for (const pins of [c.pins, ...c.units.map((u) => u.pins)]) {
-      for (const [key, connection] of Object.entries(pins)) {
-        if (connection.kind === "net") out.set(`${ref}.${pinNumberFor(c, key, board.pinNumbers)}`, connection.net)
-      }
+    // A package pin is keyed by its own name; a unit pin by `pinKey` (`<unit>/<pin>` on a
+    // multi-unit package, whose unit pin names repeat from unit to unit), the key `pinNumberFor`
+    // numbers it under. Passing a unit's raw pin name refused every multi-unit part (Task 11b).
+    const keyed: Array<readonly [string, (typeof c.pins)[string]]> = Object.entries(c.pins)
+    for (const unit of c.units) for (const [pin, connection] of Object.entries(unit.pins)) keyed.push([pinKey(c, unit, pin), connection])
+    for (const [key, connection] of keyed) {
+      if (connection !== undefined && connection.kind === "net") out.set(`${ref}.${pinNumberFor(c, key, board.pinNumbers)}`, connection.net)
     }
   }
   return out
