@@ -125,6 +125,18 @@ export const TEST_PADS = {
   ],
 } as const
 
+/** The TEST_PADS entry `id` (CR-PEDAL-TEST-PADS); throws where the ruling's list has none. */
+export function testPad(id: string): { readonly id: string; readonly net: string } {
+  const found = TEST_PADS.pads.find((p) => p.id === id)
+  if (found === undefined) {
+    throw new Error(
+      `CR-PEDAL-TEST-PADS (circuits/h7-platform/pedal-rulings.ts, TEST_PADS) has no pad "${id}"; a block draws only the pads ` +
+        "that ruling lists. Not defaulted, because a pad the ruling does not name has no source.",
+    )
+  }
+  return found
+}
+
 /** CR-PEDAL-HW-REV: revision 1's divider, VREF_A to HW_REV to GND, read from the module's `ID_STRAP`. */
 export const HW_REV_STRAP = {
   ruling: "CR-PEDAL-HW-REV",

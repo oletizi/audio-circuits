@@ -26,7 +26,7 @@
 import type { Network } from "../../../lib/model/index.ts"
 import { CAPACITOR, RESISTOR } from "../parts.ts"
 import { OPA1688 } from "../pedal-parts.ts"
-import { TEST_PADS } from "../pedal-rulings.ts"
+import { TEST_PADS, testPad } from "../pedal-rulings.ts"
 import { block, capacitor, dualOpamp, part, resistor, withMpn } from "./build.ts"
 
 const VIN_A = "VIN_A"
@@ -39,23 +39,12 @@ function nets(x: "L" | "R") {
   return { fxIn: `FX_IN_${x}`, rf: `IN_RF_${x}`, ac: `IN_AC_${x}`, t: `IN_T_${x}`, vmid: `VMID_${x}`, follow: `IN_FOLLOW_${x}` }
 }
 
-/** The TEST_PADS entry `id` (CR-PEDAL-TEST-PADS); throws where the ruling's list has none. */
-function pad(id: string): { readonly id: string; readonly net: string } {
-  const found = TEST_PADS.pads.find((p) => p.id === id)
-  if (found === undefined) {
-    throw new Error(
-      `CR-PEDAL-TEST-PADS (circuits/h7-platform/pedal-rulings.ts, TEST_PADS) has no pad "${id}"; the in_fe block draws the ` +
-        "input pads that ruling lists. Not defaulted, because a pad the ruling does not name has no source.",
-    )
-  }
-  return found
-}
 
 function channel(x: "L" | "R") {
   const n = nets(x)
   const lc = x.toLowerCase()
-  const inPad = pad(`tp_in_${lc}`)
-  const gndPad = pad(`tp_in_${lc}_gnd`)
+  const inPad = testPad(`tp_in_${lc}`)
+  const gndPad = testPad(`tp_in_${lc}_gnd`)
   return [
     resistor(`r_rf_${lc}`, "1.0k", n.fxIn, n.rf, RESISTOR, "schematic-checklist.md:152 (AIO-02, R_RF 1.0 kOhm in series from FX_IN_x); analog.md:167"),
     capacitor(`c_rf_${lc}`, "100p", n.rf, GND, CAPACITOR, "schematic-checklist.md:152 (AIO-02, C_RF 100 pF C0G 50 V to GND); analog.md:167 (OWN-02)"),
