@@ -25,7 +25,17 @@
  * adc_drv block, was not yet in the model. Task 10 built adc_drv and removed both: VINL and VINR are
  * now cross-page driver entries naming adc_drv's R_O pins (`cross-page-drivers.ts`), and the one-item
  * allowance support is deleted from the shared tools (the amendment of that ruling in
- * docs/h7-platform/decisions.md records it). The table holds the expr_ref entry alone.
+ * docs/h7-platform/decisions.md records it). The table held the expr_ref entry alone until Task 11b.
+ *
+ * Task 11b (the pedal's root) added the second, ruling CR-PEDAL-ROOT-MIDI-PIN4-ERC, a ROOT LABEL
+ * allowance (`draughting/pages/erc-allowances.ts`, `RootLabelAllowance`). MIDI_PIN4 leads to the MIDI
+ * connector no source names, which is not drawn (CR-PEDAL-MIDI; `UNDRAWN_CONNECTOR_NETS`,
+ * `circuits/h7-platform/pedal-board.ts`): it is a board port, and only midi_i2c's port is bound to it.
+ * On the assembled root, `kicad-cli sch erc` reported exactly one error that no other entry covers,
+ * `label_dangling` on `/`, "Label 'MIDI_PIN4'", the stub label of midi_i2c's MIDI_PIN4 sheet pin. Its
+ * twin MIDI_PIN5 and the five SPARE nets (SOCKET_ONLY_NETS) are reported as `isolated_pin_label`, a
+ * warning, and need no entry. The expr_ref entry is keyed in the root's `.kicad_pro` with the GND
+ * flag's uuid on the root (`draughting/pages/kicad-pro.ts`, Task 11b).
  *
  * DATA ONLY. How narrowly an allowance matches, and the model check every entry is held to, are
  * `draughting/pages/erc-allowances.ts`; the shared tools read this table through the board's drafted
@@ -48,5 +58,16 @@ export const ERC_ALLOWANCES: readonly ErcAllowance[] = [
       "circuits/h7-platform/pedal/expr-ref.ts (u_refblk pin 5, ST, on GND: analog.md:314, \"ST and N/C to GND\"); " +
       "h7-platform:LM66100DCK types ST open_collector (SLVSEZ8A; CR-PEDAL-SYMBOL-LM66100, CR-PEDAL-PIN-MATCH clause 5); " +
       "GND's one PWR_FLAG is on the root (pwr-flag-homes.ts); ruling CR-PEDAL-LM66100-ST-ERC in docs/h7-platform/decisions.md",
+  },
+  {
+    ruling: "CR-PEDAL-ROOT-MIDI-PIN4-ERC",
+    sheet: "/",
+    type: "label_dangling",
+    label: "MIDI_PIN4",
+    net: "MIDI_PIN4",
+    source:
+      "circuits/h7-platform/pedal/midi-i2c.ts (RA's far end, \"MIDI pin 4\", power.md:460; a port of midi_i2c and of the board); " +
+      "the connector it leads to is not drawn (CR-PEDAL-MIDI; UNDRAWN_CONNECTOR_NETS, circuits/h7-platform/pedal-board.ts); " +
+      "ruling CR-PEDAL-ROOT-MIDI-PIN4-ERC in docs/h7-platform/decisions.md",
   },
 ]

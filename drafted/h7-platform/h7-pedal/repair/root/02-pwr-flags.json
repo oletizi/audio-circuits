@@ -1,0 +1,75 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "h7-pedal.kicad_sch",
+ "ops": [
+  {
+   "op": "place_pwr_flag",
+   "at": [
+    3200,
+    4700
+   ],
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "5V_A_CODEC",
+   "at": [
+    7700,
+    3400
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "place_pwr_flag",
+   "at": [
+    7700,
+    3400
+   ],
+   "rotation": 0
+  },
+  {
+   "op": "place_pwr_flag",
+   "at": [
+    3500,
+    2700
+   ],
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "VIN_A",
+   "at": [
+    5800,
+    2200
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "place_pwr_flag",
+   "at": [
+    5800,
+    2200
+   ],
+   "rotation": 0
+  },
+  {
+   "op": "place_pwr_flag",
+   "at": [
+    4700,
+    6100
+   ],
+   "rotation": 180
+  },
+  {
+   "op": "place_pwr_flag",
+   "at": [
+    1250,
+    7000
+   ],
+   "rotation": 180
+  }
+ ]
+}

@@ -26,10 +26,16 @@
  * check then requires, for the partner, pin "1" and a declared flag home for the entry's net in the
  * board's `pwr-flag-homes.ts` (so a flag is on that net and nowhere else); the pin-type check holds
  * for the other item, the part's own pin. First needed for the h7 pedal's U12 ST, an open-drain
- * output the circuit ties to GND (ruling CR-PEDAL-LM66100-ST-ERC). `kicad-pro.ts` refuses such an
- * entry: a `.kicad_pro` exclusion keys the flag's uuid on the root, which no tool here reads yet.
+ * output the circuit ties to GND (ruling CR-PEDAL-LM66100-ST-ERC). `kicad-pro.ts` keys such an
+ * entry's `.kicad_pro` exclusion with the flag's uuid, read from the assembled root (Task 11b).
  *
- * EVERY ALLOWANCE NAMES TWO ITEMS. The h7 pedal pages plan's Task 9c added a one-item allowance for
+ * A ROOT LABEL ALLOWANCE (Task 11b; `RootLabelAllowance` below) is the one exception to two items: a
+ * violation on the board root whose one item is a stub label, for a board port that reaches one
+ * block only. It names no pin and is never an undriven input. `erc_sheets.py` does not read it (a
+ * one-block root's `/` admits its stubs' `label_dangling` already); `root_erc.py` and `kicad-pro.ts`
+ * do.
+ *
+ * EVERY PIN ALLOWANCE NAMES TWO ITEMS. The h7 pedal pages plan's Task 9c added a one-item allowance for
  * `pin_not_driven`, under ruling CR-PEDAL-CODEC-VIN-AWAITING-ERC (temporary), for the codec page's VINL
  * and VINR while their driving block was not built; Task 10 built it, replaced the two allowances with
  * cross-page driver entries, and deleted the one-item support here, in `erc_match.py`, `erc_sheets.py`,
@@ -62,7 +68,8 @@ export interface AllowedPin {
   readonly pin: string
 }
 
-export interface ErcAllowance {
+/** An allowance between two pins: a part's two, or a part's and the net's PWR_FLAG. */
+export interface PinAllowance {
   /** The controller ruling that admits it. */
   readonly ruling: string
   /** The sheet path KiCad reports the violation on, `/<block>/`. */
@@ -79,6 +86,36 @@ export interface ErcAllowance {
   readonly source: string
 }
 
+/**
+ * A ROOT LABEL ALLOWANCE (h7 pedal pages plan, Task 11b; first ruled for the pedal's MIDI_PIN4,
+ * CR-PEDAL-ROOT-MIDI-PIN4-ERC): one violation whose ONE item is a stub label on the board root,
+ * `Label '<label>'`, of a type in `ROOT_LABEL_TYPES`. Held to the model as the cause it states: the
+ * label's text is its net, the net is a port of the board (it leaves the drawing), and exactly one
+ * block's port is bound to it, so on the root its stub label meets no other sheet. It is not an
+ * undriven input (that is a missing cross-page driver entry, never an allowance), and it never
+ * excuses a pin.
+ */
+export interface RootLabelAllowance {
+  readonly ruling: string
+  /** Always the root, `/`. */
+  readonly sheet: string
+  readonly type: string
+  /** The stub label's text, which KiCad names in the item. */
+  readonly label: string
+  /** The board net the label names; equal to `label`. */
+  readonly net: string
+  readonly source: string
+}
+
+export type ErcAllowance = PinAllowance | RootLabelAllowance
+
+export function isRootLabelAllowance(entry: ErcAllowance): entry is RootLabelAllowance {
+  return "label" in entry
+}
+
+/** The violation types a root label allowance may name: measured on the pedal root, nothing else. */
+export const ROOT_LABEL_TYPES: readonly string[] = ["label_dangling"]
+
 export const ALLOWANCES_FILE = "erc-allowances.ts"
 /** The designator an allowance gives an item that is the net's PWR_FLAG (see the module comment). */
 export const FLAG_PARTNER = "PWR_FLAG"
@@ -90,6 +127,17 @@ function allowedPin(value: unknown, where: string): AllowedPin {
 }
 
 function parseAllowance(entry: Record<string, unknown>, where: string): ErcAllowance {
+  if (entry["label"] !== undefined) {
+    if (entry["pins"] !== undefined) throw new Error(`${where}: an allowance names either "label" (a root stub label) or "pins", not both`)
+    return {
+      ruling: requiredString(entry, "ruling", where),
+      sheet: requiredString(entry, "sheet", where),
+      type: requiredString(entry, "type", where),
+      label: requiredString(entry, "label", where),
+      net: requiredString(entry, "net", where),
+      source: requiredString(entry, "source", where),
+    }
+  }
   const pins = entry["pins"]
   if (!Array.isArray(pins) || pins.length !== 2) {
     throw new Error(`${where}: "pins" must be an array of exactly two (designator, pin) objects; got ${JSON.stringify(pins)}`)
@@ -126,7 +174,24 @@ function flagPartnerProblems(entry: ErcAllowance, p: AllowedPin, homes: FlagHome
   return problems
 }
 
-function pinProblems(entry: ErcAllowance, p: AllowedPin, componentIds: readonly string[], board: PageBoard): string[] {
+function rootLabelProblems(entry: RootLabelAllowance, board: PageBoard): string[] {
+  const problems: string[] = []
+  if (entry.sheet !== "/") problems.push(`a root label allowance is on the root sheet /, not ${entry.sheet}`)
+  if (!ROOT_LABEL_TYPES.includes(entry.type)) {
+    problems.push(`a root label allowance names a violation of type ${ROOT_LABEL_TYPES.join(" or ")}, not ${entry.type}; no other type has been measured on a root stub label`)
+  }
+  if (entry.label !== entry.net) problems.push(`the stub label's text is its net's name, so label ${entry.label} must equal net ${entry.net}`)
+  if (!Object.values(board.network.ports).includes(entry.net)) {
+    problems.push(`net ${entry.net} is not a port of ${board.modelName}, so nothing explains a root stub label of it meeting no other sheet`)
+  }
+  const blocks = board.network.blocks.filter((b) => Object.values(b.ports).includes(entry.net)).map((b) => b.prefix)
+  if (blocks.length !== 1) {
+    problems.push(`net ${entry.net} is bound to the ports of ${blocks.length} block(s) (${blocks.join(", ") || "none"}); a root label allowance needs exactly one, so its stub label meets no other sheet`)
+  }
+  return problems
+}
+
+function pinProblems(entry: PinAllowance, p: AllowedPin, componentIds: readonly string[], board: PageBoard): string[] {
   const resolved = componentIdFor(board, p.designator)
   if ("problem" in resolved) return [resolved.problem]
   const id = resolved.id
@@ -160,6 +225,10 @@ export function checkErcAllowances(table: readonly ErcAllowance[], board: PageBo
   const module = board.network
   const failures: string[] = []
   for (const entry of table) {
+    if (isRootLabelAllowance(entry)) {
+      for (const problem of rootLabelProblems(entry, board)) failures.push(`${entry.ruling}: ${entry.type} on ${entry.sheet}, label ${entry.label}: ${problem}`)
+      continue
+    }
     const label = `${entry.ruling}: ${entry.type} on ${entry.sheet} between ${entry.pins.map((p) => `${p.designator} pin ${p.pin}`).join(" and ")}`
     const problems: string[] = []
     const block = /^\/([^/]+)\/$/.exec(entry.sheet)?.[1]

@@ -1,0 +1,18 @@
+{
+  "erc": {
+    "erc_exclusions": [
+      [
+        "pin_to_pin|1371600|965200|bd0c79cb-2c5f-5a84-9cd1-98f5462063bb|79ece9de-141f-5cc9-979c-01626bb2dc10|/b3393f3a-d3ff-dc85-020b-cb0957f77989/bde1875e-a458-574b-9b99-a362cd8b7f46|/b3393f3a-d3ff-dc85-020b-cb0957f77989/bde1875e-a458-574b-9b99-a362cd8b7f46|/b3393f3a-d3ff-dc85-020b-cb0957f77989",
+        "CR-PEDAL-LM66100-ST-ERC: pin_to_pin on /expr_ref/ between U12 pin 5 and PWR_FLAG pin 1 (net GND; the installed symbol types U12 pin 5 open_collector; its partner is the net's PWR_FLAG on the root). Declared in repair/tools/erc-allowances.ts."
+      ],
+      [
+        "label_dangling|2032000|685800|8edafc22-fe98-5adc-bf1a-1d0991e6bdf7|00000000-0000-0000-0000-000000000000|/b3393f3a-d3ff-dc85-020b-cb0957f77989||",
+        "CR-PEDAL-ROOT-MIDI-PIN4-ERC: label_dangling on /, the root stub label MIDI_PIN4 (net MIDI_PIN4, a board port bound to one block). Declared in repair/tools/erc-allowances.ts."
+      ]
+    ]
+  },
+  "meta": {
+    "filename": "h7-pedal.kicad_pro",
+    "version": 3
+  }
+}

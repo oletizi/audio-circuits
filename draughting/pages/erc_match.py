@@ -7,7 +7,9 @@ A violation matches an allowance ONLY when all of these hold: it is on the allow
 is of the allowance's violation type, and its items are exactly the allowance's two (designator, pin
 number) pairs, each parsed from KiCad's "Symbol <ref> Pin <number> [...]" item. An item that is not
 a symbol pin, a third item, or a missing one, never matches. Never a match on free text alone, and
-never on the type alone.
+never on the type alone. The one exception is a ROOT LABEL allowance (it carries "label", not
+"pins"; h7 pedal Task 11b): it matches a violation with exactly one item reading
+"Label '<label>'", on its sheet and of its type.
 
 How many violations one allowance may excuse is each caller's to enforce, and both enforce one:
 `erc_sheets.py` fails an allowance matched more than once (zero is reported as stale and passes,
@@ -50,6 +52,11 @@ def matches(allowance, path, violation):
     """True when `violation`, reported on sheet `path`, is exactly the one `allowance` names."""
     if allowance["sheet"] != path or allowance["type"] != violation["type"]:
         return False
+    if "label" in allowance:
+        # A root label allowance (erc-allowances.ts, RootLabelAllowance; h7 pedal Task 11b): exactly
+        # one item, the stub label "Label '<label>'" - KiCad's own wording, matched whole.
+        items = violation.get("items", [])
+        return len(items) == 1 and items[0].get("description", "") == f"Label '{allowance['label']}'"
     got = pin_pairs(violation)
     return got is not None and len(got) == 2 and got == allowance_pairs(allowance)
 

@@ -49,6 +49,10 @@ target = f"/{sys.argv[2]}/"
 allowances = json.load(open(sys.argv[3]))
 if not isinstance(allowances, list):
     sys.exit(f"erc_sheets.py: {sys.argv[3]} is not a JSON array of allowances")
+# A root label allowance (it carries "label"; erc-allowances.ts, RootLabelAllowance) is for the board
+# root, which root_erc.py judges. On a one-block root every stub's `label_dangling` on `/` is already
+# admitted (ROOT_ALLOWED_ERRORS below), so it is not read here, and not reported stale.
+allowances = [a for a in allowances if "label" not in a]
 
 
 def matching_allowance(path, violation):
