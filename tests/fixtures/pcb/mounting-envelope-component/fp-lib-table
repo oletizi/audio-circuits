@@ -1,0 +1,4 @@
+(fp_lib_table
+	(version 7)
+	(lib (name "pt2399-core")(type "KiCad")(uri "${KIPRJMOD}/pt2399-core.pretty")(options "")(descr "A copy of the project library, written by tools/pcb/mounting-envelope-fixtures.ts and checked against the original by tests/pcb/mounting-hardware.test.ts. Without it DRC reports lib_footprint_issues and the clean control is no longer a zero-violation board."))
+)

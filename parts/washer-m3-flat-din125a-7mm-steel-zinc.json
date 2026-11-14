@@ -1,0 +1,43 @@
+{
+  "id": "washer-m3-flat-din125a-7mm-steel-zinc",
+  "kind": "accessory",
+  "description": "M3 flat washer, 3.2 mm inside diameter, 7.0 mm outside diameter, 0.5 mm thick, steel, zinc plated - dimensionally DIN 125 Type A / ISO 7089. Its OUTSIDE diameter is the mounting-hardware envelope every pt2399-core mounting hole is modelled by: no copper, part or silkscreen may sit under it.",
+  "manufacturer": "BFirst Industrial",
+  "mpn": "MFWZ 003",
+  "specs": {
+    "diameterMm": 7.01
+  },
+  "evidence": [
+    {
+      "spec": "mpn",
+      "url": "https://www.digikey.com/en/products/detail/bfirst-industrial/MFWZ-003/274978",
+      "note": "Digi-Key Product Information API via `bun run parts lookup \"MFWZ 003\" --supplier digikey`, 2026-11-13: exact match for MFWZ 003 (BFirst Industrial), Digi-Key part H767-ND, 'WASHER FLAT M3 STEEL', Bulk packaging, 45733 in stock. No Mouser offer was checked: this machine has no ~/.config/mouser key file, so `parts lookup` can only reach Digi-Key here."
+    },
+    {
+      "spec": "diameterMm",
+      "url": "https://www.digikey.com/en/products/detail/bfirst-industrial/MFWZ-003/274978",
+      "note": "Digi-Key parameters, same lookup, 2026-11-13: 'Diameter - Outside: 0.276\" (7.01mm)', 'Diameter - Inside: 0.126\" (3.20mm)', 'Thickness: 0.021\" (0.53mm)', 'Plating: Zinc', 'Material: Steel', 'Thread/Screw/Hole Size: M3'. 7.01 mm is 0.276 in converted - the inch rounding of a 7 mm nominal, not a washer 0.01 mm over size."
+    },
+    {
+      "spec": "diameterMm",
+      "url": "https://www.fastenersuperstore.com/products/258629/flat-washers",
+      "note": "The STANDARD's own range, fetched 2026-11-13 for an M3 DIN125A steel/zinc flat washer: 'Outside diameter range: 6.64 - 7 mm', 'Thickness range: .45 - .55 mm', with its Product Specs list giving 'Outer Diameter: 7mm'. So 7.0 mm is the MAXIMUM outside diameter a conforming M3 DIN 125 A washer can have, which is what makes it the right number for a keep-out envelope: an envelope set to a typical value would be undersized half the time. That is a different part from the one chosen above and is cited only for the standard's dimensions."
+    }
+  ],
+  "why": "The envelope the four pt2399-core mounting holes are modelled by is this washer's outside diameter, and circuits/pt2399-core/placement-rules.json `anchors.mounting_holes.envelope_diameter_mm` states it as 7.0 mm. This entry exists so that figure is CHECKABLE rather than remembered: tests/pcb/mounting-hardware.test.ts reads it from here and from the project-local footprint's courtyard and fails if the two stop agreeing. THE TWO NEIGHBOURS THAT WOULD SILENTLY BREAK IT, named in that rule and worth repeating where the part is chosen: DIN 433 / ISO 7092 is the SMALL series at 6.0 mm OD and DIN 9021 is the LARGE series at 9.0 mm OD. Fitting either changes the envelope, and neither is distinguishable from this one by the words 'M3 flat washer'. Chosen on price and availability among Digi-Key's M3 flat washers (45,733 in stock, $0.0194 each in hundreds) with every dimension stated as a supplier parameter rather than read off a drawing. WHAT IS NOT ESTABLISHED, said plainly rather than glossed: the Digi-Key listing does NOT cite DIN 125 or ISO 7089, and no manufacturer datasheet was fetched - Digi-Key lists none for this part. What is established is that its three stated dimensions (3.20 / 7.01 / 0.53 mm) are DIN 125 Type A's M3 dimensions within that standard's tolerances, which is the claim the description makes and the only one the envelope needs.",
+  "stock": true,
+  "sources": [
+    {
+      "supplier": "Digi-Key",
+      "url": "https://www.digikey.com/en/products/detail/bfirst-industrial/MFWZ-003/274978",
+      "sku": "H767-ND",
+      "currency": "USD",
+      "breaks": [
+        { "quantity": 100, "unitPrice": 0.0194 },
+        { "quantity": 1000, "unitPrice": 0.01532 }
+      ],
+      "checked": "2026-11-13",
+      "use": "standard"
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+(fp_lib_table
+	(version 7)
+	(lib (name "pt2399-core")(type "KiCad")(uri "${KIPRJMOD}/pt2399-core.pretty")(options "")(descr "This board's own footprints: the ones that are DERIVED from a stock KiCad footprint and differ from it, so the difference is a committed file rather than an edit somebody made in pcbnew. MountingHole_3.2mm_M3_Washer7.0mm is the whole library - a stock M3 mounting hole with its courtyard set to the washer envelope instead of the screw head. A project-local table shadows the user table by KiCad's own precedence, which tools/pcb/fp-lib-table.ts reproduces, so this nickname resolves without anything being installed per-machine."))
+)

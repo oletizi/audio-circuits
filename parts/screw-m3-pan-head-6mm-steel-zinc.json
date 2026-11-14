@@ -1,0 +1,44 @@
+{
+  "id": "screw-m3-pan-head-6mm-steel-zinc",
+  "kind": "accessory",
+  "description": "M3 machine screw, pan head, slotted, 6 mm long below the head, 5.40 mm head diameter, steel, zinc with clear chromate. The standard M3 fastener the pt2399-core mounting holes are drilled 3.2 mm for; it is fitted with the M3 DIN 125 A flat washer in washer-m3-flat-din125a-7mm-steel-zinc.json.",
+  "manufacturer": "Keystone Electronics",
+  "mpn": "29311",
+  "specs": {
+    "diameterMm": 5.4
+  },
+  "evidence": [
+    {
+      "spec": "mpn",
+      "url": "https://www.digikey.com/en/products/detail/keystone-electronics/29311/1532208",
+      "note": "Digi-Key Product Information API via `bun run parts lookup 29311 --supplier digikey`, 2026-11-13: exact match for 29311 (Keystone Electronics), Digi-Key part 36-29311-ND, 'MACH SCREW PAN HEAD SLOTTED M3', Bulk packaging, 17999 in stock. No Mouser offer was checked: this machine has no ~/.config/mouser key file."
+    },
+    {
+      "spec": "diameterMm",
+      "url": "https://www.digikey.com/en/products/detail/keystone-electronics/29311/1532208",
+      "note": "Digi-Key parameters, same lookup, 2026-11-13: 'Head Diameter: 0.213\" (5.40mm)', 'Head Height: 0.067\" (1.70mm)', 'Thread Size: M3', 'Length - Below Head: 0.236\" (6.00mm)', 'Length - Overall: 0.303\" (7.70mm)', 'Screw Head Type: Pan Head', 'Drive Type: Slotted', 'Material: Steel', 'Plating: Zinc, Clear Chromate'. `specs.diameterMm` is the HEAD diameter, not the thread: the thread is M3 and is in the description and the mpn's own parameter list. Keystone datasheet https://www.keyelco.com/userAssets/file/K75p87.pdf was not fetched."
+    }
+  ],
+  "why": "THE SCREW IS RECORDED FOR THE SAKE OF THE MEASUREMENT BESIDE IT, and the measurement is why this entry is not a demand for a part number. docs/known-gaps.md G282 records the owner striking down exactly that - 'why do you need the specific part number of a component in a schematic?' - and the geometry here needs only 'a standard M3 screw in the standard 3.2 mm clearance hole', his instruction of 2026-11-13 (G311). What this entry adds is the number that refutes modelling a mounting hole by its SCREW: this pan head measures 5.40 mm across, against the 7.01 mm washer it sits on and the 6.9 mm courtyard KiCad's stock MountingHole_3.2mm_M3 ships with. The head is smaller than the washer, which is the general fact the plan's Task 8 brief measured on an 8-32 fastener where the gap was 2 mm and silent - so a courtyard derived from a head is undersized by a margin nobody sees. Chosen for having every parameter STATED by the supplier, material included: the cheaper BFirst MPMS 003 0008 PH (H743-ND, $0.0517 in hundreds, DIN 7985A pan head) leaves 'Material: -' blank on its Digi-Key listing, and this entry would then be claiming steel from nowhere. 6 mm below the head is the shortest length Keystone lists in this family; the length that will actually be fitted depends on an enclosure and a standoff stack nobody has chosen, so it is NOT a claim this entry makes about the board. Slotted rather than Phillips because that is the drive Keystone's steel/zinc M3 pan heads come in; the drive touches nothing on the board.",
+  "stock": true,
+  "sources": [
+    {
+      "supplier": "Digi-Key",
+      "url": "https://www.digikey.com/en/products/detail/keystone-electronics/29311/1532208",
+      "sku": "36-29311-ND",
+      "currency": "USD",
+      "breaks": [
+        { "quantity": 1, "unitPrice": 0.47 },
+        { "quantity": 10, "unitPrice": 0.357 },
+        { "quantity": 25, "unitPrice": 0.3188 },
+        { "quantity": 100, "unitPrice": 0.2703 },
+        { "quantity": 500, "unitPrice": 0.22432 },
+        { "quantity": 1000, "unitPrice": 0.21 },
+        { "quantity": 2500, "unitPrice": 0.19 },
+        { "quantity": 5000, "unitPrice": 0.17416 }
+      ],
+      "checked": "2026-11-13",
+      "use": "standard"
+    }
+  ]
+}
