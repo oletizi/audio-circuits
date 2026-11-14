@@ -97,6 +97,14 @@ test("control: a root whose MIDI_PIN4 stub label is renamed refuses its key, nam
   })
 })
 
+test("control: a MIDI_PIN4 stub label moved 5.08 mm off its stub is refused, naming both points", () => {
+  withRootEdited('(label "MIDI_PIN4" (at 203.2 68.58 180)', '(label "MIDI_PIN4" (at 198.12 68.58 180)', (dir) => {
+    expect(() => exclusionKey(entry("CR-PEDAL-ROOT-MIDI-PIN4-ERC"), dir, board, homes)).toThrow(
+      'the root label "MIDI_PIN4" is at (198.12, 68.58) mm, not at its stub\'s end, (203.2, 68.58) mm',
+    )
+  })
+})
+
 test("a PWR_FLAG partner named first, or flagged on a block page, is refused by name", () => {
   const st = pinEntry("CR-PEDAL-LM66100-ST-ERC")
   const swapped: PinAllowance = { ...st, pins: [st.pins[1], st.pins[0]] }

@@ -18,6 +18,9 @@
 #  6. CR-PEDAL-CODEC-VIN-AWAITING-ERC-AMENDED: the root stub of adc_drv's VINL cut fails root-drivers.ts
 #     on VINL (R107.2's net lacks U9.25), and the root's ERC reports U9 pin 25 pin_not_driven.
 #  7. CR-MODULE-PWR-FLAGS: the root's six flags removed fails, naming each of the six nets.
+#  8. CR-PEDAL-ROOT-MIDI-PIN4-ERC (Task 11b review I1): MIDI_PIN4's root label moved 5.08 mm west,
+#     off its stub's end: kicad-pro.ts refuses to key it, naming the two points, and verify-root.sh
+#     with the exclusion keyed at the moved point (as the review regenerated it) fails on kicad-pro.
 #
 # usage: sh root-control.sh
 set -eu
@@ -124,5 +127,20 @@ for net in 3V3_D 5V_A_CODEC GND VIN_A VIN_MOD VREF_A; do
     || { cat "$work/missing.flags.log" >&2; bad "it failed, but not naming $net as missing"; }
 done
 echo "   fails as expected: $(grep -c 'carries no PWR_FLAG' "$work/missing.flags.log") nets named"
+
+echo "== 8. MIDI_PIN4's root label moved 5.08 mm off its stub: kicad-pro.ts refuses it, and verify-root fails"
+copy detach
+cp "$proj/sym-lib-table" "$work/detach/"
+python3 -c 'import sys; p=sys.argv[1]; a=sys.argv[2]; b=sys.argv[3]; t=open(p).read(); assert t.count(a)==1, t.count(a); open(p,"w").write(t.replace(a,b))' \
+  "$work/detach/$board.kicad_sch" '(label "MIDI_PIN4" (at 203.2 68.58 180)' '(label "MIDI_PIN4" (at 198.12 68.58 180)'
+if (cd "$root" && bun "$pages/kicad-pro.ts" "$proj" "$work/detach") >"$work/detach.pro" 2>"$work/detach.pro.err"; then bad "kicad-pro.ts keyed a MIDI_PIN4 label off its stub"; fi
+grep -q 'the root label "MIDI_PIN4" is at (198.12, 68.58) mm, not at its stub.s end, (203.2, 68.58) mm' "$work/detach.pro.err" \
+  || { cat "$work/detach.pro.err" >&2; bad "kicad-pro.ts failed, but not naming the label, the point found and the point expected"; }
+# The review's run: the exclusion keyed at the moved label's point, as kicad-pro.ts wrote it before
+# the fix (x 2032000 -> 1981200). verify-root.sh passed it then; it must fail now.
+field "$work/detach/$board.kicad_pro" CR-PEDAL-ROOT-MIDI-PIN4-ERC 1 1981200
+sh "$pages/verify-root.sh" "$proj" "$work/detach" >"$work/detach.verify.log" 2>&1 && bad "verify-root.sh passed a MIDI_PIN4 label off its stub"
+grep -q 'these checks failed:.*kicad-pro' "$work/detach.verify.log" || { tail -5 "$work/detach.verify.log" >&2; bad "verify-root.sh failed, but not naming kicad-pro"; }
+echo "   fails as expected: $(grep -o 'these checks failed:.*' "$work/detach.verify.log")"
 
 echo "root-control.sh: every control came out as stated"

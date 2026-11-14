@@ -13,6 +13,7 @@
 #     cross-page-drivers.ts).
 #  5. ERC on the root, every sheet, with the .kicad_pro's exclusions, judged by root_erc.py against
 #     the declared allowances (the board's erc-allowances.ts).
+#     Then the .kicad_pro must equal what kicad-pro.ts writes from this project (h7 pedal Task 11b).
 #  6. the paper: paper_fit.py must report "fits: yes", and root_sheets_fit.py must find every sheet
 #     symbol inside US Letter's inner frame and clear of the title block (every C3 root is drawn on US Letter, `TOOLING.md` design change C3,
 #     "Multi-page drawing"; first ruled for the h7-module as CR-MODULE-ROOT-FITS-LETTER; paper_fit.py
@@ -106,6 +107,17 @@ quiet "$out/kc.err"
 (cd "$root" && bun "$here/erc-allowances.ts" "$boarddir" "$out/allowances.json") \
   || fail "erc-allowances.ts refused the board's declared ERC allowances (named above)"
 python3 "$here/root_erc.py" "$out/erc.json" "$out/allowances.json" "$dir/$board.kicad_pro" || failed="$failed erc"
+# The .kicad_pro must be what kicad-pro.ts writes from THIS project, so an exclusion cannot outlive
+# the item it was keyed for: kicad-pro.ts refuses, naming it, a root label allowance whose label is
+# off its stub (h7 pedal Task 11b review I1), and any stale or hand-edited key differs here.
+echo "== the .kicad_pro, regenerated from this project"
+if (cd "$root" && bun "$here/kicad-pro.ts" "$boarddir" "$dir") >"$out/regen.kicad_pro" 2>"$out/regen.err"; then
+  cmp -s "$out/regen.kicad_pro" "$dir/$board.kicad_pro" && echo "   identical to $board.kicad_pro" \
+    || { echo "   differs from $board.kicad_pro"; failed="$failed kicad-pro"; }
+else
+  cat "$out/regen.err" >&2
+  failed="$failed kicad-pro"
+fi
 
 echo "== selftest"; python3 "$m/selftest.py" | tail -1
 echo "== crossings"; python3 "$m/crossings.py" "$sch" | tail -3

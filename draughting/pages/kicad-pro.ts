@@ -31,7 +31,11 @@
  * the root: `<type>|<x>|<y>|<label uuid>|<nil uuid>|/<root uuid>||`, x, y at the label's point.
  * MEASURED on the pedal root (kicad-cli 10.0.5), MIDI_PIN4's `label_dangling`, trying every
  * combination of "", "/" and `/<root uuid>` in the three path fields: honoured only with `/<root
- * uuid>` as the sheet path and the main item path empty (or "/"); this writes the empty form.
+ * uuid>` as the sheet path and the main item path empty (or "/"); this writes the empty form. The
+ * label must stand at its stub's end, the point `assemble-root.ts` writes for it; a label of that
+ * text anywhere else is refused, since it would dangle for another reason (Task 11b review I1).
+ * The key forms' negative results are re-run by the pedal's
+ * `drafted/h7-platform/h7-pedal/repair/tools/exclusion_key_probe.py`.
  *
  * Every value comes from a committed file, never from an ERC run: the root and sheet uuids, a root
  * flag's pin uuid and a root label's uuid and point from the root sheet, a part pin's uuid from the
@@ -51,6 +55,7 @@ import { boardFromArgs, type PageBoard } from "./board.ts"
 import { checkErcAllowances, ercAllowanceTable, FLAG_PARTNER, isRootLabelAllowance, type ErcAllowance, type PinAllowance, type RootLabelAllowance } from "./erc-allowances.ts"
 import { flagHomes, type FlagHomes } from "./flag-homes.ts"
 import { rootFlagPlacements } from "./root-flags.ts"
+import { rootSheetOps } from "../../tools/draught/assemble-root.ts"
 
 const UNITS_PER_MIL = 254
 const UNITS_PER_MM = 10000
@@ -179,6 +184,22 @@ function labelExclusionKey(entry: RootLabelAllowance, projectDir: string, board:
     throw new Error(`kicad-pro.ts: ${rootFile} holds ${labels.length} label(s) "${entry.label}"; allowance ${entry.ruling} keys exactly one`)
   }
   const [x, y] = atUnits(label, `the root label "${entry.label}"`)
+  // The allowance excuses the STUB label the arrangement draws for the net's one sheet pin, and
+  // nothing else: a label of that text moved off its stub dangles for another reason (Task 11b
+  // review I1, measured: a label moved 5.08 mm off the stub, keyed here, passed verify-root).
+  const stubs = rootSheetOps(board.network, board.name).ops.filter((op) => op.op === "add_net_label" && op.name === entry.label)
+  const stub = stubs[0]?.at
+  if (stubs.length !== 1 || !Array.isArray(stub) || typeof stub[0] !== "number" || typeof stub[1] !== "number") {
+    throw new Error(`kicad-pro.ts: assemble-root.ts writes ${stubs.length} stub label(s) "${entry.label}"; allowance ${entry.ruling} names exactly one`)
+  }
+  const want = [stub[0] * UNITS_PER_MIL, stub[1] * UNITS_PER_MIL]
+  if (x !== want[0] || y !== want[1]) {
+    throw new Error(
+      `kicad-pro.ts: the root label "${entry.label}" is at (${x / UNITS_PER_MM}, ${y / UNITS_PER_MM}) mm, not at its stub's end, ` +
+        `(${want[0] / UNITS_PER_MM}, ${want[1] / UNITS_PER_MM}) mm, where assemble-root.ts writes it; allowance ${entry.ruling} excuses ` +
+        "only the stub label, so a label moved off its stub is not keyed. Put the label back on its stub, or find why it moved.",
+    )
+  }
   return [entry.type, String(x), String(y), uuidOf(label, `the root label "${entry.label}"`), NIL_UUID, rootPath(rootFile), "", ""].join("|")
 }
 
