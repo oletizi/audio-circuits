@@ -104,10 +104,11 @@ tool reads, not from this document.
   widths. KiCad's DRC reads these. The net classes are named, and the names
   are part of this standard: **`Default`** is signal (track 0.3 mm, via
   diameter 0.8 mm, via drill 0.4 mm) and **`Power`** is power (track 0.5 mm).
-  The project's `rule_severities` must also leave `items_not_allowed`,
-  `courtyards_overlap` and `missing_courtyard` enabled (KiCad ignores
-  `missing_courtyard` by default). `tools/pcb/fab-standard.ts` checks the
-  constraint values and the net-class widths.
+  The project's `rule_severities` must also set `items_not_allowed`,
+  `courtyards_overlap` and `missing_courtyard` to **`error`** - not merely
+  "enabled" (KiCad ignores `missing_courtyard` by default, and presents
+  `warning` as enabled). `tools/pcb/fab-standard.ts` checks the constraint
+  values, the net-class widths and those three severities.
 
   **WHICH NETS ARE IN `Power` IS A SEPARATE CHECK, because the gate above
   cannot see it.** `fab-standard.ts` compares class DEFINITIONS, so a project
@@ -119,19 +120,34 @@ tool reads, not from this document.
   class each net on the board resolves into, rather than reading the patterns
   back out of the JSON that is the matcher's input.
 
-  **`rule_severities` IS CHECKED, AND NOT WHERE YOU WOULD LOOK FOR IT.** Neither
-  of the two checks above touches it, which is why it reads as unguarded and was
-  briefly recorded here as such. It is enforced by `tools/pcb/drc-report.ts`,
-  which refuses when a real DRC report's `ignored_checks` array contains any of
-  `items_not_allowed`, `courtyards_overlap` or `missing_courtyard`
-  (`REQUIRED_ACTIVE_CHECKS`), and `tests/pcb/drc.test.ts` pins it. **That is a
-  stronger check than reading the project file would be**, and deliberately so:
-  it establishes that the three checks ACTUALLY RAN in the invocation whose
-  report is being trusted, rather than that a `.kicad_pro` promised they would.
-  A project file can be correct while the run that produced a report ignored
-  them anyway - a different `--severity` selection, a stale project, a board
-  opened against another project - and only the report can tell you which
-  happened.
+  **THE THREE GATE-CRITICAL CHECKS ARE HELD IN THREE PLACES, AND IT TAKES ALL
+  THREE.** They are `items_not_allowed`, `courtyards_overlap` and
+  `missing_courtyard`, named `REQUIRED_ACTIVE_CHECKS` in
+  `tools/pcb/drc-report.ts`, and the hardware-envelope mechanism - keeping
+  copper and parts out of the mounting-hole envelope - is built on them and on
+  nothing else. What enforces what:
+
+  | Where | What it establishes | Why the others cannot |
+  | --- | --- | --- |
+  | `tools/pcb/drc-policy.ts` | a violation of one of the three FAILS at **any** severity | the only one that makes the gate **sound**; the report is the authority, and a report can come from a run whose severities disagree with any project file on disk |
+  | `tools/pcb/drc-report.ts` | the report does not list any of the three under `ignored_checks` | catches a check that did not run **at all**, which no severity setting can tell you |
+  | `tools/pcb/fab-standard.ts` | the project sets all three to `error` | the only place the severity is knowable **before** a run: an absence of violations cannot tell you what severity they would have carried |
+
+  `tests/pcb/gate-critical-checks.test.ts` holds the whole contract and each
+  mechanism was driven red without its own code.
+
+  **WHY `error` AND NOT "anything but `ignore`", which is what this section said
+  until it was measured.** `drc-policy.ts` failed on error severity only, so
+  setting one of the three to `warning` produced violations that were counted
+  and **not failed** - the same vacuous pass that `ignore` gives, reached
+  through a setting KiCad presents as enabled. `drc-report.ts`'s own refusal
+  text was recommending it, in the words *"set each of them to `error` or
+  `warning`"*. Both halves are fixed: the policy is severity-independent for
+  these three types, and the refusal now says `error` and says not `warning`.
+
+  **NOTHING HERE IS A NEW REQUIREMENT.** The plan's Task 8 Step 4 table already
+  specifies both hardware-envelope mechanisms at `error`; this section had
+  written it down as "enabled", and the code enforced less than either.
 - **`circuits/pt2399-core/route-fab-floor.txt`** carries the same minimums as a
   standing instruction to the router.
 

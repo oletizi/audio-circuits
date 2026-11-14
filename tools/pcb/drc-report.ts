@@ -19,13 +19,41 @@ export type Severity = (typeof SEVERITIES)[number]
 
 /**
  * Checks a later task's hardware-envelope gate depends on. A project that sets
- * any of them to "ignore" makes that gate pass vacuously, so each is refused.
+ * any of them to "ignore" makes that gate pass vacuously, so each is refused
+ * here from the report's own `ignored_checks`.
+ *
+ * **"IGNORE" IS NOT THE ONLY VACUOUS SETTING, which is why this constant is now
+ * read in three places rather than one.** `./drc-policy.ts` fails on
+ * `errorViolations` only, so setting any of these three to `warning` produces
+ * violations that are COUNTED AND NOT FAILED - the same vacuous pass this list
+ * exists to prevent, reached by a setting KiCad presents as "enabled" and which
+ * this file's own refusal text used to recommend. The three places, and why each
+ * is needed:
+ *
+ *  - `./drc-policy.ts` fails a violation of any of these types at ANY severity.
+ *    That is what makes the gate SOUND, and it is here rather than in a config
+ *    check because the report is the authority: a report can come from a run
+ *    whose severities disagree with any project file on disk, which is the whole
+ *    argument for checking the report in the first place.
+ *  - `ignored_checks` below, which catches a check that did not run at all.
+ *  - `./fab-standard.ts` requires all three at `error` in the project's
+ *    `rule_severities`, which is the only place the severity is knowable BEFORE
+ *    a run: an absence of violations cannot tell you what severity they would
+ *    have carried. That is fail-fast, not soundness, and it does not replace the
+ *    policy check.
  */
 export const REQUIRED_ACTIVE_CHECKS = ["items_not_allowed", "courtyards_overlap", "missing_courtyard"] as const
 
 export interface ReportItem {
   readonly description: string
   readonly severity: Severity
+  /**
+   * KiCad's check key, e.g. `invalid_outline` or `courtyards_overlap`. REQUIRED,
+   * for the same reason `severity` is: `./drc-policy.ts` is type-scoped as well
+   * as severity-scoped now, so an item whose type this code cannot read would be
+   * silently treated as not-one-of-the-gate-critical-checks.
+   */
+  readonly type: string
 }
 
 export interface ParsedReport {
@@ -70,8 +98,10 @@ function arrayField(report: Record<string, unknown>, key: string, where: string)
 
 /**
  * Items under `schematic_parity`, `violations` and `unconnected_items` must
- * each be a record carrying a recognised severity. The severity is required of
- * all three so the policy never meets an item it cannot classify.
+ * each be a record carrying a recognised severity AND a string type. Both are
+ * required of all three so the policy never meets an item it cannot classify on
+ * either axis; KiCad 10 writes `type` on every item in all three arrays,
+ * measured on the pinned 10.0.5.
  */
 function items(report: Record<string, unknown>, key: string, where: string): readonly ReportItem[] {
   return arrayField(report, key, where).map((entry, index): ReportItem => {
@@ -92,8 +122,18 @@ function items(report: Record<string, unknown>, key: string, where: string): rea
           "It is refused before the policy is applied, because treating it as not-an-error would pass a real violation.",
       )
     }
-    const description = typeof entry["description"] === "string" ? entry["description"] : String(entry["type"] ?? "")
-    return { description, severity }
+    const type = entry["type"]
+    if (typeof type !== "string" || type === "") {
+      throw new DrcRefusal(
+        "report-shape",
+        `${where} "${key}"[${index}] has no string "type" (got ${describe(entry["type"])}). The policy is ` +
+          "type-scoped as well as severity-scoped - a violation of a gate-critical check fails at any severity - " +
+          "so an item whose type cannot be read would be silently treated as not one of them. It is not " +
+          `defaulted to "": that would make every item match nothing.`,
+      )
+    }
+    const description = typeof entry["description"] === "string" ? entry["description"] : type
+    return { description, severity, type }
   })
 }
 
@@ -133,9 +173,17 @@ export function parseReport(text: string, where: string): ParsedReport {
   if (disabled.length > 0) {
     throw new DrcRefusal(
       "ignored-checks",
+      // THIS MESSAGE USED TO SAY 'set each of them to "error" or "warning"',
+      // which recommended the vacuous setting it exists to prevent: the policy
+      // failed on error severity only, so a warning-severity violation of one of
+      // these three was counted and not failed - what an ignored check does too.
+      // The history is here rather than in the message: a person reading a
+      // refusal needs the instruction, not the changelog.
       `${where} ignores ${disabled.join(", ")}. The hardware-envelope gate depends on all of items_not_allowed, ` +
         "courtyards_overlap and missing_courtyard (KiCad ignores missing_courtyard by default). Set each of them to " +
-        '"error" or "warning" under the .kicad_pro\'s board.design_settings.rule_severities.',
+        '"error" - NOT "warning" - under the .kicad_pro\'s board.design_settings.rule_severities. "warning" is ' +
+        "refused by ./fab-standard.ts because KiCad presents it as enabled while a warning-severity violation is " +
+        "counted rather than failed.",
     )
   }
 

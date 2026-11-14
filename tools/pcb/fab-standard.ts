@@ -16,6 +16,18 @@
  * standard, so this file and the project file read them from one source. A
  * project that names them otherwise is refused.
  *
+ * WHAT THIS FILE DOES NOT CHECK, named so it is not mistaken for checked:
+ * WHICH NETS are in `Power`. It compares class DEFINITIONS, which is why a
+ * project declaring `Power` at 0.5 mm with an empty `netclass_patterns` passed
+ * here while no net was in it; `tests/pcb/netclass-patterns.test.ts` holds the
+ * assignment, measured through `pcbnew`.
+ *
+ * AND WHAT IT CHECKS THAT THE STANDARD'S TABLE DOES NOT LIST: the three
+ * `REQUIRED_ACTIVE_CHECKS` severities, which live in the standard's prose rather
+ * than its "Project value" column. See `REQUIRED_CHECK_SEVERITY` below, and
+ * `./drc-policy.ts`'s header for the half of that check which makes the gate
+ * sound rather than merely fast.
+ *
  * EQUALITY IS DELIBERATE. A project stricter than the standard is refused too.
  * That is a loud failure fixed in a minute; the hazard here is the router
  * relaxing a floor silently. Tolerating "better than the standard" would need a
@@ -24,6 +36,7 @@
 
 import fs from "node:fs"
 import { DrcRefusal } from "./drc-refusal.ts"
+import { REQUIRED_ACTIVE_CHECKS } from "./drc-report.ts"
 
 /** `board.design_settings.rules` keys, in mm. */
 export const RULE_MINIMUMS: Readonly<Record<string, number>> = {
@@ -43,6 +56,23 @@ export const NET_CLASS_VALUES: Readonly<Record<string, Readonly<Record<string, n
   Default: { track_width: 0.3, via_diameter: 0.8, via_drill: 0.4 },
   Power: { track_width: 0.5 },
 }
+
+/**
+ * The severity every `REQUIRED_ACTIVE_CHECKS` check must carry in
+ * `board.design_settings.rule_severities`.
+ *
+ * WHY `error` AND NOT "anything but ignore". `./drc-policy.ts` now fails a
+ * violation of one of those three types at any severity, so soundness does not
+ * rest on this. What rests on this is FAIL-FAST, and it is the only place the
+ * severity can be known AHEAD of a run: an absence of violations cannot tell you
+ * what severity they would have carried, so a project set to `warning` reads as
+ * clean until the day something actually overlaps. `error` is what
+ * `docs/superpowers/plans/2026-11-12-agent-pcb-place-and-route-phase-1.md`'s
+ * Task 8 Step 4 table specifies for both hardware-envelope mechanisms, and what
+ * `docs/standards/pcbway-fab-rules.md` means by requiring them enabled. It is
+ * not a criterion this file chose.
+ */
+export const REQUIRED_CHECK_SEVERITY = "error"
 
 const TOLERANCE = 1e-9
 
@@ -83,6 +113,25 @@ export function verifyFabStandard(projectPath: string): void {
   for (const [key, expected] of Object.entries(RULE_MINIMUMS)) {
     const found = drift(`board.design_settings.rules.${key}`, expected, child(rules, key))
     if (found !== undefined) problems.push(found)
+  }
+
+  // THE THREE GATE-CRITICAL CHECKS, AT error. Checked here because this is the
+  // only place their severity is knowable before a run; the soundness half is in
+  // ./drc-policy.ts, which fails a violation of one of these types at any
+  // severity. See REQUIRED_CHECK_SEVERITY above for why the bar is `error`
+  // rather than "not ignore".
+  const severities = child(child(child(json, "board"), "design_settings"), "rule_severities")
+  for (const check of REQUIRED_ACTIVE_CHECKS) {
+    const actual = child(severities, check)
+    if (actual === REQUIRED_CHECK_SEVERITY) continue
+    problems.push(
+      `board.design_settings.rule_severities.${check}: the hardware-envelope gate needs "${REQUIRED_CHECK_SEVERITY}", ` +
+        `project has ${actual === undefined ? "no value" : JSON.stringify(actual)}` +
+        (actual === "warning"
+          ? ' - and "warning" is the setting to be most careful about, because KiCad presents it as enabled while a ' +
+            "warning-severity violation is counted rather than failed"
+          : ""),
+    )
   }
 
   const classes = child(child(json, "net_settings"), "classes")
