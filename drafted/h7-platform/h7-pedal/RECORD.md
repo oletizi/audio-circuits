@@ -79,7 +79,7 @@ sheet, so it has no row here; `repair/replay.sh` checks its sha256.
 | controls_a | **REVIEWED, 2026-11-13** (Task 9b); `verify.sh` exits 0 | `controls_a.svg` |
 | controls_b | **REVIEWED, 2026-11-13** (Task 9b); `verify.sh` exits 0 | `controls_b.svg` |
 | expr_ref | **REVIEWED, 2026-11-13** (Task 9b); `verify.sh` exits 0 | `expr_ref.svg` |
-| codec_sup | UNREVIEWED (Task 9c); `verify.sh` exits 0 | `codec_sup.svg` |
+| codec_sup | **REVIEWED, 2026-11-13** (Task 9c); `verify.sh` exits 0 | `codec_sup.svg` |
 | sai_iso | UNREVIEWED (Task 9c); `verify.sh` exits 0 | `sai_iso.svg` |
 | codec | UNREVIEWED (Task 9c); `verify.sh` exits 0 | `codec.svg` |
 | jacks_byp | **REVIEWED, 2026-11-13** (Task 11a); `verify.sh` exits 0 | `jacks_byp.svg` |
@@ -2055,7 +2055,7 @@ Observations, not a judgement of the page, each crossing at the point `crossings
 
 ## codec_sup: the codec domain's supply, oscillator and local reset (Task 9c)
 
-**Status: UNREVIEWED.** sha256 `9f98870190e4b1207c005494b73ec8fb75f2f48857df9723e612a96902ce3147`.
+**Status: REVIEWED, 2026-11-13.** The owner's verdict, verbatim: *"approved"* (`docs/schematic/verdicts.md`; a verdict on the drawing, not a clearance of the circuit). sha256 `9f98870190e4b1207c005494b73ec8fb75f2f48857df9723e612a96902ce3147`.
 Render: `codec_sup.svg` beside it.
 
 The block: `circuits/h7-platform/pedal/codec-sup.ts`, 11 parts. U6 (U_CVDD, TPS7A2433DBVR,

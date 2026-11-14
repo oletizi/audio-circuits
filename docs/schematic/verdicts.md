@@ -853,6 +853,34 @@ nor a frozen contract (CONTRACT-FREEZE stays open), and it is not a clearance of
 
 ---
 
+## h7-pedal codec_sup page, copperhead draft repaired with akcli
+
+- **Sheet:** `drafted/h7-platform/h7-pedal/codec_sup.kicad_sch` sha256 `9f98870190e4b1207c005494b73ec8fb75f2f48857df9723e612a96902ce3147` (commit `32e789f`)
+- **Produced by** as the other pedal pages; the pedal's `RECORD.md` and `repair/codec_sup/` have the detail.
+- **Shown** 2026-11-13 as a 150 dpi PNG, first with sai_iso and codec under the question *"What is your
+  verdict on each of these three pedal pages: the codec supply (codec_sup), the audio data-line isolation
+  (sai_iso), and the codec (codec)?"*, then alone at the owner's request ("show me the drawing") with
+  *"What is your verdict on the codec supply page (codec_sup)?"*
+- **Before the verdict** the owner asked to be walked through the page and then: *"I don't have the
+  electrical engineering expertise to decide. Is the design backed by best practices and prior art and
+  has it been reviewed?"* The controller answered that each part follows its manufacturer's example circuit
+  (SBVS386E Figure 8-1, SLVSES2J section 9.2, SLAS533B's sequencing and clock requirements), that D20, D21
+  and D22 are the owner's own approvals, that the S1 analyses and every review in this repository were by
+  agents and checked transcription, not soundness, that no qualified human engineer has reviewed it, that
+  bench-only rows (PCM3060-POR-XO-START, IF-PD-1-MEASURE, LDO-PSRR-SPUR) stay open, and that a verdict here
+  is a verdict on the drawing and not a clearance of the circuit.
+- **Verdict, verbatim** (2026-11-13):
+
+  > *"approved"*
+
+**WHAT THIS ENTRY DOES NOT CLAIM.** The owner said they lack the expertise to judge the circuit; the verdict
+is recorded as a verdict on the drawing only. It is not a clearance of the codec domain's design, which no
+qualified engineer has reviewed, and it records no owner decision on the controller rulings this page rests
+on (CR-PEDAL-DIGITAL-READINGS, CR-PEDAL-POPULATION). It does not cover sai_iso or codec, whose verdicts are
+still open.
+
+---
+
 ## Microsoft SchGen's attempts at the five approved Pultec boards
 
 - **Date:** 2026-11-10.
