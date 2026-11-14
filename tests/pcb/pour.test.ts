@@ -194,6 +194,16 @@ test("an arc in a filled polygon, a pad shape that is not read, a back-side foot
   expect(refusalOf(() => measure(nameless)).message).toContain("no Reference")
 })
 
+test("a layer with no polygons, and polygons with no area, are refused by the neck measurement and not read as a pour with no neck", () => {
+  const none = refusalOf(() => measureLayer([]))
+  expect(none.guard).toBe("board-shape")
+  expect(none.message).toContain("was given no polygons")
+  // Three collinear points enclose nothing: they rasterise to no copper pixel.
+  const flat = refusalOf(() => measureLayer([[[0, 0], [1, 0], [2, 0]]]))
+  expect(flat.guard).toBe("board-shape")
+  expect(flat.message).toContain("rasterised to no copper pixels")
+})
+
 test("a missing file and text that is not a board are refused as unreadable, not read as an empty board", () => {
   expect(refusalOf(() => measurePour("/nonexistent/board.kicad_pcb", PT2399_CORE)).guard).toBe("board-unreadable")
   expect(refusalOf(() => measure("this is not a board")).guard).toBe("board-unreadable")
@@ -204,13 +214,13 @@ test("a missing file and text that is not a board are refused as unreadable, not
 
 test("a board with no U1, no through-hole ground pad or no bypass capacitor still reports every figure it can", () => {
   const noU1 = measure(fixtureBoard({ ...GOOD, refs: { u1: "U9" } }))
-  expect(reasonOf(noU1.continuityAroundIc)).toContain("U1")
-  expect(reasonOf(noU1.bypassReturn)).toContain("U1")
+  expect(reasonOf(noU1.continuityAroundIc)).toContain("no part to walk a loop around")
+  expect(reasonOf(noU1.bypassReturn)).toContain("nothing for a bypass return to reach")
   expect(noU1.regionsByLayer.get("F.Cu")).toBe(1)
   expect(valueOf(noU1.spokesByGroundPad).size).toBe(3)
 
   const noCap = measure(fixtureBoard({ ...GOOD, refs: { c1: "X1" } }))
-  expect(reasonOf(noCap.bypassReturn)).toContain("bypass")
+  expect(reasonOf(noCap.bypassReturn)).toContain("no bypass return to ask about")
   expect(valueOf(noCap.continuityAroundIc).get("F.Cu")?.leastUncovered.coveredFraction).toBe(1)
 
   // A surface-mount build: no through-hole ground pad, and all the other figures stand.

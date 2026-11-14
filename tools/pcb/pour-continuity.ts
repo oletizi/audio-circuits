@@ -65,6 +65,10 @@ export const LOOP_BAND: { readonly fromMm: number; readonly toMm: number; readon
  * side of its centre in x and `(hx - r) |sin| + (hy - r) |cos| + r` in y.
  */
 export function padExtent(pads: readonly BoardPad[]): { x0: number; y0: number; x1: number; y1: number } {
+  // WITHOUT THIS A CALLER THAT SKIPS ITS OWN EMPTY-PADS CHECK HANGS INSTEAD OF FAILING: the min and max of nothing are
+  // infinite, the loop built from an infinite box has no end, and a test run over it times out where it should go red. A hang
+  // reads as an infrastructure fault and not as a defect, so the refusal lives here as well as in `continuityAround`.
+  if (pads.length === 0) throw new Error("padExtent was given no pads: the extent of nothing is not a box, and a loop walked round one would never end.")
   const boxes = pads.map(({ outline: o }) => {
     const a = (o.degrees * Math.PI) / 180
     const [c, s] = [Math.abs(Math.cos(a)), Math.abs(Math.sin(a))]

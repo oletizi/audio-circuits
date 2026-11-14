@@ -198,7 +198,7 @@ test("a break that runs across the start of the walk is one break, not two", () 
 
 test("with no footprint of the IC's reference there is nothing to walk round, and the other figures stand", () => {
   const metrics = measure(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, spokes: FOUR, refs: { u1: "U9" } }))
-  expect(reasonOf(metrics.continuityAroundIc)).toContain("U1")
+  expect(reasonOf(metrics.continuityAroundIc)).toContain("no part to walk a loop around")
   expect(valueOf(metrics.spokesByGroundPad).size).toBe(3)
 })
 
@@ -266,4 +266,8 @@ test("a continuity reading carries measurements and no verdict, down to the loop
   const fields = ["breaksMm", "connectedGroupsTouched", "coveredFraction", "fillPiecesTouched", "offsetMm", "uncoveredMm"]
   expect(Object.keys(loops.leastUncovered).sort()).toEqual(fields)
   for (const loop of loops.profile) expect(Object.keys(loop).sort()).toEqual(fields)
+})
+
+test("the extent of no pads is refused outright, so removing the caller's own check fails fast and does not hang", () => {
+  expect(() => padExtent([])).toThrow("no pads")
 })

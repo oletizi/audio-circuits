@@ -102,7 +102,7 @@ test("a C-numbered part with no ground pad is not a bypass capacitor, and with n
   const text = fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] } })
   const signal = text.replace('(pad "2" thru_hole circle (at 0 5) (size 1.6 1.6) (drill 0.8) (layers "*.Cu" "*.Mask") (net "GND"))', '(pad "2" thru_hole circle (at 0 5) (size 1.6 1.6) (drill 0.8) (layers "*.Cu" "*.Mask") (net "SIG"))')
   expect(signal).not.toBe(text)
-  expect(reasonOf(measure(signal).bypassReturn)).toContain("bypass")
+  expect(reasonOf(measure(signal).bypassReturn)).toContain("no bypass return to ask about")
 })
 
 // --- More than one bypass capacitor ------------------------------------------

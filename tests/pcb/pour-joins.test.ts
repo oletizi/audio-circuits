@@ -102,6 +102,48 @@ test("a dead-end stub off a bridge does not narrow it: two 0.5 mm tracks bridgin
   expect(valueOf(thin.narrowestBridgeMm)).toBe(0.3)
 })
 
+/** Three pieces of fill, the first two as in SPLIT and a third beyond a gap at x 45..46. */
+const THREE: readonly (readonly Pt[])[] = [
+  [[0, 0], [30.52, 0], [30.52, 40], [0, 40]],
+  [[31.51, 0], [45, 0], [45, 40], [31.51, 40]],
+  [[46, 0], [60, 0], [60, 40], [46, 40]],
+]
+const threeBoard = (track: readonly TrackSpec[]) => fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": THREE }, track })
+
+test("with three pieces of fill, a wide track joining two and a narrow one reaching the third join all three at the NARROW width, never the wide", () => {
+  // A (1.0 mm) spans pieces 0 and 1 and ends in the gap; T (0.2 mm) starts at that end and reaches piece 2 only.
+  const a: TrackSpec = { from: [20, 10], to: [45.5, 10], layer: "F.Cu", width: 1.0 }
+  const t: TrackSpec = { from: [45.5, 10], to: [55, 10], layer: "F.Cu", width: 0.2 }
+  expect(measure(threeBoard([a])).regionJoins).toEqual([{ layer: "F.Cu", polygons: [0, 1], widthMm: 1.0 }])
+  for (const order of [[a, t], [t, a]]) {
+    const metrics = measure(threeBoard(order))
+    expect(metrics.regionsByLayer.get("F.Cu")).toBe(3)
+    expect(metrics.regionJoins).toEqual([{ layer: "F.Cu", polygons: [0, 1, 2], widthMm: 0.2 }])
+    expect(valueOf(metrics.narrowestBridgeMm)).toBe(0.2)
+  }
+})
+
+test("a narrow track that itself spans all three pieces, sharing an endpoint with a wide one that spans two, reads the narrow width", () => {
+  // X (0.3 mm) crosses all three pieces; Y (0.9 mm) spans pieces 0 and 1 and starts where X does. The pieces Y joins are a
+  // subset of X's, so the width of the whole is X's, not Y's.
+  const x: TrackSpec = { from: [20, 30], to: [55, 30], layer: "F.Cu", width: 0.3 }
+  const y: TrackSpec = { from: [20, 30], to: [35, 32], layer: "F.Cu", width: 0.9 }
+  for (const order of [[x, y], [y, x]]) {
+    expect(measure(threeBoard(order)).regionJoins).toEqual([{ layer: "F.Cu", polygons: [0, 1, 2], widthMm: 0.3 }])
+  }
+})
+
+test("a narrow track bridging nothing, linking a wide bridge to a short stub, does not narrow the bridge it hangs from", () => {
+  // A (1.0 mm) spans both pieces. B (0.5 mm) and C (0.3 mm) lie wholly in the left piece; C shares one end with A and the other
+  // with B. When C is switched on its side already joins both pieces at 1.0, and C's own width must not replace that.
+  const a: TrackSpec = { from: [20, 10], to: [40, 10], layer: "F.Cu", width: 1.0 }
+  const b: TrackSpec = { from: [10, 20], to: [15, 20], layer: "F.Cu", width: 0.5 }
+  const c: TrackSpec = { from: [20, 10], to: [15, 20], layer: "F.Cu", width: 0.3 }
+  for (const order of [[a, b, c], [c, b, a], [b, c, a]]) {
+    expect(measure(board(order)).regionJoins).toEqual([{ layer: "F.Cu", polygons: [0, 1], widthMm: 1.0 }])
+  }
+})
+
 test("a chain whose first track touches only one piece and whose second reaches the other reads the second's width", () => {
   // The wide track stays in the left piece; the narrow one carries on across the slot. The pieces are joined at 0.4.
   const chain: readonly TrackSpec[] = [
