@@ -19,8 +19,9 @@
  * from the pin typing, not from the circuit. Its partner is the flag, so the entry names it as
  * `PWR_FLAG` (`draughting/pages/erc-allowances.ts`, the PWR_FLAG partner).
  *
- * Task 9c (the codec page) added two, ruling CR-PEDAL-CODEC-VIN-AWAITING-ERC (drafted, awaiting the
- * controller). U9's VINL (pin 25) and VINR (pin 26) are typed `input` (`h7-platform:PCM3060PW`), and
+ * Task 9c (the codec page) added two, ruling CR-PEDAL-CODEC-VIN-AWAITING-ERC (adopted by the
+ * controller as temporary, 2026-11-13 (d3e0e95); Task 10 removes it). U9's VINL (pin 25) and VINR
+ * (pin 26) are typed `input` (`h7-platform:PCM3060PW`), and
  * what drives them is in the adc_drv block, which the model does not hold yet: the nets are ports of
  * `h7Pedal()` only as a construction state (`AWAITING_NETS`, `circuits/h7-platform/pedal-board.ts`:
  * "Until Task 10 (adc_drv, out)"). A cross-page driver entry is held to the model and so cannot name

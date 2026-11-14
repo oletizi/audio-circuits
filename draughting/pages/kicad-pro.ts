@@ -85,7 +85,8 @@ function pinPointMil(pinsFile: string, designator: string, pin: string): readonl
 export function exclusionKey(entry: ErcAllowance, projectDir: string, board: string, repairDir: string): string {
   const block = /^\/([^/]+)\/$/.exec(entry.sheet)?.[1]
   if (block === undefined) throw new Error(`kicad-pro.ts: allowance sheet ${entry.sheet} is not /<block>/`)
-  const path = sheetPath(join(projectDir, `${board}.kicad_sch`), block)
+  // The two refusals come before any file is read: neither depends on the root or the block sheet,
+  // so each refuses by name with no project on disk (tests/draught/kicad-pro-refusals.test.ts).
   const [main, aux] = entry.pins
   if (aux === undefined) {
     throw new Error(
@@ -103,6 +104,7 @@ export function exclusionKey(entry: ErcAllowance, projectDir: string, board: str
         "the board's root task must teach this tool to read the flag's uuid from the root before writing the .kicad_pro.",
     )
   }
+  const path = sheetPath(join(projectDir, `${board}.kicad_sch`), block)
   const sheetFile = join(projectDir, `${block}.kicad_sch`)
   const [x, y] = pinPointMil(join(repairDir, block, "pins.json"), main.designator, main.pin)
   return [

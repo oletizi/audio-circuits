@@ -35,7 +35,7 @@
  * check is the same for its one pin: in the block, on the entry's net, with the stated library pin type.
  * It cannot name a PWR_FLAG partner. First needed for the h7 pedal's codec page, whose VINL and VINR
  * inputs are driven by a block the model does not hold yet (ruling CR-PEDAL-CODEC-VIN-AWAITING-ERC,
- * awaiting the controller); `kicad-pro.ts` refuses such an entry, since a board root is assembled only
+ * adopted by the controller as temporary, 2026-11-13 (d3e0e95); Task 10 removes it); `kicad-pro.ts` refuses such an entry, since a board root is assembled only
  * once every block, and so every driver, is built.
  *
  * TEST OVERRIDE. When the environment variable `PAGES_ERC_ALLOWANCES_TABLE` names a JSON file, the

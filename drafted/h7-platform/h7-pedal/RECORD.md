@@ -1022,7 +1022,7 @@ at one point, so the junction audit reports 45 pin points.
 | ports whose label is on the wrong net | 1 of 6 | 0 of 6 |
 | ERC, the sheet alone | 3 errors (`pin_not_connected` 1, R21 pin 2; `power_pin_not_driven` 2, U4's IN and GND), 4 warnings (`lib_symbol_issues` 4) | 8 errors (`pin_not_connected` 6: each hierarchical label has no parent sheet; `power_pin_not_driven` 2, U4's IN and GND), 5 warnings (`isolated_pin_label` 1, 5V_A_CODEC; `lib_symbol_issues` 4) |
 | ERC under a one-block root, `/ldo_vmid/` | 3 errors (`pin_not_connected` 1, `power_pin_not_driven` 2), 0 warnings | **0 errors, 0 warnings** |
-| ERC under a one-block root, `/` | 10 errors (`hier_label_mismatch` 6, `label_dangling` 4), 6 warnings (`isolated_pin_label` 2, `lib_symbol_issues` 4) | 3 errors (`label_dangling` 3, the 5V_A, VMID_L and VMID_R stubs' labels, alone with one block; `erc_sheets.py` admits them), 6 warnings (`isolated_pin_label` 2, 5V_A_CODEC's; `lib_symbol_issues` 4) |
+| ERC under a one-block root, `/` | 10 errors (`hier_label_mismatch` 6, `label_dangling` 4), 6 warnings (`isolated_pin_label` 2, `lib_symbol_issues` 4) | 3 errors (`label_dangling` 3, the 5V_A, VMID_L and VMID_R stubs' labels, alone with one block; `erc_sheets.py` admits them), 4 warnings (`lib_symbol_issues` 4), re-measured in Task 9c's fix round 1; it read 6 (`isolated_pin_label` 2, 5V_A_CODEC's stub label and sheet label) until Task 9c homed 5V_A_CODEC's flag on the root (the codec_sup section), which puts a flag on that stub. The draft column is as Task 7c measured it |
 | parenthesis depth at end, lowest | 0, 0 | 0, 0 |
 | true wire crossings, T-meetings | 6, 0 | 1, 0 |
 | orphan junctions, of total | 0 of 15 | 0 of 26 |
@@ -2107,8 +2107,8 @@ note lists it with the codec's not-fitted parts.
 
 **What the new home does to the earlier pages: nothing to their bytes.** Of the twelve, only
 ldo_vmid has a 5V_A_CODEC port (R21's pin 2). Its one-block root's 5V_A_CODEC stub now carries the
-root's flag, and its `/` reads 3 errors and 4 warnings where its section above records 6 warnings
-(the two `isolated_pin_label` warnings on the 5V_A_CODEC stub's label and the sheet's hierarchical
+root's flag, and its `/` reads 3 errors and 4 warnings where it read 6 (its section above now
+records both; the two `isolated_pin_label` warnings on the 5V_A_CODEC stub's label and the sheet's hierarchical
 label are gone). Re-run with this table, `verify.sh` exits 0 on ldo_vmid, `/ldo_vmid/` at 0 errors
 and 0 warnings, its sha256 unchanged, and the replay into a new directory reaches every earlier
 page's sha256.
@@ -2362,7 +2362,7 @@ runs under them.
 **Status: UNREVIEWED.** sha256 `1c17ed164ce98f749cb2db3a88f815e59d10ed82d92b5ca5a924952f4c414588`.
 Render: `codec.svg` beside it. **Its block sheet is not at 0 ERC errors**: two `pin_not_driven`
 errors, on U9's VINL and VINR, are excused by allowances under CR-PEDAL-CODEC-VIN-AWAITING-ERC, a
-ruling drafted by this task and **awaiting the controller** (below).
+ruling drafted by this task and **adopted by the controller as temporary, 2026-11-13 (d3e0e95); Task 10 removes it** (below).
 
 The block: `circuits/h7-platform/pedal/codec.ts`, 13 parts. U9 (U_CODEC, PCM3060PWR,
 `h7-platform:PCM3060PW`) with C36 and C37 (C_VCC_HF 100 nF and C_VCC_BULK 10 uF, 5V_A_CODEC to GND),
@@ -2426,7 +2426,7 @@ every class 1 part.
   and [CR-PEDAL-CROSS-PAGE-POWER-DRIVERS](../../../docs/h7-platform/decisions.md#cr-pedal-cross-page-power-drivers):
   3V3_CODEC (U6's OUT, a PWR_FLAG stand-in, since the sai_iso page), and three new entries, below.
 - [CR-PEDAL-CODEC-VIN-AWAITING-ERC](../../../docs/h7-platform/decisions.md#cr-pedal-codec-vin-awaiting-erc),
-  **drafted by this task, awaiting the controller**: the two allowances, below.
+  drafted by this task, **adopted by the controller as temporary, 2026-11-13 (d3e0e95); Task 10 removes it**: the two allowances, below.
 - [CR-MODULE-PORT-LABEL-CHECK](../../../docs/h7-platform/decisions.md#cr-module-port-label-check):
   0 of 15 ports on the wrong net.
 - Checklist items, not rulings: the schematic checklist's CODEC-02 to CODEC-12 (lines 88 to 110),
@@ -2464,8 +2464,14 @@ every class 1 part.
   `tests/draught/erc-allowances-one-item.test.ts` (the matcher takes exactly the one pin, not pin 26,
   not a second item, not another sheet; a one-item PWR_FLAG partner is refused; and every allowance
   under the ruling names a net still in `AWAITING_NETS`, so the test fails on the change that builds
-  adc_drv). A scratch edit taking VINL out of `AWAITING_NETS` made that test fail; the edit was
-  reverted. The expr_ref allowance and the module's are two-item and unaffected: their replays and
+  adc_drv). Control of the guard itself (fix round 1, review M3): a scratch edit took VINL out of
+  `AWAITING_NETS` and kept it a port of `h7Pedal()` (in `UNDRAWN_CONNECTOR_NETS`), so the model still
+  built, as it will once adc_drv exists. The guard's case alone failed, with "VINL is no longer in
+  AWAITING_NETS (circuits/h7-platform/pedal-board.ts): its driving block is built"; the test's other
+  cases passed, and no model-validation error was raised. `pedal-board.ts` was restored byte for byte.
+  (The first record of this control removed VINL from `AWAITING_NETS` only; that edit failed in
+  `loadBoard`, on the model's own one-pin-net validation, before the guard ran, so it could not tell
+  a working guard from a missing one.) The expr_ref allowance and the module's are two-item and unaffected: their replays and
   controls are unchanged.
 - `pwr-flag-homes.ts` is unchanged by this page.
 

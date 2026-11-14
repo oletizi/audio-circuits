@@ -1,6 +1,7 @@
 /**
  * The one-item ERC allowance (`draughting/pages/erc-allowances.ts`, ONE_ITEM_TYPES; h7 pedal pages plan
- * Task 9c, ruling CR-PEDAL-CODEC-VIN-AWAITING-ERC, drafted, awaiting the controller).
+ * Task 9c, ruling CR-PEDAL-CODEC-VIN-AWAITING-ERC,
+ * adopted by the controller as temporary, 2026-11-13 (d3e0e95); Task 10 removes it).
  *
  * - The matcher (`erc_match.py`) excuses a one-item `pin_not_driven` violation only on exactly the
  *   allowance's pin: not another pin, not a two-item violation, not another sheet.
