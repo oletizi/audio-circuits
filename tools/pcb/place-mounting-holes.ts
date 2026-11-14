@@ -135,11 +135,31 @@ export function withMountingHardware(
     const node = parseSexpr(body)
     if (!isOurMountingHole(node)) return false
     const library = node.atoms[0] ?? ""
+    const reference =
+      node.nodes.find((n) => n.name === "property" && n.atoms[0] === "Reference")?.atoms[1] ?? "?"
+    const uuid = node.nodes.find((n) => n.name === "uuid")?.atoms[0]
+    // NO DEFAULT. This read `?? ""`, which was harmless ONLY because
+    // `footprintsOf(before)` refuses a uuid-less footprint and happens to run
+    // first - harmlessness that depends on call ordering, and this repository's
+    // rule is that a fallback outside test code is a bug factory because it
+    // hides absence. An empty uuid would be a removal record keyed on nothing,
+    // which `./footprint-accounting.ts` would then match against no footprint
+    // and report as "reported REMOVED and still on the board" - a true-looking
+    // refusal pointing at the wrong thing.
+    if (uuid === undefined || uuid === "") {
+      throw new Error(
+        `${boardWhere}: the footprint ${reference} (${library}) this tool is about to remove ` +
+          "carries no (uuid ...), so the removal cannot be recorded in a way the accounting in " +
+          "./footprint-accounting.ts can check. It is not defaulted to an empty string: a " +
+          "removal keyed on nothing is indistinguishable from one that was never recorded, which " +
+          "is the silent deletion that whole module exists to make impossible. KiCad writes a " +
+          "uuid on every footprint, so a board without one has been hand-edited.",
+      )
+    }
     removed.push({
-      reference:
-        node.nodes.find((n) => n.name === "property" && n.atoms[0] === "Reference")?.atoms[1] ?? "?",
+      reference,
       library,
-      uuid: node.nodes.find((n) => n.name === "uuid")?.atoms[0] ?? "",
+      uuid,
       why:
         library === `${PROJECT_LIBRARY}:${MOUNTING_FOOTPRINT}`
           ? "project library id"

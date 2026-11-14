@@ -468,3 +468,30 @@ test("a foreign mounting hole is LEFT ALONE and said so, not deleted and not ref
   // hole at the wrong centre, which the shape test would have.
   expect(placedMountingHoles(result.text, "foreign").map((h) => h.ref).sort()).toEqual([...REFERENCES].sort())
 })
+
+test("a footprint about to be REMOVED with no uuid is REFUSED, never defaulted", () => {
+  // NO FALLBACK OUTSIDE TEST CODE. The removal record read the uuid as
+  // `?? ""`, and that was harmless only because `footprintsOf` refuses a
+  // uuid-less footprint and happened to run first - harmlessness that depends
+  // on call ordering, which stops being true when someone reorders. An empty
+  // uuid would be a removal record keyed on nothing, which the accounting would
+  // then match against no footprint and report as "reported REMOVED and still
+  // on the board": a true-looking refusal pointing at the wrong thing.
+  //
+  // The throw is now in the removal callback, which runs BEFORE the accounting,
+  // so this is the refusal that fires rather than the downstream one.
+  const naked = withTopLevelForms(fs.readFileSync(FIXTURE, "utf8"), FIXTURE, [
+    `(footprint "pt2399-core:${MOUNTING_FOOTPRINT}"\n\t\t(at 30 30)\n` +
+      `\t\t(property "Reference" "MH7"\n\t\t\t(at 0 0 0)\n\t\t)\n\t)`,
+  ])
+  let message = ""
+  try {
+    withMountingHardware(naked, FIXTURE, RULES, LIBRARY)
+  } catch (error) {
+    message = error instanceof Error ? error.message : String(error)
+  }
+  console.log(`  refuses: ${message.slice(0, 118)}...`)
+  expect(message).toContain("MH7")
+  expect(message).toContain("carries no (uuid ...)")
+  expect(message).toContain("not defaulted to an empty string")
+})

@@ -87,7 +87,19 @@ function describe(uuids: readonly string[], labels: ReadonlyMap<string, string>)
  *    re-run is byte-identical, so it removes MH1 and writes MH1 back every time;
  *  - **something named as added is not there** - a form that did not land,
  *    which is the failure the tool's own read-back check exists for and this
- *    one catches independently of it.
+ *    one catches independently of it;
+ *  - **something named as removed was not on the board to begin with** - a
+ *    credit for something that was never there. This one can only over-report
+ *    and never hide a loss, so it is the least dangerous of the five; it is
+ *    here because an accounting function that accepts a phantom removal is
+ *    wrong at its own job, and because at the moment it mattered it would read
+ *    as confusing rather than as a defect.
+ *
+ * `added` is deliberately NOT required to be absent from `before`: re-adding a
+ * uuid that was removed is REPLACEMENT, which is what makes the mounting-hole
+ * step byte-idempotent, and the second bullet above already catches an `added`
+ * that arrived without a removal because `footprintsOf` refuses the duplicate
+ * uuid such a board would carry.
  */
 export function verifyFootprintAccounting(opts: {
   readonly before: ReadonlyMap<string, string>
@@ -122,6 +134,18 @@ export function verifyFootprintAccounting(opts: {
   // which was the guard being wrong rather than the tool - and it is the one
   // thing about the invariant that is not obvious from `after = before - removed
   // + added` read as prose.
+  // A CREDIT FOR SOMETHING THAT WAS NEVER THERE. This can only over-report and
+  // never hide a loss, which is why it is the last of the five rather than the
+  // first - but an accounting function that accepts a removal of a footprint
+  // that was not on the board before the edit is wrong at its own job, and it
+  // would read as confusing rather than as a defect at the moment it mattered.
+  const phantom = opts.removed.filter((uuid) => !opts.before.has(uuid))
+  if (phantom.length > 0) {
+    problems.push(
+      `${phantom.length} footprint(s) were reported REMOVED but were NOT ON THE BOARD BEFORE the ` +
+        `edit: ${describe(phantom, labels)}`,
+    )
+  }
   const survived = opts.removed.filter((uuid) => opts.after.has(uuid) && !added.has(uuid))
   if (survived.length > 0) {
     problems.push(

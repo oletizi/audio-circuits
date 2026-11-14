@@ -205,3 +205,42 @@ test("several refusals at once are ALL named, not just the first", () => {
   // And the counts, so a reader can see the shape of the edit as well as its defects.
   expect(message).toContain("Before: 2 footprint(s); after: 2")
 })
+
+test("REFUSAL 5: something named as REMOVED that was never on the board before", () => {
+  // A credit for something that was never there. It can only over-report and
+  // never hide a loss, which is why it was the last of the five to be added -
+  // but an accounting function that accepts a phantom removal is wrong at its
+  // own job, and at the moment it mattered it would read as confusing rather
+  // than as a defect.
+  const message = refusalOf(() =>
+    verifyFootprintAccounting({
+      before: footprintsOf(board(A), "before"),
+      after: footprintsOf(board(A), "after"),
+      removed: [U2],
+      added: [],
+      where: "fixture",
+    }),
+  )
+  console.log(`  ${message.split("\n")[1]?.trim() ?? ""}`)
+  expect(message).toContain("were NOT ON THE BOARD BEFORE the edit")
+  expect(message).toContain(U2.slice(0, 8))
+})
+
+test("a phantom removal is caught even when everything else balances", () => {
+  // The shape that would otherwise slip through: a real removal AND a phantom
+  // one in the same call. Before this check the extra uuid was simply ignored.
+  const message = refusalOf(() =>
+    verifyFootprintAccounting({
+      before: footprintsOf(board(A, B), "before"),
+      after: footprintsOf(board(A), "after"),
+      removed: [U2, U3],
+      added: [],
+      where: "fixture",
+    }),
+  )
+  console.log(`  ${message.split("\n")[1]?.trim() ?? ""}`)
+  expect(message).toContain("were NOT ON THE BOARD BEFORE the edit")
+  // And ONLY that: the genuine removal of U2 is not also complained about.
+  expect(message).not.toContain("LEFT THE BOARD WITHOUT BEING NAMED")
+  expect(message).not.toContain("reported REMOVED and are still on the board")
+})
