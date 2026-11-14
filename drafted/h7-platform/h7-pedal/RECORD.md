@@ -80,8 +80,8 @@ sheet, so it has no row here; `repair/replay.sh` checks its sha256.
 | controls_b | **REVIEWED, 2026-11-13** (Task 9b); `verify.sh` exits 0 | `controls_b.svg` |
 | expr_ref | **REVIEWED, 2026-11-13** (Task 9b); `verify.sh` exits 0 | `expr_ref.svg` |
 | codec_sup | **REVIEWED, 2026-11-13** (Task 9c); `verify.sh` exits 0 | `codec_sup.svg` |
-| sai_iso | UNREVIEWED (Task 9c); `verify.sh` exits 0 | `sai_iso.svg` |
-| codec | UNREVIEWED (Task 9c); `verify.sh` exits 0 | `codec.svg` |
+| sai_iso | **REVIEWED, 2026-11-13** (Task 9c); `verify.sh` exits 0 | `sai_iso.svg` |
+| codec | **REVIEWED, 2026-11-13** (Task 9c); `verify.sh` exits 0 | `codec.svg` |
 | jacks_byp | **REVIEWED, 2026-11-13** (Task 11a); `verify.sh` exits 0 | `jacks_byp.svg` |
 | in_fe | **REVIEWED, 2026-11-13** (Task 11a); `verify.sh` exits 0 | `in_fe.svg` |
 | adc_drv | **REVIEWED, 2026-11-13** (Task 11a); `verify.sh` exits 0 | `adc_drv.svg` |
@@ -2236,7 +2236,7 @@ either side of it, so no row is crossed.
 
 ## sai_iso: the SAI domain isolation buffers (Task 9c)
 
-**Status: UNREVIEWED.** sha256 `ffc831855bd99856e6c84610169623a34f99ca50e15a834fccb0b23251cff9c8`.
+**Status: REVIEWED, 2026-11-13.** The owner's verdict, verbatim: *"approved"* (`docs/schematic/verdicts.md`; a verdict on the drawing, not a clearance of the circuit). sha256 `ffc831855bd99856e6c84610169623a34f99ca50e15a834fccb0b23251cff9c8`.
 Render: `sai_iso.svg` beside it.
 
 The block: `circuits/h7-platform/pedal/sai-iso.ts`, 11 parts. U10 (U_ISO_M, SN74LVC3G34DCTR,
@@ -2393,7 +2393,7 @@ runs under them.
 
 ## codec: the PCM3060 in hardware mode (Task 9c)
 
-**Status: UNREVIEWED.** sha256 `1c17ed164ce98f749cb2db3a88f815e59d10ed82d92b5ca5a924952f4c414588`.
+**Status: REVIEWED, 2026-11-13.** The owner's verdict, verbatim: *"approved"* (`docs/schematic/verdicts.md`; a verdict on the drawing, not a clearance of the circuit). sha256 `1c17ed164ce98f749cb2db3a88f815e59d10ed82d92b5ca5a924952f4c414588`.
 Render: `codec.svg` beside it. **Since Task 10 its block sheet is at 0 ERC errors and 0 warnings
 under its one-block root, with no allowance**: VINL and VINR, the two `pin_not_driven` errors this
 task had excused by one-item allowances under CR-PEDAL-CODEC-VIN-AWAITING-ERC (adopted by the

@@ -881,6 +881,30 @@ still open.
 
 ---
 
+## h7-pedal sai_iso and codec pages, copperhead drafts repaired with akcli
+
+- **Sheets:**
+  - `drafted/h7-platform/h7-pedal/sai_iso.kicad_sch` sha256 `ffc831855bd99856e6c84610169623a34f99ca50e15a834fccb0b23251cff9c8` (commit `d018191`)
+  - `drafted/h7-platform/h7-pedal/codec.kicad_sch` sha256 `1c17ed164ce98f749cb2db3a88f815e59d10ed82d92b5ca5a924952f4c414588` (commit `68c26d2`)
+- **Produced by** as the other pedal pages; the pedal's `RECORD.md` and `repair/<block>/` have the detail.
+- **Shown** 2026-11-13 as 150 dpi PNGs, first with codec_sup, then again at the owner's request ("show them to
+  me") with only the question *"What is your verdict on each of these two pedal pages: the audio data-line
+  isolation (sai_iso) and the codec (codec)?"* The sheets were unchanged between the showings.
+- **Verdict, verbatim** (2026-11-13):
+
+  > *"approved"*
+
+**WHAT THIS ENTRY DOES NOT CLAIM.** One word answered a question about two pages, and it is recorded against
+each sheet on that reading; the owner may correct it for either. Earlier the same day, on codec_sup, the owner
+said they lack the electrical engineering expertise to judge the circuit and was told no qualified engineer has
+reviewed the codec domain; this verdict is recorded on the same footing, a verdict on the drawing and not a
+clearance of the circuit. It records no owner decision on the controller rulings these pages rest on
+(CR-PEDAL-POPULATION and its CODEC-10 note, CR-PEDAL-PCM3060-VALUES, CR-PEDAL-CODEC-VIN-AWAITING-ERC and its
+amendment), each of which stays the controller's and the owner may override; and it closes none of the open
+rows the codec domain carries.
+
+---
+
 ## Microsoft SchGen's attempts at the five approved Pultec boards
 
 - **Date:** 2026-11-10.
