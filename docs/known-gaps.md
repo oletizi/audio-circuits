@@ -4650,7 +4650,23 @@ other direction:** `tools/pcb/fab-standard.ts` reads no `.kicad_dru` at all, so
 this board's rule is gated by a make prerequisite and nothing else and a second
 board gaining one would get no check - recorded in that file's own "WHAT THIS
 FILE DOES NOT CHECK" section, and deliberately not solved, there being no second
-board. Findings open against the delivered tooling at the time of this
-amendment are in the Task 8 review, the load-bearing one being that
+board.
+
+**ON OPEN FINDINGS, THIS ENTRY POINTS AT THE REVIEWS AND NAMES NOTHING,
+DELIBERATELY.** The live record is
+`.superpowers/sdd/2026-11-12-agent-pcb-place-and-route-phase-1/` during
+execution and `docs/superpowers/plans/<plan-name>-execution/` once committed.
+**An earlier version of this paragraph named a specific open defect - that
 `place-mounting-holes.ts` would silently delete a real footprint carrying a
-single non-plated pad.
+single non-plated pad - and it was fixed NINETEEN MINUTES LATER, in the same
+push.** A reader following it would have gone after a closed, tested defect. The
+re-review that caught it noted the sentence was time-scoped in its own wording,
+so it was not strictly the staleness this amendment is about; it is struck
+anyway, because **a register entry is the wrong instrument for the state of a
+defect that is actively being worked**, and the right lesson is to point at the
+record that moves rather than to copy a snapshot of it. (The underlying defect
+also turned out to recur one predicate-width over - deletion keyed on a part's
+SHAPE rather than its IDENTITY, so an all-non-plated heatsink or DIN-rail
+adapter was removed just as silently - which is a second argument for not
+naming defect states here: the sentence would have been wrong, then right
+again, then wrong.)
