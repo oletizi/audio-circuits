@@ -34,8 +34,8 @@ test("resistances are expressed in uppercase K", () => {
 test("decades the board does not exercise are refused, not guessed", () => {
   // Both ends widened independently, so the refusals moved outwards: 470R and
   // 2M are now inside the proven range and only these remain outside it.
-  expect(() => valueFor(resistor(0.05))).toThrow(/100mR.*10M/s)
-  expect(() => valueFor(resistor(1.05e7))).toThrow(/100mR.*10M/s)
+  expect(() => valueFor(resistor(0.05))).toThrow(/100mR.*22M/s)
+  expect(() => valueFor(resistor(2.3e7))).toThrow(/100mR.*22M/s)
   expect(() => valueFor(capacitor(2e-3))).toThrow(/1pF.*1000uF/s)
 })
 
@@ -54,7 +54,7 @@ test("capacitor boundary: highest accepted value just below 1000uF formats", () 
   expect(valueFor(capacitor(9.99e-4))).toBe("999uF")
 })
 
-test("resistor boundaries: 1k formats, the K/M boundary is 1M, 10M formats and above it refuses", () => {
+test("resistor boundaries: 1k formats, the K/M boundary is 1M, 10M and 22M format and above 22M refuses", () => {
   expect(valueFor(resistor(1000))).toBe("1K")
   expect(valueFor(resistor(999000))).toBe("999K")
   // The K/M boundary sits at 1M, and 999K is the last value spelled in K.
@@ -63,7 +63,9 @@ test("resistor boundaries: 1k formats, the K/M boundary is 1M, 10M formats and a
   expect(valueFor(resistor(1.5e6))).toBe("1.5M")
   // 10M is the h7 pedal's expression-tip resistor to GND (schematic-checklist.md:196).
   expect(valueFor(resistor(1e7))).toBe("10M")
-  expect(() => valueFor(resistor(1.05e7))).toThrow(/up to and including 10M/)
+  // 22M is the h7 pedal's input pull-down R_PD (schematic-checklist.md:153, AIO-03), the top of the range.
+  expect(valueFor(resistor(2.2e7))).toBe("22M")
+  expect(() => valueFor(resistor(2.3e7))).toThrow(/up to and including 22M/)
 })
 
 test("an IC's value is its manufacturer part number", () => {
@@ -123,7 +125,7 @@ test("exactly zero ohms is a wire link, spelled 0R; negative refuses", () => {
   // Pultec section board holds 0R resistors - a jumper or a wire across two pads. Zero
   // is admitted as its own case. The band below 1R is RKM-spelled (next test), never ".5R".
   expect(valueFor(twoPin("R6", "resistor", { ohms: 0 }))).toBe("0R")
-  expect(() => valueFor(twoPin("R9", "resistor", { ohms: -0.5 }))).toThrow(/100mR.*10M/s)
+  expect(() => valueFor(twoPin("R9", "resistor", { ohms: -0.5 }))).toThrow(/100mR.*22M/s)
 })
 
 test("a resistance from 100 mOhm up to 1 ohm is spelled in RKM, 0R22, never .22R", () => {
@@ -133,7 +135,7 @@ test("a resistance from 100 mOhm up to 1 ohm is spelled in RKM, 0R22, never .22R
   expect(valueFor(twoPin("R8", "resistor", { ohms: 0.3 }))).toBe("0R3")
   expect(valueFor(twoPin("R10", "resistor", { ohms: 0.1 }))).toBe("0R1")
   expect(valueFor(twoPin("R11", "resistor", { ohms: 0.5 }))).toBe("0R5")
-  expect(() => valueFor(twoPin("R12", "resistor", { ohms: 0.05 }))).toThrow(/100mR.*10M/s)
+  expect(() => valueFor(twoPin("R12", "resistor", { ohms: 0.05 }))).toThrow(/100mR.*22M/s)
 })
 
 test("resistance at or above one kilohm is unchanged by this task", () => {

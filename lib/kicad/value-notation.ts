@@ -35,9 +35,10 @@ const MAX_FARADS = 1e-3
 // preamp's bias network. The range this formatter is PROVEN over is the union,
 // and the tests assert both boundaries. The top was widened once more to take
 // 10M itself, "10M", for the h7 pedal's expression-tip resistor to GND
-// (schematic-checklist.md:196, CTL-08); 10.5M and above stay refused.
+// (schematic-checklist.md:196, CTL-08). It was widened again to take 22M, "22M", for the h7
+// pedal's input pull-downs R_PD (schematic-checklist.md:153, AIO-03); above 22M stays refused.
 const MIN_OHMS = 1
-const MAX_OHMS = 1e7
+const MAX_OHMS = 2.2e7
 // The sub-ohm band, spelled in RKM ("0R22"), was added for the h7 module's two damping resistors
 // (0.22 ohm, power.md:270; 0.30 ohm, CR-MODULE-VDDA-BANK). Its floor is the smallest value tested.
 const MIN_SUB_OHMS = 0.1
@@ -87,7 +88,7 @@ export function resistanceText(ohms: number, id: string): string {
   if (!Number.isFinite(ohms) || ohms < MIN_SUB_OHMS || ohms > MAX_OHMS) {
     throw new Error(
       `resistance ${ohms}R on "${id}" is outside the range this formatter has been proven ` +
-        "over (100mR up to and including 10M). Extend lib/kicad/value-notation.ts with a test " +
+        "over (100mR up to and including 22M). Extend lib/kicad/value-notation.ts with a test " +
         "rather than letting it guess a spelling.",
     )
   }
