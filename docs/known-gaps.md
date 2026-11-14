@@ -4583,10 +4583,27 @@ decap rule is what fails first as spacing rises. Neither is an agent's to relax
 to make the other reachable.
 
 **THE BOARD SIZE IS A DECISION, NOT A DERIVATION.** Nothing measured
-150 x 100 mm. A clean 2.0 mm placement occupies about **42.7 x 66.6 mm** of it,
-so roughly a quarter of the area carries the circuit. He was told that figure.
-It supersedes the plan's two-pass step that brought the board edge in to the
-placed extent: the size is now an input he set, not an output a task computed.
+150 x 100 mm. On the DELIVERED board the 24 circuit parts span
+**50.84 x 57.80 mm**, which is **19.6%** of its area. It supersedes the plan's
+two-pass step that brought the board edge in to the placed extent: the size is
+now an input he set, not an output a task computed.
+
+> **CORRECTED 2026-11-13, AND THE OWNER WAS TOLD THE WRONG FIGURE BEFORE IT WAS
+> CAUGHT.** This paragraph read *"about 42.7 x 66.6 mm of it, so roughly a
+> quarter of the area carries the circuit. He was told that figure."* The area
+> claim survives at 19.6%; the dimensions do not. **42.7 x 66.6 mm was a real
+> measurement of the WRONG ARTIFACT** - a throwaway probe seed placed on a bare
+> 150 x 100 rectangle before the mounting holes and the final geometry existed,
+> not the placement that was adopted. No seed in the sweep produces it. Found by
+> the Task 8 reviewer, re-measured independently by the controller, and reported
+> to the owner as a correction.
+>
+> **THE LESSON IS NOT THE 8 MM.** A figure measured on a scratch file and then
+> quoted about the deliverable is indistinguishable, in prose, from one measured
+> on the deliverable - which is this file's own standing argument for why a
+> measurement belongs in a tool that re-runs it rather than in a sentence. The
+> controller wrote that argument into the criteria files in the same sitting and
+> then broke it here.
 
 **WHERE IT IS RECORDED, since this register is not what binds.**
 `circuits/pt2399-core/placement-rules.json` `separation.part_to_part` carries the
@@ -4601,15 +4618,39 @@ CRITERION: no two parts' courtyards closer than 2.0 mm on the delivered board,
 checkable without trusting the tool that placed them. The MECHANISM, which is
 this writer's guess and is recorded as such: the placer's `--clearance 2.0` as a
 hard veto, plus a KiCad `(constraint courtyard_clearance (min 2mm))` custom
-design rule as the independent second check. **The constraint is confirmed
-present in the pinned KiCad 10.0.5's own documentation; what violation type it
-REPORTS is NOT yet measured**, and that matters because `tools/pcb/drc-policy.ts`
-keys on `type` and its required-checks list is not a list an implementer may
-widen to fit. If it reports outside that list, the deviation gets recorded here
-rather than the list getting edited.
+design rule as the independent second check.
 
-**NEITHER NUMBER IS ENFORCED AT THE TIME OF WRITING**, and both files say so in
-those words rather than implying otherwise. No tool compares the declared size
-to the board's Edge.Cuts; no tool yet carries the courtyard rule. Until they do,
-these are criteria that have been authored by the right person and checked by
-nothing.
+**BOTH ARE NOW MEASURED AND BOTH ARE NOW ENFORCED - AMENDED 2026-11-13, the
+same day, and the superseded wording is kept because an entry whose own
+"not yet" clauses have quietly come true is the failure this register was cut
+down for.** It read: *"The constraint is confirmed present in the pinned KiCad
+10.0.5's own documentation; what violation type it REPORTS is NOT yet
+measured"*, and then *"NEITHER NUMBER IS ENFORCED AT THE TIME OF WRITING ... No
+tool compares the declared size to the board's Edge.Cuts; no tool yet carries
+the courtyard rule."* **Both sentences were true when written and both were
+false within hours**, which is exactly why the project's rule sends a
+measurement to a tool and not to prose. What is true at this amendment:
+
+- `courtyard_clearance` **reports as `courtyards_overlap`**, at error severity -
+  measured against the pinned KiCad rather than reasoned from its docs. That
+  type was ALREADY in `tools/pcb/drc-policy.ts`'s required-checks list, so
+  nothing was widened to fit, which was the hazard the struck clause existed to
+  guard. Verified in both directions: clean at 2 mm, 24 violations naming the
+  rule at 2.5 mm.
+- `circuits/pt2399-core/pt2399-core.kicad_dru` carries the rule, is generated
+  from the approved figure, is compared BY CONTENT as a prerequisite of every
+  DRC make target, and refuses when missing or loosened.
+- `tools/pcb/resolve-intent-zones.ts` compares the board's Edge.Cuts against
+  `envelope.size_mm` and refuses a mismatch, ignoring the origin by design.
+- Independently measured minimum courtyard gap on the delivered board:
+  **2.0000 mm, zero pairs below it.**
+
+**WHAT IS STILL UNCHECKED, stated so this amendment does not overclaim in the
+other direction:** `tools/pcb/fab-standard.ts` reads no `.kicad_dru` at all, so
+this board's rule is gated by a make prerequisite and nothing else and a second
+board gaining one would get no check - recorded in that file's own "WHAT THIS
+FILE DOES NOT CHECK" section, and deliberately not solved, there being no second
+board. Findings open against the delivered tooling at the time of this
+amendment are in the Task 8 review, the load-bearing one being that
+`place-mounting-holes.ts` would silently delete a real footprint carrying a
+single non-plated pad.
