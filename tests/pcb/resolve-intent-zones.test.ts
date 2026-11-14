@@ -170,7 +170,17 @@ test("the resolver refuses an intent with no outline_derivation at all", () => {
 
 test("THE APPROVED INTENT STILL DECLARES NO BOARD COORDINATES", () => {
   const intent = approvedIntent()
-  expect(intent["envelope"]).toBeUndefined()
+
+  // The envelope is the ONE exception, and it is the owner's own number
+  // ("increase the board size to 150mm x 100mm", 2026-11-13) rather than
+  // anything an agent derived. It is a SIZE, never a rect: a rect carries an
+  // origin, and an origin is the board coordinate this test exists to keep out.
+  // So assert the shape as well as the value - an `envelope.rect` appearing
+  // here would be exactly the regression this guard is for.
+  const envelope = intent["envelope"] as Record<string, unknown>
+  expect(envelope["size_mm"]).toEqual([150.0, 100.0])
+  expect(envelope["rect"]).toBeUndefined()
+
   for (const block of intent["blocks"] as readonly Record<string, unknown>[]) {
     expect(block["zone"]).toBeUndefined()
   }
