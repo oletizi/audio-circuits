@@ -78,7 +78,7 @@ test("longEdge is south when the outline is wider, east when taller, south on a 
   expect(longEdge({ x0: 0, y0: 0, x1: 40, y1: 40 })).toBe("south")
 })
 
-test("the committed intent resolves to the central half for delay_ic and a long edge for J1", () => {
+test("the committed intent resolves to the middle 80% for delay_ic and a long edge for J1", () => {
   const resolved = resolveIntentZones(approvedIntent(), B65, INTENT)
   const blocks = resolved["blocks"] as readonly Record<string, unknown>[]
   const zoned = blocks.filter((b) => b["zone"] !== undefined)
@@ -86,7 +86,11 @@ test("the committed intent resolves to the central half for delay_ic and a long 
   // Exactly one zone, and it is the IC's. More would be a floorplan drawn
   // before the outline; none would leave the seeder's decap stage dead.
   expect(zoned.map((b) => b["name"])).toEqual(["delay_ic"])
-  expect(zoned[0]?.["zone"]).toEqual([26.25, 22.5, 58.75, 47.5])
+  // The owner ruled the extent on 2026-11-13: "loosen to 80%". On the 65 x 50
+  // outline at (10, 10) that is a tenth of each axis clear at every edge -
+  // 6.5 mm in x, 5 mm in y. These are the numbers his ruling produces, so a
+  // change here is a change to an approved criterion, not a test fix.
+  expect(zoned[0]?.["zone"]).toEqual([16.5, 15, 68.5, 55])
 
   const connectors = resolved["edge_connectors"] as readonly Record<string, unknown>[]
   expect(connectors.map((c) => [c["ref"], c["edge"]])).toEqual([["J1", "south"]])
