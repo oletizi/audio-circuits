@@ -14,12 +14,14 @@
  * goes at the first stub label of the net, in blocks order, west edge before east, that is the TOP pin
  * of its sheet edge (rotation 0, nothing above it but the box's top), else the first that is the
  * BOTTOM pin of its edge (rotation 180, nothing below it but the box's bottom). A fixed rule, not a
- * choice made from the circuit.
+ * choice made from the circuit. A net with no stub at either end of any edge gets the second rule
+ * (h7 pedal Task 11b; `rootFlagPlacements` below): its flag on a label of its own, in the slot above
+ * an edge's top pin.
  *
  * Refuses, naming the net: a root-homed net that no block port is bound to (no stub to put a flag
- * on, so the table and the model disagree); a net with no stub at the top or bottom of an edge; and
- * a chosen point with no stub label of the net in `rootSheetOps`'s op-list (the arrangement and the
- * op-list disagree).
+ * on, so the table and the model disagree); a net the second rule finds no free slot for; and a
+ * chosen point with no stub label of the net in `rootSheetOps`'s op-list, or a slot that already
+ * holds one (the arrangement and the op-list disagree).
  *
  * Moved from `drafted/h7-platform/h7-module/repair/tools/` (H7 pedal plan Task 4).
  *
