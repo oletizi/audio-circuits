@@ -109,6 +109,14 @@ export function dumbbell(top: number, bottom: number): readonly Pt[] {
 export interface Placement {
   readonly u1: Pt
   readonly c1: Pt
+  /** A second bypass capacitor, laid out like C1. */
+  readonly c2?: Pt
+}
+
+export interface TrackSpec {
+  readonly from: Pt
+  readonly to: Pt
+  readonly layer: string
 }
 
 /** U1's ground pads are at +0 and +6 in y; C1's +5V pad is at its origin and its ground pad 5 below. */
@@ -128,7 +136,7 @@ export interface UTurn {
 
 export interface FixtureOptions {
   readonly place: Placement
-  /** Outline polygons per layer; each is spliced with the reliefs unless `bare` is set. */
+  /** Outline polygons per layer; each has the reliefs spliced in. */
   readonly pour: Readonly<Record<string, readonly (readonly Pt[])[]>>
   /** Spokes per ground pad key (`U1-3`, `U1-4`, `C1-2`); a pad absent here has no void cut around it. */
   readonly spokes?: Readonly<Record<string, number>>
@@ -137,7 +145,10 @@ export interface FixtureOptions {
   /** Layers that carry a saved fill. Defaults to the layers named in `pour`. Fewer than `zoneLayers` is an unfilled layer. */
   readonly filledLayers?: readonly string[]
   readonly thermalGap?: number | null
-  readonly track?: boolean
+  /** `true` runs a ground track on F.Cu from U1's first ground pad to C1's ground pad; a spec places one anywhere. */
+  readonly track?: boolean | TrackSpec
+  /** C1 is a surface-mount part on F.Cu, so only a feature on that layer can touch its pads. */
+  readonly c1Smd?: boolean
   readonly extraZones?: readonly string[]
   readonly refs?: { readonly u1?: string; readonly c1?: string }
   readonly padShape?: string
@@ -164,7 +175,12 @@ function footprint(ref: string, at: Pt, courtyard: readonly [number, number, num
 
 function pad(number: string, y: number, net: string, shape: string, type: string, turn?: UTurn): string {
   const angle = turn === undefined ? "" : ` ${turn.degrees}`
-  return `  (pad "${number}" ${type} ${shape} (at 0 ${y}${angle}) (size ${turn?.padSize ?? "1.6 1.6"}) (drill 0.8) (layers "*.Cu" "*.Mask") (net "${net}"))`
+  const [layers, drill] = type === "smd" ? ['"F.Cu" "F.Mask"', ""] : ['"*.Cu" "*.Mask"', " (drill 0.8)"]
+  return `  (pad "${number}" ${type} ${shape} (at 0 ${y}${angle}) (size ${turn?.padSize ?? "1.6 1.6"})${drill} (layers ${layers}) (net "${net}"))`
+}
+
+function capacitor(ref: string, at: Pt, shape: string, type: string, uuid: string): string {
+  return footprint(ref, at, [-1.5, -1.5, 1.5, 6.5], [pad("1", 0, "+5V", shape, type), pad("2", 5, "GND", shape, type)], uuid)
 }
 
 export function fixtureBoard(opts: FixtureOptions): string {
@@ -205,16 +221,21 @@ export function fixtureBoard(opts: FixtureOptions): string {
     "\t)",
   ].join("\n")
   const [u, c] = [opts.place.u1, opts.place.c1]
-  const track = opts.track === true
-    ? [`\t(segment (start ${u[0]} ${u[1]}) (end ${c[0]} ${c[1] + 5}) (width 0.5) (layer "F.Cu") (net "GND") (uuid "bbbbbbbb-0000-4000-8000-000000000001"))`]
-    : []
+  const spec: TrackSpec | null =
+    opts.track === true ? { from: u, to: [c[0], c[1] + 5], layer: "F.Cu" } : opts.track === undefined || opts.track === false ? null : opts.track
+  const track =
+    spec === null
+      ? []
+      : [`\t(segment (start ${spec.from[0]} ${spec.from[1]}) (end ${spec.to[0]} ${spec.to[1]}) (width 0.5) (layer "${spec.layer}") (net "GND") (uuid "bbbbbbbb-0000-4000-8000-000000000001"))`]
+  const c2 = opts.place.c2 === undefined ? [] : [capacitor("C2", opts.place.c2, shape, type, "33333333-0000-4000-8000-000000000001")]
   return [
     "(kicad_pcb",
     "\t(version 20260206)",
     '\t(generator "pcbnew")',
     '\t(layers (0 "F.Cu" signal) (2 "B.Cu" signal) (31 "F.CrtYd" user "F.Courtyard"))',
     footprint(u1Ref, u, [-2, -2, 2, 8], [pad("3", 0, "GND", shape, type, opts.u1Turn), pad("4", 6, "GND", shape, type, opts.u1Turn)], "11111111-0000-4000-8000-000000000001", opts.u1Turn?.degrees),
-    footprint(c1Ref, c, [-1.5, -1.5, 1.5, 6.5], [pad("1", 0, "+5V", shape, type), pad("2", 5, "GND", shape, type)], "22222222-0000-4000-8000-000000000001"),
+    capacitor(c1Ref, c, shape, opts.c1Smd === true ? "smd" : type, "22222222-0000-4000-8000-000000000001"),
+    ...c2,
     ...track,
     ...(opts.zone === false ? [] : [zone]),
     ...(opts.extraZones ?? []),

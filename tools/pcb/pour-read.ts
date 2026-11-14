@@ -106,9 +106,8 @@ function polygonPoints(fill: SNode, where: string): readonly Pt[] {
 }
 
 export function readGroundPour(root: SNode, where: string, copper: readonly string[]): GroundPour {
-  const zones = children(root, "zone").filter(
-    (z) => child(z, "keepout") === undefined && child(z, "net")?.atoms[0] === GROUND_NET,
-  )
+  // A Rule Area (keepout) carries no net, so the net filter alone leaves it out.
+  const zones = children(root, "zone").filter((z) => child(z, "net")?.atoms[0] === GROUND_NET)
   if (zones.length === 0) {
     throw new PourRefusal(
       "no-ground-zone",
