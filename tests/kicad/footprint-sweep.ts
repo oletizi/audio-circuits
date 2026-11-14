@@ -109,6 +109,21 @@ export const NOT_A_KICAD_FOOTPRINT: ReadonlyMap<string, string> = new Map([
     "C_Disc_D3.0mm",
     "a bare family name in the same targets fixture, read only for the field's presence",
   ],
+  // A PROJECT-LOCAL footprint, which is a real file on disk and NOT in any
+  // installed library - so the resolution arm above could only ever answer
+  // `no-such-library` for it, which is no check at all. It is swept as a bare
+  // name because tools/pcb/mounting-hardware.ts declares the library nickname
+  // and the footprint name separately and composes them, so no `Library:Name`
+  // literal exists to sweep.
+  [
+    "MountingHole_3.2mm_M3_Washer7.0mm",
+    "the project-local M3 mounting hole in circuits/pt2399-core/pt2399-core.pretty/, resolved " +
+      "through that directory's own fp-lib-table rather than an installed library. It is NOT " +
+      "unverified: tests/pcb/mounting-hardware.test.ts opens the file, compares it form by form " +
+      "against the stock MountingHole:MountingHole_3.2mm_M3 it is derived from, and checks its " +
+      "courtyard against the approved envelope and the catalogued washer's outside diameter - a " +
+      "stronger check than existence, which is all this sweep performs.",
+  ],
   // TWO ENTRIES WENT WITH THE SCHEMATIC GENERATOR, and they are named here
   // rather than silently absent because the pin in both directions is what
   // keeps this list honest: `"F"`, a one-letter placeholder footprint in the
