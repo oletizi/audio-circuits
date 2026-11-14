@@ -1,0 +1,147 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "out.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "6cf5841f-7f6f-5566-9c42-08b01251be9d"
+  },
+  {
+   "op": "add_net_label",
+   "name": "FX_OUT_L",
+   "at": [
+    6900,
+    2400
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "b6fae843-29a7-5fb3-8041-20fbd40fa35a"
+  },
+  {
+   "op": "add_net_label",
+   "name": "FX_OUT_R",
+   "at": [
+    6900,
+    4400
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "83803501-a3a0-505e-9c8a-855142d0a299"
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    9400,
+    4900
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "8f1697ed-eca5-560d-80c6-09bb236cd880"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VIN_A",
+   "at": [
+    9000,
+    2300
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "8c9c680e-1f16-5535-8add-e2ccc47b4768"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VMID_L",
+   "at": [
+    2400,
+    1800
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "373fe83e-2426-5ae9-be5f-d0d7cbfabd2f"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VMID_R",
+   "at": [
+    2400,
+    3800
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "bb72830e-1c6e-593d-9875-3eb999a5c52f"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VOUTL+",
+   "at": [
+    1300,
+    2500
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "840a8d75-937c-562a-a5bd-25a60e2419ff"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VOUTL-",
+   "at": [
+    1300,
+    2300
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "1ebe9fac-ea53-5ecf-95cc-8fd76dfbc18e"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VOUTR+",
+   "at": [
+    1300,
+    4500
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "25d9877f-c7a4-5298-b9fd-16b7bca9d60e"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VOUTR-",
+   "at": [
+    1300,
+    4300
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  }
+ ]
+}

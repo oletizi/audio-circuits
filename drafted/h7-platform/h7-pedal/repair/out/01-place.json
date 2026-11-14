@@ -1,0 +1,952 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "out.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "c604b35e-0135-5b69-b73f-e32986b04780"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "6a709901-1089-505c-85bd-6bedda93333e"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "2e975244-a167-522f-adbd-5cbd4129e43a"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "08d483f0-4455-5e06-804c-93dc06df9dad"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "cd71b2ea-1f57-548d-8b88-9306d9e429e3"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "2d481852-2a4d-5b32-b3b4-6987ce78cf62"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "146c4060-a970-5f6e-a4ed-c53e5b292a77"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "637a3186-0fa0-57b8-96f0-8187981092c9"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "08777cc4-9a4a-5eba-abb6-e442fbbeb3c0"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "a4f2e591-645c-5209-8605-14b37386d203"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "c8d9b3ab-bf6c-5c8e-8ff0-5a5abc708791"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "08cdb12c-cdd8-55fd-9e7b-b52bbf08feb4"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "33285b9d-8e24-5994-a3a7-189615277080"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "62daacfd-ccb7-5528-ab32-da04a6f89665"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "71c8015c-641c-5fb7-a2ac-b412c0a341d1"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "40ed70b1-b190-5866-97c4-a5cad1b4c872"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "3311a444-d4d6-5554-8690-9bed0d8e8c1c"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "5ba96bbd-ffb8-5ee3-b74a-e7ebba062206"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "7504a1aa-fef3-5e95-ab54-40cac542725a"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "a3285a5b-3be8-5a49-97a7-692b2ccb2450"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "3ffe69a6-2552-5b69-a4f1-e7eaeaf7bf29"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "2a735065-94ef-5199-a8fc-039358b50212"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "45581d36-8580-5b19-b748-246481c5f13a"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "994188f2-5d98-51b4-b177-c86e5447346f"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "9525b235-f5c7-5198-8953-0f5a22925ba5"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "56696f5f-872f-54b4-bccf-bc2b920cdeae"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "fe1be307-4867-52ad-aa2c-4616fd02f46e"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "0ae131cf-6627-579d-afa3-260315079c84"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "9d44aeb7-968c-564e-b68d-9982c51358dc"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "0b2f30cb-3aee-5944-b1d1-3e099dfda208"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "d5a97a70-80da-5a70-8764-eac079af8bc1"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "cb564e2b-a73d-53af-8096-422cfb3eca68"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "0c5b221c-a5dd-5b37-87b9-73656da1fe40"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "87ef7fd8-b1ae-5de2-ac46-987232d87c43"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "241fbbb7-3fba-5cb4-a128-2229216eafa9"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "23aca0b6-33b0-5975-9c21-2d9f30d0ff4f"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "f4d0ebe8-afe1-56c1-a914-651b71a187dc"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "ba05e65e-41ba-5a7c-830c-1aa3de715921"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "b9dbd23e-9bc9-5979-98b5-065a8e0ef524"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "8e9fac0e-761f-55c5-a885-0972daa38387"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "9669919a-933f-5d8d-85f2-3b0d191f3559"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "7927571b-2b8c-5aa3-bcc6-6069d43989eb"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "3932bc84-f3fd-5895-8799-d8e68ca69e21"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "459a836d-e80d-5d24-9615-14bd8b742cbd"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "01db75e9-86df-57b5-843a-fd15efc90c60"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "5f32203c-05c3-5800-99b1-21124f48ee71"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "ee2719bf-19ee-5271-a839-bd8309e59be4"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "8997d120-2d61-53a1-bcd7-dae0bff54939"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "7e3e27aa-f50c-5b29-a062-44ada17b0c4d"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "669d2b64-fee3-5d20-a0d7-9782ef9ff905"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "801b26a6-7716-538b-8005-f80f2af32ba0"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "90ee4152-8722-59f4-aa1e-6b81ad58463d"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "da2265ae-c03f-577c-b747-0b0ab590cdb0"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "1547cb32-938b-5d89-b26e-cffbf9ed4226"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "4ad74b4c-a771-5f1f-b7c1-bd3df3cee0af"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "35f86eff-9033-5c0e-ab5f-683b78133c4d"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "7b81ff20-c54a-5687-a207-7016d22e74de"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "4dfc0946-8d5e-53f7-8419-d641ebf5222b"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "e9128e6a-52bd-5cee-872a-c50e216aa21a"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "4e7f8100-85b3-55f2-8395-0f87a1202159"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "712dad51-e689-5673-a861-9894f22c95f5"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "964fa544-8590-56ea-937a-730c184e00aa"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "ac4dcad7-fc3d-5131-a5f4-fa71dee43a8a"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "d0a0f01f-56e2-5fbe-8c25-eb5ef4c831ef"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "4581bcbf-a8c2-5a62-8b84-c9c10445d812"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "e5d3e1b3-8fd3-53be-9446-1834b65400f9"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "21b5a5f3-53ec-5987-9162-396818960a31"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "3b3e6b96-7053-520e-a856-39c83974a947"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "ec35d7f8-9478-5abc-9f07-8818b112c93b"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "e79319ed-7a03-53fc-8d18-fccb495084a6"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "5b7faaac-a473-5ea9-ad99-c86f244e4a84"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "fa58c940-ea09-5da8-9db1-811a07573fd0"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "e7ac7904-ba5b-5d62-aa22-29c7e755c5b4"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "483abdb1-35e4-5795-bef8-4d7fb8ead327"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "f59236ed-5d99-5fd1-8dfd-9b7de83a2dae"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "335037d1-34ce-55a2-b6e8-6101358b3ccc"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "1fc0e701-b545-55bf-aa04-abff66b36d36"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "c848cb0d-572f-5eb0-9f57-33e48ba26377"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "4f88901c-6553-5091-8cfc-dbcf0dcf079e"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "7d41cc4f-02d1-5fde-aac3-8a441fc3123e"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "d046d221-3a2f-5acb-8a4d-a94e8d988008"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "9e9e083e-d8b4-5677-be1f-ab5cce5331e8"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "ee0ef14a-f545-5b67-adb9-8489feda1a4c"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "1dc99e9b-f907-5311-ac69-ac511b076e26"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "1679e2b2-59ef-5bd1-a87a-999d447868b2"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "b70ced9e-cec7-5014-a915-c8cf0f6bcaae"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "834c24ed-c24f-5160-85d7-c6c86c05759a"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "92a9bcc1-8d0c-55b7-9e40-3b002dac9ddc"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "d2e607a2-8a05-597a-aba2-9d94368326fd"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "9f290d90-6069-55d8-b325-c600bbaa2f2e"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "9d0018bf-1beb-56a0-afe8-918a0f5241ae"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "18d6e56d-7f28-5021-a3ee-f7b057a142e3"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "fa8453d4-8b0e-5483-a2dd-09f60981a42d"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "dcc9ae3a-5d87-59c2-8962-2891f2ff6a73"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "2fcbed76-ea6f-55f9-b694-82e4182170c7"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "1828e995-ce54-553b-888b-02b7ad8a2571"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "2700d72d-f73f-5e06-b7ee-9890c3d78507"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "df47f8da-af55-5a32-a89a-d4850ac9fa3a"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "5c6fdc08-ff70-54d5-88c7-06170cc5259a"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "fd836963-e7a8-5472-88b5-d2985a639adf"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "1277c851-127b-59a3-a0a7-38c491f9f9e4"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "3d331587-076f-5af3-ac58-78cf13acf3eb"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "6e534752-1367-5a24-836b-d7043455c958"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "2fb8ef7d-6f61-5454-8c9f-0af40897a197"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "e92e116f-90be-5702-acc4-547165da7619"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "62e64a1e-32cc-5ffa-bc70-40e1a6b6cf9c"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "78dee62d-eb97-5ce5-a23b-55eb0fd62a63"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "96de3363-b3ec-56e8-982d-9d859d8b4279"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "d469f655-8def-5dac-a0ed-f42d8eead2d7"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "17368f28-7c3d-5ceb-ac11-54084aa8f112"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "264e1282-a598-5807-a1b2-d8fd4ae5acc5"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "5c4ad07e-ee71-5943-b092-907ae75d7ead"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "44e89fc1-3a3d-5bd6-a45c-e1d9fff54adb"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "257fc5f1-0b2a-5316-a374-aba854e74b67"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "71a23147-0b24-5521-ac09-82007e38ceb0"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "0d9d639c-ec0c-5eba-bf5a-1ca67d1ac086"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "59675336-b34f-5b33-9262-7e558fdb64eb"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "d2ffc824-0a39-50c1-9374-248e11e3f2f4"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "2cb22bdb-be1e-57b7-b00e-4fde7c5fd4fb"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "45c1b11e-1305-5338-9a7b-21e6f99947ce"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "444e4cc0-9340-5245-997a-2a205a62b201"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "d35c8d29-bda4-547f-881e-efb60ef2d5c1"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "6aec7005-d84a-55a8-a4af-76cb5f0f0198"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "b1df5f8d-2411-5c65-a225-8d4ac18ff382"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "4654b5ba-515e-5931-ae2a-a8336f8aaadd"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "3e4e4297-f371-5221-8d90-d37665df7187"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "78f0a421-0bc5-5f24-a50c-d1afae982b50"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "c5602dcc-2e08-5ea4-8802-9ab31f0f2628"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "3f17db12-6303-59ee-98c0-10397088f01a"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "e6f79a34-856e-5540-aa76-f74d92fd1fe7"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "a6cf5aae-3c37-5e00-9613-31668133f952"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "ee7b759f-0b12-59e0-b924-b926243c87b4"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "22f80e5d-1aed-5dbd-9e20-cf90b2f42bb4"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "548dd6c3-dd3e-5b66-8d51-e7456de3e26c"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "84a7c786-749b-5ff9-ae48-4a7a0ea2f9da"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "68512bd5-8877-504c-9b20-6813ef9a3406"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "6c1e9294-e296-5471-bc8e-2ba141446a51"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "ac517f25-ea01-5fe7-b0ac-01a8b2c9565b"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "57696b60-0866-5e95-9d4b-e051bf60eda0"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "4adc1bfb-49cc-53dd-a346-3d5890828b91"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "b7f24b8e-1956-5a06-b2a7-3d769bd2e598"
+  },
+  {
+   "op": "move_component",
+   "designator": "C83",
+   "x_mil": 1650,
+   "y_mil": 2300
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "C83",
+   "rotation": 90,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "R114",
+   "x_mil": 2300,
+   "y_mil": 2300
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "R114",
+   "rotation": 90,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "C82",
+   "x_mil": 1950,
+   "y_mil": 2500
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "C82",
+   "rotation": 90,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "R113",
+   "x_mil": 2400,
+   "y_mil": 2500
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "R113",
+   "rotation": 90,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "R116",
+   "x_mil": 2800,
+   "y_mil": 2150
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "R116",
+   "rotation": 180,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "C85",
+   "x_mil": 3300,
+   "y_mil": 2150
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "C85",
+   "rotation": 180,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "U19",
+   "x_mil": 4000,
+   "y_mil": 2400,
+   "unit": 1
+  },
+  {
+   "op": "move_component",
+   "designator": "R115",
+   "x_mil": 3400,
+   "y_mil": 2800
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "R115",
+   "rotation": 90,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "C84",
+   "x_mil": 3400,
+   "y_mil": 3100
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "C84",
+   "rotation": 90,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "R117",
+   "x_mil": 4900,
+   "y_mil": 2400
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "R117",
+   "rotation": 90,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "C86",
+   "x_mil": 5300,
+   "y_mil": 2550
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "C86",
+   "rotation": 0,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "C87",
+   "x_mil": 5800,
+   "y_mil": 2400
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "C87",
+   "rotation": 90,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "TP11",
+   "x_mil": 6200,
+   "y_mil": 2400
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "TP11",
+   "rotation": 0,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "R118",
+   "x_mil": 6500,
+   "y_mil": 2550
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "R118",
+   "rotation": 0,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "TP12",
+   "x_mil": 6200,
+   "y_mil": 2900
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "TP12",
+   "rotation": 0,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "C89",
+   "x_mil": 1650,
+   "y_mil": 4300
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "C89",
+   "rotation": 90,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "R120",
+   "x_mil": 2300,
+   "y_mil": 4300
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "R120",
+   "rotation": 90,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "C88",
+   "x_mil": 1950,
+   "y_mil": 4500
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "C88",
+   "rotation": 90,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "R119",
+   "x_mil": 2400,
+   "y_mil": 4500
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "R119",
+   "rotation": 90,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "R122",
+   "x_mil": 2800,
+   "y_mil": 4150
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "R122",
+   "rotation": 180,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "C91",
+   "x_mil": 3300,
+   "y_mil": 4150
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "C91",
+   "rotation": 180,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "U19",
+   "x_mil": 4000,
+   "y_mil": 4400,
+   "unit": 2
+  },
+  {
+   "op": "move_component",
+   "designator": "R121",
+   "x_mil": 3400,
+   "y_mil": 4800
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "R121",
+   "rotation": 90,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "C90",
+   "x_mil": 3400,
+   "y_mil": 5100
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "C90",
+   "rotation": 90,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "R123",
+   "x_mil": 4900,
+   "y_mil": 4400
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "R123",
+   "rotation": 90,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "C92",
+   "x_mil": 5300,
+   "y_mil": 4550
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "C92",
+   "rotation": 0,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "C93",
+   "x_mil": 5800,
+   "y_mil": 4400
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "C93",
+   "rotation": 90,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "TP13",
+   "x_mil": 6200,
+   "y_mil": 4400
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "TP13",
+   "rotation": 0,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "R124",
+   "x_mil": 6500,
+   "y_mil": 4550
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "R124",
+   "rotation": 0,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "TP14",
+   "x_mil": 6200,
+   "y_mil": 4900
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "TP14",
+   "rotation": 0,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "U19",
+   "x_mil": 7800,
+   "y_mil": 2600,
+   "unit": 3
+  },
+  {
+   "op": "move_component",
+   "designator": "C94",
+   "x_mil": 8200,
+   "y_mil": 2600
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "C94",
+   "rotation": 0,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "C95",
+   "x_mil": 8600,
+   "y_mil": 2600
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "C95",
+   "rotation": 0,
+   "mirror": "none"
+  }
+ ]
+}

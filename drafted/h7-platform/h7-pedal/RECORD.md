@@ -52,6 +52,7 @@ below says which it is.** A verdict is bound to the sha256 in the table below;
 | `jacks_byp.kicad_sch` | block jacks_byp | `2ad7be98ed45efb192ccd5dc4a56f892bc009c6b3c98beb4d3d3a0de7565c489` |
 | `in_fe.kicad_sch` | block in_fe | `37049f7c8c5bb7894936c2ae6df4e62d10ef8aceaa6d7e939ad224e11bb196d2` |
 | `adc_drv.kicad_sch` | block adc_drv | `7b35259f9717da2d34344fb030f0ba8d46db3c6001b41a04aa9c092a49da5079` |
+| `out.kicad_sch` | block out | `3bd4e4a006bdb52f2bd8bf21b81eafdbc85dc964bfc5285d60c14d06efa4da0a` |
 
 Each committed `.svg` beside a sheet is `draughting/pages/render.sh`'s render of that sheet's
 committed bytes, with the pinned kicad-cli.
@@ -76,6 +77,7 @@ committed bytes, with the pinned kicad-cli.
 | jacks_byp | UNREVIEWED (Task 11a); `verify.sh` exits 0 | `jacks_byp.svg` |
 | in_fe | UNREVIEWED (Task 11a); `verify.sh` exits 0 | `in_fe.svg` |
 | adc_drv | UNREVIEWED (Task 11a); `verify.sh` exits 0 | `adc_drv.svg` |
+| out | UNREVIEWED (Task 11a); `verify.sh` exits 0 | `out.svg` |
 
 ## The drafts every repair starts from
 
@@ -3065,3 +3067,143 @@ input and VIN labels.
   bodies; U18A's and U18B's centred above the body; U18C's east of its body.
 - Renders: the first had U18C's fields over C80; C80, C81, the east GND vertical and both rail labels
   moved 400 mil east.
+
+## out: the output stages (Task 11a)
+
+**Status: UNREVIEWED.** sha256 `3bd4e4a006bdb52f2bd8bf21b81eafdbc85dc964bfc5285d60c14d06efa4da0a`.
+Render: `out.svg` beside it.
+
+The block: `circuits/h7-platform/pedal/out.ts`, 31 parts. Per channel, left then right: C82 and C88
+(`c_ap_x`, 10 uF) from VOUTx+ to OUT_AP_x, R113 and R119 (`r_d1_x`, 20.0 kOhm) to OUT_INV_x; C83 and
+C89 (`c_am_x`, 10 uF) from VOUTx- to OUT_AM_x, R114 and R120 (`r_d2_x`, 20.0 kOhm) to OUT_NI_x; R115
+and R121 (`r_fo_x`, 19.1 kOhm) with C84 and C90 (`c_fo_x`, 47 pF) from OUT_INV_x to OUT_OA_x; R116 and
+R122 (`r_go_x`, 19.1 kOhm) with C85 and C91 (`c_go_x`, 47 pF) from OUT_NI_x to VMID_x; R117 and R123
+(`r_s_x`, 100 Ohm) from OUT_OA_x to OUT_S_x; C86 and C92 (`c_out_x`, 220 pF) from OUT_S_x to GND; C87
+and C93 (`c_dc_x`, 22 uF, `Device:C_Polarized`, + on OUT_S_x) from OUT_S_x to FX_OUT_x; R118 and R124
+(`r_b_x`, 100 kOhm) from FX_OUT_x to GND; the output pads TP11 and TP13 (`tp_out_x`) on FX_OUT_x and
+the GND pads TP12 and TP14 (`tp_out_x_gnd`). U19 (`u_out`, OPA1688, `h7-platform:OPA1688xD`, three
+units): unit A the left stage, unit B the right (+IN on OUT_NI_x, -IN on OUT_INV_x, OUT on OUT_OA_x),
+unit C V+ on VIN_A and V- on GND, with C94 (`c_uout_hf`, 100 nF) and C95 (`c_uout_bulk`, 10 uF). Ports
+FX_OUT_L, FX_OUT_R, GND, VIN_A, VMID_L, VMID_R, VOUTL+, VOUTL-, VOUTR+ and VOUTR-; four reach one pin
+each (C82's, C83's, C88's and C89's pin 1). OUT_AP_x, OUT_AM_x, OUT_INV_x, OUT_NI_x, OUT_OA_x and
+OUT_S_x are private to the page and drawn as wire, with no label. No no-connects.
+
+### The rulings this page rests on
+
+- [CR-PEDAL-BLOCKS](../../../docs/h7-platform/decisions.md#cr-pedal-blocks): `out` is one of the
+  pedal's blocks: each channel from the codec's differential output to the output relay's NO contact.
+- [CR-PEDAL-ANALOG-READINGS](../../../docs/h7-platform/decisions.md#cr-pedal-analog-readings): the
+  private names OUT_AP_x, OUT_AM_x, OUT_INV_x, OUT_NI_x, OUT_OA_x and OUT_S_x; the output test pads
+  and their GND pads drawn on this page.
+- [CR-PEDAL-TEST-PADS](../../../docs/h7-platform/decisions.md#cr-pedal-test-pads): the output pad on
+  FX_OUT_x and the GND pad beside it, each a `Connector:TestPoint`.
+- [CR-PEDAL-SYMBOL-OPA1688](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-opa1688): U19's
+  project symbol, numbered unit by unit (A 1 OUT, 2 -IN, 3 +IN; B 5 +IN, 6 -IN, 7 OUT; C 8 V+, 4 V-).
+- [CR-PEDAL-KINDS](../../../docs/h7-platform/decisions.md#cr-pedal-kinds) and
+  [CR-PEDAL-PIN-MATCH](../../../docs/h7-platform/decisions.md#cr-pedal-pin-match).
+- [CR-PEDAL-NETS](../../../docs/h7-platform/decisions.md#cr-pedal-nets): VOUTL+, VOUTL-, VOUTR+ and
+  VOUTR- (the codec's output pins), VMID_x and FX_OUT_x as shared nets.
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): VIN_A and GND
+  are wires ending in hierarchical labels; no power symbol on the page.
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
+  this page; VIN_A's and GND's flags are on the root, and the one-block root's stub flags clear U19's
+  V+ and V-.
+- [CR-MODULE-PORT-LABEL-CHECK](../../../docs/h7-platform/decisions.md#cr-module-port-label-check):
+  0 of 10 ports on the wrong net.
+- Sources, not rulings: schematic-checklist.md AIO-13 to AIO-17 (lines 163 to 167; AIO-15's leg
+  assignment, VOUTx+ to the inverting input), PWR-11 (line 132), line 149 (A = L, B = R); analog.md
+  lines 197, 198, 207 and 211; parts.md lines 57, 105 and 108, which the block cites part by part.
+- Drawing choices, not transcriptions: two bands, the left channel above the right, each read west to
+  east from the VOUT labels to FX_OUT_x's; the VOUTx- leg on +IN's row, R_GO and C_GO rising from it
+  side by side to a VMID_x row over it, VMID_x's label at that row's west end; the VOUTx+ leg on -IN's
+  row, C_A+ 300 mil east of C_A- so the two capacitors do not stack; the feedback under each unit,
+  R_FO's loop and C_FO's below it; U19's units at rotation 0, as `page.place_ops` requires; the output
+  row through R_S and C_DC (+ west) past C_OUT and R_B (hanging to the band's GND row) and the output
+  pad (rising); the GND pad on the GND row under the output pad; the supply unit and its capacitors east
+  of the upper band; the two GND rows joined by a vertical down the east edge. The VOUT nets, which the
+  draft drew no wire for, take the default stroke (`out/layout.py`, `UNDRAWN_STROKES`, says why).
+
+### The tables after this page
+
+Unchanged. `verify.sh` read 6 flag homes, 9 cross-page drivers and 1 ERC allowance. No pin on this
+page needs a cross-page driver (U19's inputs sit on OUT_NI_x and OUT_INV_x, driven through the page's
+own passive parts), and no allowance is used.
+
+### Measurements, before (the draft) and after (this page)
+
+Both columns with the tables as this page leaves them. The draft columns were measured on the draft
+copied beside the committed `sym-lib-table`.
+
+| measure | draft | page |
+| --- | --- | --- |
+| netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
+| footprints; footprints undeclared | 0; 31 (the model declares none) | 0; 31 |
+| exported components, nets, net members | 31, 22, 64 | 31, 22, 64 |
+| exported nets carrying a model net name | 18 of 22 | 10 of 22 (the ten ports; the other twelve are the twelve private nets, unlabelled) |
+| ports whose label is on the wrong net | 6 of 10 | 0 of 10 |
+| ERC, the sheet alone | 6 errors (`pin_not_connected` 4, C82, C83, C88 and C89 pin 1; `power_pin_not_driven` 2, U19's V+ and V-), 3 warnings (`lib_symbol_issues` 3) | 11 errors (`pin_not_connected` 9: nine of the ten hierarchical labels have no parent sheet, FX_OUT_R's is not reported; `power_pin_not_driven` 2, U19's V+ and V-), 7 warnings (`isolated_pin_label` 4, the four VOUT labels; `lib_symbol_issues` 3) |
+| ERC under a one-block root, `/out/` | 6 errors (`pin_not_connected` 4, `power_pin_not_driven` 2), 2 warnings (`same_local_global_label` 2) | **0 errors, 0 warnings** |
+| ERC under a one-block root, `/` | 18 errors (`hier_label_mismatch` 10, `label_dangling` 8), 5 warnings (`isolated_pin_label` 2, `lib_symbol_issues` 3) | 4 errors (`label_dangling` 4, the FX_OUT_L, FX_OUT_R, VMID_L and VMID_R stubs' labels, alone with one block; `erc_sheets.py` admits them), 11 warnings (`isolated_pin_label` 8, the stub and sheet labels of the four VOUT nets; `lib_symbol_issues` 3) |
+| parenthesis depth at end, lowest | 0, 0 | 0, 0 |
+| true wire crossings, T-meetings | 1, 0 | 0, 0 |
+| orphan junctions, of total | 0 of 8 | 0 of 30 |
+| wire-to-wire tees without a dot; collinear overlapping pairs | 0; 4 | 0; 0 |
+| labels | 35 on 18 nets (27 global, 8 local) | 10 on 10 nets, all hierarchical |
+| paper fit (US Letter) | overshoots east by 13.293 mm | fits |
+| wire groups with more than one stroke | 0 of 35 | 0 of 22 |
+| symbols (part instances, power symbols, PWR_FLAGs) | 33 (33: 31 parts, U19 in three units; 0, 0) | 33 (33, 0, 0) |
+| placed pins | 64 | 64 |
+| wires, total length | 98, 563.88 mm | 78, 889.00 mm |
+| wire corners | 24 | 9 |
+| junctions | 8 | 30 |
+| no-connects | 0 | 0 |
+
+The selftest ran first on both: 10 controls, every one moved or fired.
+
+**`power_pin_not_driven` 2 on the sheet alone**: U19's V+ (pin 8, VIN_A) and V- (pin 4, GND), both
+`power_in`; under the one-block root the stubs' flags clear both.
+
+**`lib_symbol_issues` 3**, on U19's three units: the pf page's U1 warning (no `.kicad_pro` beside a
+block page). The symbol is embedded in the sheet. No `lib_symbol_mismatch`: `Device:R`, `Device:C`,
+`Device:C_Polarized` and `Connector:TestPoint` match their installed copies.
+
+**`isolated_pin_label` 4**, on the sheet alone: the four VOUT labels; each net's other end is U9's
+output pin on the codec page.
+
+**Observation, undiagnosed: the sheet-alone run reports `pin_not_connected` on nine of the ten
+hierarchical labels, not FX_OUT_R's.** The sai_iso page has the same kind of omission (CODEC_LRCK's
+and CODEC_BCK's, Task 9c). It hides no fault: the export puts R124's pin 1, C93's pin 2 and TP13 on
+`/FX_OUT_R`, the port-label check reads 0 of 10 on the wrong net, and under the one-block root `/out/`
+reads 0 errors and the FX_OUT_R stub's label is reported dangling as the other stubs' are. An earlier
+layout of this page, with C_A+ under C_A- and R_D1 under R_D2, reported all ten; nothing near FX_OUT_R
+changed between the two.
+
+### Why the page has no crossing, as the layout records it
+
+Observations, not a judgement of the page: on each unit's west side +IN is over -IN, and the VOUTx-
+leg (to +IN) is drawn on the upper row with its R_GO and C_GO rising away from the VOUTx+ leg below;
+the feedback loops lie under the unit, below the lower leg; the output row's shunt parts hang to the
+band's GND row, which starts east of the feedback loops; the supply section and the east GND vertical
+lie east of FX_OUT_x's labels.
+
+### What the page shows, as observations
+
+- Each band, west to east, upper row: VOUTx-'s label (pointing west), C_A-, R_D2, the OUT_NI_x row past
+  R_GO and C_GO (rising side by side to the VMID_x row, whose label is at its west end, pointing west)
+  into U19's +IN.
+- Lower row: VOUTx+'s label, C_A+ (300 mil east of C_A-), R_D1, the OUT_INV_x node into U19's -IN;
+  from the node, a vertical down to R_FO's loop and C_FO's loop under the unit, both returning up a
+  vertical east of U19's OUT.
+- The output row: U19's OUT east through R_S, past C_OUT (hanging to the GND row), through C_DC (+
+  west), past the output pad (rising) and R_B (hanging to the GND row), to FX_OUT_x's label (pointing
+  east). The GND pad sits on the GND row under the output pad, its circle up.
+- East of the upper band: U19C, C94 and C95 between the VIN_A row (VIN_A's label at its east end,
+  pointing east) and the upper GND row, which runs on to a vertical down the east edge to the lower GND
+  row; GND's label at that row's east end, pointing east.
+- The OUT_ nets carry copperhead's purple, VMID_x its teal and FX_OUT_x its blue; GND, VIN_A and the
+  VOUT nets the default.
+- The upper leg's fields above it and the lower leg's below it; R_GO's and C_GO's east of their bodies;
+  U19A's and U19B's centred above the body; R_FO's above its loop, C_FO's below; the output row's
+  horizontal parts' above them, the hanging parts' east of their bodies; U19C's west of its body.
+- Renders: the first had C_A- straight over C_A+, their plates 40 mil apart; C_A+ moved 300 mil east
+  and R_D1 100 mil east.

@@ -29,6 +29,7 @@ fsw_led; Task 9b, controls_a, controls_b and expr_ref; Task 9c, codec_sup, sai_i
 | end: `jacks_byp.kicad_sch` (Task 11a) | `2ad7be98ed45efb192ccd5dc4a56f892bc009c6b3c98beb4d3d3a0de7565c489` |
 | end: `in_fe.kicad_sch` (Task 11a) | `37049f7c8c5bb7894936c2ae6df4e62d10ef8aceaa6d7e939ad224e11bb196d2` |
 | end: `adc_drv.kicad_sch` (Task 11a) | `7b35259f9717da2d34344fb030f0ba8d46db3c6001b41a04aa9c092a49da5079` |
+| end: `out.kicad_sch` (Task 11a) | `3bd4e4a006bdb52f2bd8bf21b81eafdbc85dc964bfc5285d60c14d06efa4da0a` |
 
 ## Replay
 

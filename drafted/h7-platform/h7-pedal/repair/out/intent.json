@@ -1,0 +1,367 @@
+{
+  "version": 1,
+  "parts": [
+    {
+      "ref": "C82",
+      "libId": "Device:C",
+      "value": "10uF",
+      "group": "Output stages"
+    },
+    {
+      "ref": "C83",
+      "libId": "Device:C",
+      "value": "10uF",
+      "group": "Output stages"
+    },
+    {
+      "ref": "R113",
+      "libId": "Device:R",
+      "value": "20K",
+      "group": "Output stages"
+    },
+    {
+      "ref": "R114",
+      "libId": "Device:R",
+      "value": "20K",
+      "group": "Output stages"
+    },
+    {
+      "ref": "R115",
+      "libId": "Device:R",
+      "value": "19.1K",
+      "group": "Output stages"
+    },
+    {
+      "ref": "C84",
+      "libId": "Device:C",
+      "value": "47pF",
+      "group": "Output stages"
+    },
+    {
+      "ref": "R116",
+      "libId": "Device:R",
+      "value": "19.1K",
+      "group": "Output stages"
+    },
+    {
+      "ref": "C85",
+      "libId": "Device:C",
+      "value": "47pF",
+      "group": "Output stages"
+    },
+    {
+      "ref": "R117",
+      "libId": "Device:R",
+      "value": "100R",
+      "group": "Output stages"
+    },
+    {
+      "ref": "C86",
+      "libId": "Device:C",
+      "value": "220pF",
+      "group": "Output stages"
+    },
+    {
+      "ref": "C87",
+      "libId": "Device:C_Polarized",
+      "value": "22uF",
+      "group": "Output stages"
+    },
+    {
+      "ref": "R118",
+      "libId": "Device:R",
+      "value": "100K",
+      "group": "Output stages"
+    },
+    {
+      "ref": "TP11",
+      "libId": "Connector:TestPoint",
+      "value": "TestPoint",
+      "group": "Output stages"
+    },
+    {
+      "ref": "TP12",
+      "libId": "Connector:TestPoint",
+      "value": "TestPoint",
+      "group": "Output stages"
+    },
+    {
+      "ref": "C88",
+      "libId": "Device:C",
+      "value": "10uF",
+      "group": "Output stages"
+    },
+    {
+      "ref": "C89",
+      "libId": "Device:C",
+      "value": "10uF",
+      "group": "Output stages"
+    },
+    {
+      "ref": "R119",
+      "libId": "Device:R",
+      "value": "20K",
+      "group": "Output stages"
+    },
+    {
+      "ref": "R120",
+      "libId": "Device:R",
+      "value": "20K",
+      "group": "Output stages"
+    },
+    {
+      "ref": "R121",
+      "libId": "Device:R",
+      "value": "19.1K",
+      "group": "Output stages"
+    },
+    {
+      "ref": "C90",
+      "libId": "Device:C",
+      "value": "47pF",
+      "group": "Output stages"
+    },
+    {
+      "ref": "R122",
+      "libId": "Device:R",
+      "value": "19.1K",
+      "group": "Output stages"
+    },
+    {
+      "ref": "C91",
+      "libId": "Device:C",
+      "value": "47pF",
+      "group": "Output stages"
+    },
+    {
+      "ref": "R123",
+      "libId": "Device:R",
+      "value": "100R",
+      "group": "Output stages"
+    },
+    {
+      "ref": "C92",
+      "libId": "Device:C",
+      "value": "220pF",
+      "group": "Output stages"
+    },
+    {
+      "ref": "C93",
+      "libId": "Device:C_Polarized",
+      "value": "22uF",
+      "group": "Output stages"
+    },
+    {
+      "ref": "R124",
+      "libId": "Device:R",
+      "value": "100K",
+      "group": "Output stages"
+    },
+    {
+      "ref": "TP13",
+      "libId": "Connector:TestPoint",
+      "value": "TestPoint",
+      "group": "Output stages"
+    },
+    {
+      "ref": "TP14",
+      "libId": "Connector:TestPoint",
+      "value": "TestPoint",
+      "group": "Output stages"
+    },
+    {
+      "ref": "U19",
+      "libId": "h7-platform:OPA1688xD",
+      "value": "OPA1688IDR",
+      "group": "Output stages"
+    },
+    {
+      "ref": "C94",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "Output stages"
+    },
+    {
+      "ref": "C95",
+      "libId": "Device:C",
+      "value": "10uF",
+      "group": "Output stages"
+    }
+  ],
+  "nets": [
+    {
+      "name": "FX_OUT_L",
+      "kind": "signal",
+      "pins": [
+        "C87.2",
+        "R118.1",
+        "TP11.1"
+      ]
+    },
+    {
+      "name": "FX_OUT_R",
+      "kind": "signal",
+      "pins": [
+        "C93.2",
+        "R124.1",
+        "TP13.1"
+      ]
+    },
+    {
+      "name": "GND",
+      "kind": "signal",
+      "pins": [
+        "C86.2",
+        "C92.2",
+        "C94.2",
+        "C95.2",
+        "R118.2",
+        "R124.2",
+        "TP12.1",
+        "TP14.1",
+        "U19.4"
+      ]
+    },
+    {
+      "name": "OUT_AM_L",
+      "kind": "signal",
+      "pins": [
+        "C83.2",
+        "R114.1"
+      ]
+    },
+    {
+      "name": "OUT_AM_R",
+      "kind": "signal",
+      "pins": [
+        "C89.2",
+        "R120.1"
+      ]
+    },
+    {
+      "name": "OUT_AP_L",
+      "kind": "signal",
+      "pins": [
+        "C82.2",
+        "R113.1"
+      ]
+    },
+    {
+      "name": "OUT_AP_R",
+      "kind": "signal",
+      "pins": [
+        "C88.2",
+        "R119.1"
+      ]
+    },
+    {
+      "name": "OUT_INV_L",
+      "kind": "signal",
+      "pins": [
+        "C84.1",
+        "R113.2",
+        "R115.1",
+        "U19.2"
+      ]
+    },
+    {
+      "name": "OUT_INV_R",
+      "kind": "signal",
+      "pins": [
+        "C90.1",
+        "R119.2",
+        "R121.1",
+        "U19.6"
+      ]
+    },
+    {
+      "name": "OUT_NI_L",
+      "kind": "signal",
+      "pins": [
+        "C85.1",
+        "R114.2",
+        "R116.1",
+        "U19.3"
+      ]
+    },
+    {
+      "name": "OUT_NI_R",
+      "kind": "signal",
+      "pins": [
+        "C91.1",
+        "R120.2",
+        "R122.1",
+        "U19.5"
+      ]
+    },
+    {
+      "name": "OUT_OA_L",
+      "kind": "signal",
+      "pins": [
+        "C84.2",
+        "R115.2",
+        "R117.1",
+        "U19.1"
+      ]
+    },
+    {
+      "name": "OUT_OA_R",
+      "kind": "signal",
+      "pins": [
+        "C90.2",
+        "R121.2",
+        "R123.1",
+        "U19.7"
+      ]
+    },
+    {
+      "name": "OUT_S_L",
+      "kind": "signal",
+      "pins": [
+        "C86.1",
+        "C87.1",
+        "R117.2"
+      ]
+    },
+    {
+      "name": "OUT_S_R",
+      "kind": "signal",
+      "pins": [
+        "C92.1",
+        "C93.1",
+        "R123.2"
+      ]
+    },
+    {
+      "name": "VIN_A",
+      "kind": "signal",
+      "pins": [
+        "C94.1",
+        "C95.1",
+        "U19.8"
+      ]
+    },
+    {
+      "name": "VMID_L",
+      "kind": "signal",
+      "pins": [
+        "C85.2",
+        "R116.2"
+      ]
+    },
+    {
+      "name": "VMID_R",
+      "kind": "signal",
+      "pins": [
+        "C91.2",
+        "R122.2"
+      ]
+    }
+  ],
+  "noConnect": [],
+  "hints": {
+    "groupOrder": [
+      "Output stages"
+    ]
+  }
+}

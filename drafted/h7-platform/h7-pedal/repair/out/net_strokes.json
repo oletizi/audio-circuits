@@ -1,0 +1,20 @@
+{
+ "FX_OUT_L": "(stroke (width 0.254) (type default) (color 30 90 200 1))",
+ "FX_OUT_R": "(stroke (width 0.254) (type default) (color 30 90 200 1))",
+ "GND": "(stroke (width 0.254) (type default))",
+ "OUT_AM_L": "(stroke (width 0.254) (type default) (color 130 50 170 1))",
+ "OUT_AM_R": "(stroke (width 0.254) (type default) (color 130 50 170 1))",
+ "OUT_AP_L": "(stroke (width 0.254) (type default) (color 130 50 170 1))",
+ "OUT_AP_R": "(stroke (width 0.254) (type default) (color 130 50 170 1))",
+ "OUT_INV_L": "(stroke (width 0.254) (type default) (color 130 50 170 1))",
+ "OUT_INV_R": "(stroke (width 0.254) (type default) (color 130 50 170 1))",
+ "OUT_NI_L": "(stroke (width 0.254) (type default) (color 130 50 170 1))",
+ "OUT_NI_R": "(stroke (width 0.254) (type default) (color 130 50 170 1))",
+ "OUT_OA_L": "(stroke (width 0.254) (type default) (color 130 50 170 1))",
+ "OUT_OA_R": "(stroke (width 0.254) (type default) (color 130 50 170 1))",
+ "OUT_S_L": "(stroke (width 0.254) (type default) (color 130 50 170 1))",
+ "OUT_S_R": "(stroke (width 0.254) (type default) (color 130 50 170 1))",
+ "VIN_A": "(stroke (width 0.254) (type default))",
+ "VMID_L": "(stroke (width 0.254) (type default) (color 0 130 120 1))",
+ "VMID_R": "(stroke (width 0.254) (type default) (color 0 130 120 1))"
+}

@@ -1,0 +1,88 @@
+[
+ {
+  "name": "FX_OUT_L",
+  "pins": [
+   "C87.2",
+   "R118.1",
+   "TP11.1"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "FX_OUT_R",
+  "pins": [
+   "C93.2",
+   "R124.1",
+   "TP13.1"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "GND",
+  "pins": [
+   "C86.2",
+   "C92.2",
+   "C94.2",
+   "C95.2",
+   "R118.2",
+   "R124.2",
+   "TP12.1",
+   "TP14.1",
+   "U19.4"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "VIN_A",
+  "pins": [
+   "C94.1",
+   "C95.1",
+   "U19.8"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "VMID_L",
+  "pins": [
+   "C85.2",
+   "R116.2"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "VMID_R",
+  "pins": [
+   "C91.2",
+   "R122.2"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "VOUTL+",
+  "pins": [
+   "C82.1"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "VOUTL-",
+  "pins": [
+   "C83.1"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "VOUTR+",
+  "pins": [
+   "C88.1"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "VOUTR-",
+  "pins": [
+   "C89.1"
+  ],
+  "drafted": false
+ }
+]
