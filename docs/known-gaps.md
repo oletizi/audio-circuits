@@ -4514,3 +4514,102 @@ by whom. The declination costs an informational gate, not a real one.
 question, but re-asking it costs his attention and stalls the work behind it.
 What would REOPEN it: his own request, or a measured pour he looks at and
 objects to - not an agent's view that thresholds would be tidier.
+
+### G314 - OWNER DIRECTIVE, 2026-11-13: he assembles these boards BY HAND, so parts need room between them - and this binds EVERY output class, not the one it was first recorded against
+
+**HIS WORDS, and he had to say them twice.** 2026-11-13, on the `pt2399-core`
+THT PCB:
+
+> *"remember that I have fingers, so I need enough room between parts to use my
+> fingers. I'm not a pick and place machine"*
+
+And the figures, when asked what number he wanted:
+
+> *"Use 2mm min spacing and increase the board size to 150mm x 100mm"*
+
+**THE REASON THIS IS AN ENTRY AND NOT JUST A NUMBER: THE SAME DIRECTIVE WAS
+ALREADY ON RECORD AND DID NOT REACH THE PCB PATH.** `lib/stripboard/seed-area.ts`
+carries it in nearly the same words, from 2026-10-15:
+
+> *"I try to cluster related parts, AND I try to give myself room to work. I have
+> actual fingers-I'm not a pick and place machine."*
+
+with his priority beside it - *"Clustering is nice, but secondary to ease of
+assembly"* - and it is ENFORCED there, in the stripboard seed builder's tier
+order. The PCB place-and-route path, brought into this repository three weeks
+later, had no equivalent. **So a directive recorded against one output class did
+not reach another, nothing in this repository checked for that, and the cost was
+that he had to repeat himself.** The five output classes in `CLAUDE.md` -
+topologies, schematics, perfboard, THT PCB, SMD PCB - are five places a build
+constraint has to land, and the next one to miss this is the SMD path, where
+"room for fingers" means something different again and where nobody has asked
+him what it means.
+
+**WHAT THE PCB HAD BEFORE THE RULING, AND NOBODY CHOSE IT.** 0.25 mm. The
+placer's `--clearance` flag means *min courtyard gap*, but its default is the
+board's Default net-class **copper** clearance, so part-to-part spacing was
+silently inheriting a copper-to-copper electrical rule. Measured on a clean
+65 x 50 seed before the ruling: tightest pair 0.318 mm courtyard to courtyard,
+about 0.8 mm body to body, with 6 of 24 parts inside 0.5 mm of a neighbour.
+**A figure that arrives by inheritance from an unrelated rule is worse than one
+nobody set, because it looks deliberate.**
+
+**WHY HIS STRIPBOARD TOLERANCE DOES NOT TRANSFER, in his own words.** His built
+stripboard layouts mostly leave parts touching - 14 of 16 parts on
+`transistor-preamp-feedback` are adjacent to their nearest neighbour with no
+free hole between - and `seed-area.ts` therefore makes crowding a PREFERENCE
+rather than a refusal. The reason it can: *"Don't worry about body collisions on
+the stripboard. It's extremely flexible."* A stripboard part can be jostled
+aside; a drilled hole in a fabricated board cannot. **So the PCB gets a refusal
+where stripboard gets a tier, and reading the stripboard tolerance as the
+general rule would have been the wrong generalisation of a true measurement.**
+
+**EVIDENCE, and it is a check that could have failed.** Seeds 0-7 at
+`--clearance 2.0` on his 150 x 100 board: **3 clean of 8**, every failure a
+single named cap (C1 or C2, the known structural pair where both bridge +5V/GND
+and U1 has one +5V pin), eight decap seats on every run, and no `legality`,
+`zone_containment`, `edge_connector` or unseated part - so it meets the Task 8
+evidence bar on both of its clauses. On a clean seed the achieved minimum gap is
+exactly **2.000 mm** with nothing below it. The earlier candidate rectangles
+could not take 2.0 mm: 65 x 50 gave **0 of 8** and pulled a third cap (C4) into
+the failures; 50 x 80 gave 3 of 8. At 3.0 mm nothing produces a clean seed and
+J1 can no longer reach its edge setback. **2.0 mm therefore sits inside the
+feasible range rather than at its edge, which is the thing worth knowing if it
+is ever questioned.**
+
+**THE TRADE, because both sides of it are his.** Spacing pushes the bypass caps
+away from U1, so this rule fights `decaps.max_distance_mm` of 10.0 mm and the
+decap rule is what fails first as spacing rises. Neither is an agent's to relax
+to make the other reachable.
+
+**THE BOARD SIZE IS A DECISION, NOT A DERIVATION.** Nothing measured
+150 x 100 mm. A clean 2.0 mm placement occupies about **42.7 x 66.6 mm** of it,
+so roughly a quarter of the area carries the circuit. He was told that figure.
+It supersedes the plan's two-pass step that brought the board edge in to the
+placed extent: the size is now an input he set, not an output a task computed.
+
+**WHERE IT IS RECORDED, since this register is not what binds.**
+`circuits/pt2399-core/placement-rules.json` `separation.part_to_part` carries the
+2.0 mm with his words and both intended mechanisms;
+`circuits/pt2399-core/floorplan-intent.json` `envelope.size_mm` carries the
+150 x 100 as a SIZE and not a rect, because a rect carries an origin and an
+origin is the board coordinate that file's whole design keeps out. Commit
+`29cf4c7`.
+
+**WHAT WOULD SETTLE IT - and the criterion is not the mechanism.** The
+CRITERION: no two parts' courtyards closer than 2.0 mm on the delivered board,
+checkable without trusting the tool that placed them. The MECHANISM, which is
+this writer's guess and is recorded as such: the placer's `--clearance 2.0` as a
+hard veto, plus a KiCad `(constraint courtyard_clearance (min 2mm))` custom
+design rule as the independent second check. **The constraint is confirmed
+present in the pinned KiCad 10.0.5's own documentation; what violation type it
+REPORTS is NOT yet measured**, and that matters because `tools/pcb/drc-policy.ts`
+keys on `type` and its required-checks list is not a list an implementer may
+widen to fit. If it reports outside that list, the deviation gets recorded here
+rather than the list getting edited.
+
+**NEITHER NUMBER IS ENFORCED AT THE TIME OF WRITING**, and both files say so in
+those words rather than implying otherwise. No tool compares the declared size
+to the board's Edge.Cuts; no tool yet carries the courtyard rule. Until they do,
+these are criteria that have been authored by the right person and checked by
+nothing.
