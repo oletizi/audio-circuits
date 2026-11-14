@@ -142,6 +142,8 @@ export function readGroundTracks(root: SNode, where: string, groundNet: string):
 export interface GroundVia {
   readonly at: Pt
   readonly diameterMm: number
+  /** The two copper layers the via runs between as written; every layer between them in the stack is also pierced. */
+  readonly span: readonly [string, string]
 }
 
 export function readGroundVias(root: SNode, where: string, groundNet: string): readonly GroundVia[] {
@@ -150,9 +152,19 @@ export function readGroundVias(root: SNode, where: string, groundNet: string): r
     .map((via) => {
       const at = child(via, "at")
       if (at === undefined) throw new PourRefusal("board-shape", `${where}: a via on ${groundNet} has no (at ...).`)
+      const layers = child(via, "layers")?.atoms
+      const [first, last] = layers ?? []
+      if (first === undefined || last === undefined) {
+        throw new PourRefusal(
+          "board-shape",
+          `${where}: a via on ${groundNet} has no two-layer (layers ...) span. A via with no span is not assumed to be a ` +
+            "through via: a blind or buried one would be read as tying together fill it never touches.",
+        )
+      }
       return {
         at: [num(at.atoms[0], "via x", where), num(at.atoms[1], "via y", where)] as const,
         diameterMm: num(child(via, "size")?.atoms[0], "via size", where),
+        span: [first, last] as const,
       }
     })
 }

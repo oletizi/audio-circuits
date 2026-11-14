@@ -48,9 +48,10 @@
  *  - `continuityAroundU1` is `continuityAroundIc`, per layer, reporting COVERAGE
  *    (fraction, break lengths) and CONNECTEDNESS (electrical groups touched)
  *    side by side so that nobody has to define "continuity" (`./pour-types.ts`).
- *    It is placed from the largest clearance in the zone, the `.kicad_pro` and the
- *    `.kicad_dru` (`./pour-project.ts`), so `measurePour` reads those beside the
- *    board and `measurePourText` takes them as a parameter.
+ *    It reads NO CLEARANCE from anywhere: it walks a band of loops out from the
+ *    IC's pad extent and reports every one, with the one showing the most ground as
+ *    the headline (`./pour-continuity.ts` says why). A clearance-placed loop moved
+ *    with configuration and not with the pour, in both directions.
  *  - `narrowestBridgeMm` is a `Reading<number>` and means a join between regions;
  *    the fill's constriction is `narrowestNeckMm`.
  *  - `spokesByGroundPad` is per pad, per layer, with the zone's declared
@@ -78,8 +79,6 @@ import { parseSexpr } from "../../lib/kicad/sexpr.ts"
 import type { SNode } from "../../lib/kicad/sexpr.ts"
 import { continuityAround } from "./pour-continuity.ts"
 import { groundGroups } from "./pour-connectivity.ts"
-import { readProjectClearance } from "./pour-project.ts"
-import type { ProjectClearance } from "./pour-project.ts"
 import { NOISE_FLOOR_MM, RESOLUTION_MM, measureLayer } from "./pour-bridge.ts"
 import { bypassReturnOf, spokesOn } from "./pour-pads.ts"
 import { narrowestBridge, regionJoins, viaLinks } from "./pour-joins.ts"
@@ -87,13 +86,13 @@ import { copperLayersOf, readGroundPour } from "./pour-read.ts"
 import type { GroundPour } from "./pour-read.ts"
 import { readGroundTracks, readGroundVias, readPads } from "./pour-read-pads.ts"
 import { PourRefusal } from "./pour-refusal.ts"
-import type { PourMetrics, PourSubject, Reading } from "./pour-types.ts"
+import type { PourMetrics, PourSubject } from "./pour-types.ts"
 
 export { PourRefusal, POUR_GUARDS } from "./pour-refusal.ts"
 export type { PourGuard } from "./pour-refusal.ts"
 export { PT2399_CORE, measured, unavailable } from "./pour-types.ts"
 export type {
-  BypassKind, BypassReturn, LoopContinuity, PourMetrics, PourSubject, Reading, RegionJoin, SpokeReading, ViaLink,
+  BypassKind, BypassReturn, LoopAtOffset, LoopContinuity, PourMetrics, PourSubject, Reading, RegionJoin, SpokeReading, ViaLink,
 } from "./pour-types.ts"
 export { SAMPLE_STEP_MM } from "./pour-sample.ts"
 
@@ -113,12 +112,7 @@ function necks(pour: GroundPour): Pick<PourMetrics, "regionsByLayer" | "narrowes
 }
 
 /** Measures the pour on the text of a saved, refilled board. `where` names it in refusals. */
-export function measurePourText(
-  boardText: string,
-  where: string,
-  subject: PourSubject,
-  project: Reading<ProjectClearance>,
-): PourMetrics {
+export function measurePourText(boardText: string, where: string, subject: PourSubject): PourMetrics {
   let root: SNode
   try {
     root = parseSexpr(boardText)
@@ -137,7 +131,7 @@ export function measurePourText(
   const vias = readGroundVias(root, where, groundNet)
   const regions = necks(pour)
   const joins = regionJoins(pour, tracks)
-  const links = viaLinks(pour, vias)
+  const links = viaLinks(pour, vias, copper)
   return {
     resolutionMm: RESOLUTION_MM,
     noiseFloorMm: NOISE_FLOOR_MM,
@@ -149,7 +143,6 @@ export function measurePourText(
       pour,
       pads.filter((p) => p.ref === icReference),
       icReference,
-      project,
       groundGroups(pour, pads.filter((p) => p.net === groundNet), joins, links),
     ),
     spokesByGroundPad: spokesOn(pour, pads.filter((p) => p.net === groundNet)),
@@ -161,5 +154,5 @@ export function measurePour(boardPath: string, subject: PourSubject): PourMetric
   if (!fs.existsSync(boardPath)) {
     throw new PourRefusal("board-unreadable", `no board at ${boardPath}.`)
   }
-  return measurePourText(fs.readFileSync(boardPath, "utf8"), boardPath, subject, readProjectClearance(boardPath))
+  return measurePourText(fs.readFileSync(boardPath, "utf8"), boardPath, subject)
 }

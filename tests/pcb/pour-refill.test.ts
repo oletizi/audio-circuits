@@ -28,16 +28,10 @@ import { valueOf } from "./pour-helpers.ts"
 
 afterAll(cleanUpTempScratch)
 
-/** The `.kicad_pro` `measurePour` reads beside the board: one netclass at 0.25 mm, this project's own. */
-function writeProject(board: string): void {
-  fs.writeFileSync(board.replace(/\.kicad_pcb$/, ".kicad_pro"), JSON.stringify({ net_settings: { classes: [{ name: "Default", clearance: 0.25 }] } }))
-}
-
 function unfilledBoard(): string {
   const dir = freshTempScratch("pcb-pour-refill-")
   const board = path.join(dir, "fixture.kicad_pcb")
   fs.writeFileSync(board, fixtureBoard({ place: OPEN_PLACE, pour: {}, zoneLayers: ["F.Cu", "B.Cu"], filledLayers: [] }))
-  writeProject(board)
   return board
 }
 
@@ -92,7 +86,6 @@ test("an oval pad turned 0, 90 and 270 degrees reads the four spokes KiCad cut r
   for (const degrees of [0, 90, 270]) {
     const dir = freshTempScratch("pcb-pour-refill-")
     const board = path.join(dir, "fixture.kicad_pcb")
-    writeProject(board)
     fs.writeFileSync(
       board,
       fixtureBoard({
@@ -148,8 +141,8 @@ test("the real board with an unbroken full-board pour reads full coverage round 
   const metrics = measurePour(board, PT2399_CORE)
   const loops = valueOf(metrics.continuityAroundIc)
   for (const layer of ["F.Cu", "B.Cu"]) {
-    expect(loops.get(layer)?.coveredFraction).toBe(1)
-    expect(loops.get(layer)?.breaksMm).toEqual([])
+    expect(loops.get(layer)?.best.coveredFraction).toBe(1)
+    expect(loops.get(layer)?.best.breaksMm).toEqual([])
     expect(metrics.regionsByLayer.get(layer)).toBe(1)
   }
   expect(metrics.narrowestBridgeMm.kind).toBe("unavailable")

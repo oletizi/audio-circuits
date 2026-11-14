@@ -155,8 +155,6 @@ export interface FixtureOptions {
   readonly voidMm?: number
   /** The zone's (connect_pads ...) mode: omitted is KiCad's thermal relief. */
   readonly connect?: "yes" | "no" | "thru_hole_only"
-  /** The zone's own clearance; null writes a (connect_pads ...) with none. Defaults to 0.5. */
-  readonly clearance?: number | null
   /** `true` runs a ground track on F.Cu from U1's first ground pad to C1's ground pad; a spec places one anywhere. */
   readonly track?: boolean | TrackSpec | readonly TrackSpec[]
   /** U1 also has a pad 3 mm to the left of its first, on a net that is neither ground nor supply. */
@@ -169,6 +167,8 @@ export interface FixtureOptions {
   readonly padType?: string
   /** Turns U1 and its pads. A pad's angle in a saved board is absolute, so the pads carry the same angle as the footprint. */
   readonly u1Turn?: UTurn
+  /** Declares In1.Cu and In2.Cu after B.Cu, the order KiCad's own id order can give, so the stack order has to be worked out. */
+  readonly innerLayers?: boolean
   /** False leaves the ground zone out entirely. */
   readonly zone?: boolean
 }
@@ -238,7 +238,7 @@ export function fixtureBoard(opts: FixtureOptions): string {
     '\t\t(uuid "aaaaaaaa-0000-4000-8000-000000000001")',
     '\t\t(name "SYNTHETIC:ground")',
     "\t\t(hatch edge 0.5)",
-    `\t\t(connect_pads${opts.connect === undefined ? "" : ` ${opts.connect}`}${opts.clearance === null ? "" : ` (clearance ${opts.clearance ?? 0.5})`})`,
+    `\t\t(connect_pads${opts.connect === undefined ? "" : ` ${opts.connect}`} (clearance 0.5))`,
     "\t\t(min_thickness 0.25)",
     `\t\t${fillForm}`,
     "\t\t(polygon (pts (xy 0 0) (xy 60 0) (xy 60 40) (xy 0 40)))",
@@ -260,7 +260,7 @@ export function fixtureBoard(opts: FixtureOptions): string {
     "(kicad_pcb",
     "\t(version 20260206)",
     '\t(generator "pcbnew")',
-    '\t(layers (0 "F.Cu" signal) (2 "B.Cu" signal) (31 "F.CrtYd" user "F.Courtyard"))',
+    `\t(layers (0 "F.Cu" signal) (2 "B.Cu" signal)${opts.innerLayers === true ? ' (4 "In1.Cu" signal) (6 "In2.Cu" signal)' : ""} (31 "F.CrtYd" user "F.Courtyard"))`,
     footprint(u1Ref, u, [-2, -2, 2, 8], [pad("3", 0, "GND", shape, type, opts.u1Turn), pad("4", 6, "GND", shape, type, opts.u1Turn), ...(opts.u1ExtraPad === true ? [pad("1", 0, "IN", shape, type, opts.u1Turn, -3)] : [])], "11111111-0000-4000-8000-000000000001", opts.u1Turn?.degrees),
     capacitor(c1Ref, c, shape, opts.c1Smd === true ? "smd" : type, "22222222-0000-4000-8000-000000000001"),
     ...c2,

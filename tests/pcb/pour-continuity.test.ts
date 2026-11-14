@@ -1,75 +1,111 @@
 /**
- * THE LOOP ROUND THE IC, and the figure it reads.
+ * THE LOOPS ROUND THE IC, and what the continuity figure reads from them.
  *
- * Task 9's review measured the first version of this figure at 0.593 on a pour
- * with no break in it - the loop crossed the IC's own sixteen pad voids - and the
- * same loop 0.3 mm further out at exactly 1.0000, and no test moved when the loop
- * did. Every single-region fixture then had its courtyard at least 0.7 mm clear
- * of every void, so the normal case for a through-hole board was never built.
- * These fixtures put reliefs on every pad of the IC and then place the loop from
- * both sides: it must clear the voids, and it must not run so far out that it
- * reads a different part of the board.
+ * The figure went wrong twice. The courtyard box sat inside U1's own pad voids and
+ * read 0.593 on an unbroken pour; a loop placed from declared clearances then
+ * moved with configuration and not with the pour - 0.4221 with a second zone,
+ * 0.9563 with a pad-local clearance, 0.7746 with a conditioned rule, each on an
+ * unbroken plane. The figure now reads NO clearance: it walks a band of loops out
+ * from the pad extent, reports all of them, and takes as its headline the one with
+ * the least of the way round uncovered. These fixtures put reliefs round every pad
+ * of the IC, at three depths, and a real break across all of them.
  *
  * Numbers against fixtures, never a verdict. `./pour-fixtures.ts` has the geometry:
- * U1's pads at (30, 18) and (30, 24), copper radius 0.8, voids to 1.3, so the pad
- * extent is x 29.2..30.8 by y 17.2..24.8 and the loop, grown by clearance 0.5 plus
- * thermal gap 0.5, is x 28.2..31.8 by y 16.2..25.8.
+ * U1's pads at (30, 18) and (30, 24), copper radius 0.8, so the pad extent is
+ * x 29.2..30.8 by y 17.2..24.8, and loops are walked every 0.25 mm out to 3 mm.
+ * The real-KiCad cases for the three configurations are in `./pour-refill.test.ts`.
  */
 import { test, expect } from "bun:test"
 import type { Pt } from "../../tools/pcb/pour-geometry.ts"
+import { LOOP_BAND, padExtent } from "../../tools/pcb/pour-continuity.ts"
+import type { BoardPad } from "../../tools/pcb/pour-read-pads.ts"
 import { OPEN_PLACE, RECTANGLE, fixtureBoard } from "./pour-fixtures.ts"
-import { measured, unavailable } from "../../tools/pcb/pour.ts"
-import type { ProjectClearance } from "../../tools/pcb/pour-project.ts"
 import { measure, near, reasonOf, valueOf } from "./pour-helpers.ts"
 
 const FOUR = { "U1-3": 4, "U1-4": 4, "C1-2": 4 } as const
 
-function loopOf(text: string, layer = "F.Cu") {
-  const loop = valueOf(measure(text).continuityAroundIc).get(layer)
-  if (loop === undefined) throw new Error(`no continuity reading on ${layer}`)
-  return loop
+function continuityOf(text: string, layer = "F.Cu") {
+  const loops = valueOf(measure(text).continuityAroundIc).get(layer)
+  if (loops === undefined) throw new Error(`no continuity reading on ${layer}`)
+  return loops
 }
 
-test("on an unbroken pour with a relief round every pad of the IC the loop reads full coverage and no break", () => {
-  const loop = loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, spokes: FOUR }))
-  expect(loop.coveredFraction).toBe(1)
-  expect(loop.breaksMm).toEqual([])
-  expect(loop.fillPiecesTouched).toBe(1)
+const bestOf = (text: string, layer = "F.Cu") => continuityOf(text, layer).best
+
+// --- The band: an unbroken pour, with the IC's own voids at three depths -----
+
+test("on an unbroken pour with a relief round every pad the headline loop reads full coverage, and the loop at the pad extent shows the IC's own voids", () => {
+  const loops = continuityOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, spokes: FOUR }))
+  expect(loops.best.coveredFraction).toBe(1)
+  expect(loops.best.breaksMm).toEqual([])
+  expect(loops.best.uncoveredMm).toBe(0)
+  // The loop at the pad extent itself crosses the voids; that is the 0.593 the first version reported as the pour.
+  const inner = loops.profile[0]
+  expect(inner?.offsetMm).toBe(0)
+  expect(inner?.coveredFraction).toBeLessThan(0.9)
+  // And the band is the one stated, walked in full.
+  expect(loops.bandMm).toEqual({ fromMm: 0, toMm: 3, stepMm: 0.25 })
+  expect(loops.profile.map((l) => l.offsetMm)).toEqual([0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3])
+  expect(LOOP_BAND).toEqual(loops.bandMm)
 })
 
-test("the loop is placed 1.0 mm outside the pad extent: the zone's clearance 0.5 plus its thermal gap 0.5", () => {
-  // The two are each 0.5, so a loop placed by either alone reads 0.5 and is caught; only the sum reads 1.0.
-  expect(loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, spokes: FOUR })).offsetMm).toBe(1)
-  expect(loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, spokes: FOUR, clearance: 0.3 })).offsetMm).toBeCloseTo(0.8, 9)
+test("a deeper void - what a larger clearance cuts - still leaves a loop in the band clear of it, with no clearance read anywhere", () => {
+  // Voids reaching 1.2 mm past the pad copper: the loops nearer than that read them, and the headline is one beyond.
+  const loops = continuityOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, spokes: FOUR, voidMm: 1.2 }))
+  expect(loops.best.coveredFraction).toBe(1)
+  expect(loops.best.offsetMm).toBeGreaterThanOrEqual(1.25)
+  expect(loops.profile[0]?.coveredFraction).toBeLessThan(0.9)
 })
 
-test("the loop is not placed so far out that it reads a neighbouring part of the board", () => {
-  // A slot from x 31.9 to 32.4: clear of the loop's right edge at 31.8, in the way of one at 32.1 or beyond.
-  const slotted: readonly (readonly Pt[])[] = [
-    [[0, 0], [31.9, 0], [31.9, 40], [0, 40]],
-    [[32.4, 0], [60, 0], [60, 40], [32.4, 40]],
-  ]
-  const loop = loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": slotted } }))
-  expect(loop.coveredFraction).toBe(1)
-  expect(loop.fillPiecesTouched).toBe(1)
+test("a void deeper than the band reaches is read as a break on every loop: the band's limit is real, and the profile shows it", () => {
+  // One pad's void reaching 3.5 mm past its copper; the outermost loop is 3.0 mm out, 3.8 mm from the pad's centre.
+  const loops = continuityOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, spokes: { "U1-3": 4 }, voidMm: 3.5 }))
+  for (const loop of loops.profile) expect(loop.coveredFraction).toBeLessThan(1)
+  expect(loops.best.coveredFraction).toBeLessThan(1)
 })
 
-test("a slot across the loop is a break of its own width on each edge it crosses", () => {
-  // The slot at x 30.52..31.51 cuts the loop's top and bottom edges, 0.99 mm each. The loop is 26.4 mm round.
-  const split: readonly (readonly Pt[])[] = [
-    [[0, 0], [30.52, 0], [30.52, 40], [0, 40]],
-    [[31.51, 0], [60, 0], [60, 40], [31.51, 40]],
-  ]
-  const loop = loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": split } }))
-  expect(loop.breaksMm.length).toBe(2)
-  for (const b of loop.breaksMm) near(b, 0.99, 0.06)
-  near(loop.coveredFraction, 1 - 1.98 / 26.4, 0.01)
-  // The covered parts of the loop are on two separate pieces of copper.
-  expect(loop.fillPiecesTouched).toBe(2)
+test("nothing a clearance could be read from changes the figure: the zone's own value, or a second zone with another", () => {
+  // Voids reaching 0.9 mm past the pad: a loop placed from a clearance of 0.75 would sit inside them (it read 0.6680), one placed from 1.0 would not.
+  const base = fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, spokes: FOUR, voidMm: 0.9 })
+  const wide = base.replace("(clearance 0.5)", "(clearance 9)")
+  const narrow = base.replace("(clearance 0.5)", "(clearance 0.05)")
+  expect(wide).not.toBe(base)
+  expect(JSON.stringify(continuityOf(wide))).toBe(JSON.stringify(continuityOf(base)))
+  expect(JSON.stringify(continuityOf(narrow))).toBe(JSON.stringify(continuityOf(base)))
+  // A second ground zone on the layer, 20 mm from the IC, declaring a clearance of its own.
+  const second = [
+    '\t(zone (net "GND") (layers "F.Cu") (uuid "dddddddd-0000-4000-8000-000000000001") (name "SYNTHETIC:second-ground")',
+    "\t\t(connect_pads (clearance 0.05)) (fill yes (thermal_gap 0.5) (thermal_bridge_width 0.5))",
+    "\t\t(polygon (pts (xy 50 0) (xy 58 0) (xy 58 8) (xy 50 8)))",
+    '\t\t(filled_polygon (layer "F.Cu") (pts (xy 50 0) (xy 58 0) (xy 58 8) (xy 50 8))))',
+  ].join("\n")
+  const withSecond = fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, spokes: FOUR, voidMm: 0.9, extraZones: [second] })
+  expect(continuityOf(withSecond).best).toEqual(continuityOf(base).best)
 })
 
-test("one break and fifty breaks are told apart, though they cover the same fraction", () => {
-  // The same 1.0 mm of loop lost on each of the top and bottom edges: once as one 1.0 mm slot, once as five 0.2 mm gaps.
+// --- A real break depresses the whole band ----------------------------------
+
+const SPLIT: readonly (readonly Pt[])[] = [
+  [[0, 0], [30.52, 0], [30.52, 40], [0, 40]],
+  [[31.51, 0], [60, 0], [60, 40], [31.51, 40]],
+]
+
+test("a slot across the pour is a break on every loop clear of it, of its own width on each edge it crosses", () => {
+  // The slot x 30.52..31.51 cuts the top and bottom edges, 0.99 mm each, of every loop whose right edge is past it.
+  const loops = continuityOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT } }))
+  expect(loops.best.breaksMm.length).toBe(2)
+  for (const b of loops.best.breaksMm) near(b, 0.99, 0.06)
+  near(loops.best.uncoveredMm, 1.98, 0.1)
+  // The nearest such loop wins the tie: its right edge at 30.8 + 0.75 = 31.55 is the first past the slot.
+  expect(loops.best.offsetMm).toBe(0.75)
+  // Not one loop in the band is whole.
+  for (const loop of loops.profile) expect(loop.uncoveredMm).toBeGreaterThan(1.9)
+  expect(loops.best.fillPiecesTouched).toBe(2)
+  expect(loops.best.connectedGroupsTouched).toBe(2)
+})
+
+test("one break and many breaks are told apart, though they cover a similar fraction", () => {
+  // One 1.0 mm slot at x 30..31, against six 0.2 mm gaps between x 28.3 and 31.75.
   const one: readonly (readonly Pt[])[] = [
     [[0, 0], [30.0, 0], [30.0, 40], [0, 40]],
     [[31.0, 0], [60, 0], [60, 40], [31.0, 40]],
@@ -82,58 +118,27 @@ test("one break and fifty breaks are told apart, though they cover the same frac
     shredded.push([[x, 0], [x1, 0], [x1, 40], [x, 40]])
   }
   shredded.push([[31.75, 0], [60, 0], [60, 40], [31.75, 40]])
-  const a = loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": one } }))
-  const b = loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": shredded } }))
+  const a = bestOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": one } }))
+  const b = bestOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": shredded } }))
   expect(a.breaksMm.length).toBe(2)
-  expect(b.breaksMm.length).toBeGreaterThanOrEqual(10)
+  expect(b.breaksMm.length).toBeGreaterThan(a.breaksMm.length)
   expect(Math.max(...b.breaksMm)).toBeLessThan(0.3)
   expect(b.fillPiecesTouched).toBeGreaterThan(a.fillPiecesTouched)
-  // And they are NOT told apart by the covered fraction alone, which is the point of reporting the rest.
-  near(b.coveredFraction, a.coveredFraction, 0.03)
+  near(b.coveredFraction, a.coveredFraction, 0.08)
+  // Further out the same pour is cut into many more pieces, and the profile carries them.
+  const profile = continuityOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": shredded } })).profile
+  expect(Math.max(...profile.map((l) => l.breaksMm.length))).toBeGreaterThanOrEqual(8)
 })
 
-test("a zone that declares no clearance gives no loop, and says why; the other figures stand", () => {
-  const metrics = measure(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, spokes: FOUR, clearance: null }))
-  expect(reasonOf(metrics.continuityAroundIc)).toContain("clearance")
-  expect(valueOf(metrics.spokesByGroundPad).size).toBe(3)
-})
-
-test("the loop is placed round ALL of the IC's pads, whatever their nets: a pad on a signal net widens it", () => {
-  // A band of no copper at x 28.0..28.4 cuts the loop's left edge (x 28.2) when only the two ground pads are counted.
-  // With a third pad 3 mm to the left the loop's left edge is at 25.2, clear of the band, and the band cuts only the top and bottom.
-  const banded: readonly (readonly Pt[])[] = [
-    [[0, 0], [28.0, 0], [28.0, 40], [0, 40]],
-    [[28.4, 0], [60, 0], [60, 40], [28.4, 40]],
-  ]
-  const loop = loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": banded }, u1ExtraPad: true }))
-  expect(loop.breaksMm.length).toBe(2)
-  for (const b of loop.breaksMm) near(b, 0.4, 0.06)
-})
-
-test("a pad's size and the turn of its footprint change the loop: the same band reads differently for a 3.0 mm oval turned and not", () => {
-  const near_ = (text: string) => loopOf(text)
-  // The band across x 29.0..29.2 cuts the left edge of a loop grown from narrow (1.6 mm) pads and not that of a loop grown from wide ones.
-  const band: readonly (readonly Pt[])[] = [
-    [[0, 0], [29.0, 0], [29.0, 40], [0, 40]],
-    [[29.2, 0], [60, 0], [60, 40], [29.2, 40]],
-  ]
-  const upright = near_(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": band }, padShape: "oval", u1Turn: { degrees: 90, padSize: "3.0 1.6" } }))
-  const flat = near_(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": band }, padShape: "oval", u1Turn: { degrees: 0, padSize: "3.0 1.6" } }))
-  // Turned 90 degrees the pads are 1.6 wide in x and the footprint also turns; at 0 they are 3.0 wide in x.
-  // Their loops are different sizes, so the same band reads differently. (That they differ is all this asserts:
-  // the angle and sign of the rotation are pinned against hand-worked figures in ./pour-geometry.test.ts.)
-  expect(upright.breaksMm).not.toEqual(flat.breaksMm)
-})
-
-test("breaks are listed longest first, and the longest is the one a reader looks at", () => {
-  // A vertical gap x 30.0..31.0 cuts the top and bottom edges (1.0 mm each); a horizontal gap y 20.0..20.3 cuts the left and right (0.3 each).
+test("breaks are listed longest first", () => {
+  // A vertical gap x 30.0..31.0 cuts top and bottom (1.0 mm each); a horizontal gap y 20.0..20.3 cuts left and right (0.3 each).
   const quadrants: readonly (readonly Pt[])[] = [
     [[0, 0], [30.0, 0], [30.0, 20.0], [0, 20.0]],
     [[31.0, 0], [60, 0], [60, 20.0], [31.0, 20.0]],
     [[0, 20.3], [30.0, 20.3], [30.0, 40], [0, 40]],
     [[31.0, 20.3], [60, 20.3], [60, 40], [31.0, 40]],
   ]
-  const breaks = loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": quadrants } })).breaksMm
+  const breaks = bestOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": quadrants } })).breaksMm
   expect(breaks.length).toBe(4)
   near(breaks[0], 1.0, 0.06)
   near(breaks[1], 1.0, 0.06)
@@ -143,74 +148,74 @@ test("breaks are listed longest first, and the longest is the one a reader looks
 
 test("a loop with no copper under it is one break the length of the loop, covered 0, touching nothing", () => {
   const far: readonly (readonly Pt[])[] = [[[0, 0], [5, 0], [5, 5], [0, 5]]]
-  const loop = loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": far } }))
-  expect(loop.coveredFraction).toBe(0)
-  expect(loop.fillPiecesTouched).toBe(0)
-  expect(loop.breaksMm.length).toBe(1)
-  near(loop.breaksMm[0], 26.4, 0.1)
+  const loops = continuityOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": far } }))
+  expect(loops.best.coveredFraction).toBe(0)
+  expect(loops.best.fillPiecesTouched).toBe(0)
+  expect(loops.best.connectedGroupsTouched).toBe(0)
+  // Every loop is wholly uncovered, so the nearest wins: the pad extent's own 18.4 mm round.
+  expect(loops.best.offsetMm).toBe(0)
+  expect(loops.best.breaksMm.length).toBe(1)
+  near(loops.best.breaksMm[0], 18.4, 0.1)
 })
 
 test("a break that runs across the start of the walk is one break, not two", () => {
-  // The band x 28.0..28.4 holds the loop's whole left edge (x 28.2) and the first and last 0.2 mm of the top and bottom edges.
-  const band: readonly (readonly Pt[])[] = [
-    [[0, 0], [28.0, 0], [28.0, 40], [0, 40]],
-    [[28.4, 0], [60, 0], [60, 40], [28.4, 40]],
-  ]
-  const loop = loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": band } }))
-  expect(loop.breaksMm.length).toBe(1)
-  near(loop.breaksMm[0], 10.0, 0.15)
+  // An L-shaped pour with x < 30, y < 18 removed: it holds the walk's start corner (x0, y0) of every loop.
+  const elbow: readonly (readonly Pt[])[] = [[[30, 0], [60, 0], [60, 40], [0, 40], [0, 18], [30, 18]]]
+  const best = bestOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": elbow } }))
+  expect(best.breaksMm.length).toBe(1)
+  // At the pad extent: 0.8 mm of top edge and 0.8 mm of left edge either side of the corner.
+  near(best.breaksMm[0], 1.6, 0.1)
 })
 
-// --- The clearance that applies is the largest the project declares ----------
-
-test("a netclass clearance larger than the zone's moves the loop out with it, and an unbroken pour reads whole", () => {
-  // The voids reach 1.2 mm past the pad copper - what a 0.9 mm netclass clearance plus margin cuts - and the zone itself declares 0.5.
-  // From the zone's clearance alone the loop would sit 1.0 mm out, inside the void, and read the IC's own pad voids as breaks.
-  const text = fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, spokes: FOUR, voidMm: 1.2 })
-  const zoneOnly = loopOf(text)
-  expect(zoneOnly.offsetMm).toBe(1)
-  expect(zoneOnly.coveredFraction).toBeLessThan(1)
-  const project = measured({ maxMm: 0.9, sources: [{ source: "test netclass", mm: 0.9 }] })
-  const loop = valueOf(measure(text, project).continuityAroundIc).get("F.Cu")
-  expect(loop?.offsetMm).toBeCloseTo(1.4, 9)
-  expect(loop?.coveredFraction).toBe(1)
-  expect(loop?.breaksMm).toEqual([])
-})
-
-test("a project clearance below the zone's does not pull the loop in", () => {
-  expect(loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, spokes: FOUR })).offsetMm).toBe(1)
-})
-
-test("a project whose clearance could not be read gives no loop and says why; the other figures stand", () => {
-  const none = unavailable<ProjectClearance>("SYNTHETIC: no project")
-  const metrics = measure(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, spokes: FOUR }), none)
-  expect(reasonOf(metrics.continuityAroundIc)).toContain("no project")
+test("with no footprint of the IC's reference there is nothing to walk round, and the other figures stand", () => {
+  const metrics = measure(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, spokes: FOUR, refs: { u1: "U9" } }))
+  expect(reasonOf(metrics.continuityAroundIc)).toContain("U1")
   expect(valueOf(metrics.spokesByGroundPad).size).toBe(3)
+})
+
+// --- What the loops are walked round -----------------------------------------
+
+function pad(x: number, y: number, hx: number, hy: number, degrees = 0): BoardPad {
+  return { ref: "U1", number: "1", type: "thru_hole", net: null, layers: ["F.Cu"], outline: { centre: [x, y], hx, hy, radius: Math.min(hx, hy), degrees } }
+}
+
+test("the pad extent is the box round the copper of every pad, whatever its net, size or turn", () => {
+  const box = padExtent([pad(10, 10, 0.8, 0.8), pad(10, 16, 0.8, 0.8)])
+  expect([box.x0, box.y0, box.x1, box.y1].map((v) => Math.round(v * 1000) / 1000)).toEqual([9.2, 9.2, 10.8, 16.8])
+  // A 3.0 x 1.6 oval is 3.0 wide, and the same pad turned 90 degrees is 3.0 tall.
+  const flat = padExtent([pad(10, 10, 1.5, 0.8, 0)])
+  const upright = padExtent([pad(10, 10, 1.5, 0.8, 90)])
+  expect([flat.x1 - flat.x0, flat.y1 - flat.y0].map((v) => Math.round(v * 100) / 100)).toEqual([3, 1.6])
+  expect([upright.x1 - upright.x0, upright.y1 - upright.y0].map((v) => Math.round(v * 100) / 100)).toEqual([1.6, 3])
+})
+
+test("an IC pad on a signal net widens the extent the loops are walked from", () => {
+  const withSignal = bestOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT }, u1ExtraPad: true }))
+  const without = bestOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT } }))
+  // The extra pad 3 mm to the left makes every loop longer, so the same two slot crossings are the same length on a longer walk.
+  expect(withSignal.breaksMm.length).toBe(2)
+  expect(withSignal.coveredFraction).toBeGreaterThan(without.coveredFraction)
 })
 
 // --- Coverage and connectedness, side by side --------------------------------
 
-const SPLIT: readonly (readonly Pt[])[] = [
-  [[0, 0], [30.52, 0], [30.52, 40], [0, 40]],
-  [[31.51, 0], [60, 0], [60, 40], [31.51, 40]],
-]
 const via = (x: number): string =>
   `\t(via (at ${x} 10) (size 0.8) (drill 0.4) (layers "F.Cu" "B.Cu") (net "GND") (uuid "eeeeeeee-0000-4000-8000-000000000001"))`
 
 test("two pieces of fill the loop touches are isolated when nothing joins them: pieces 2, groups 2", () => {
-  const loop = loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT } }))
-  expect(loop.fillPiecesTouched).toBe(2)
-  expect(loop.connectedGroupsTouched).toBe(2)
+  const best = bestOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT } }))
+  expect(best.fillPiecesTouched).toBe(2)
+  expect(best.connectedGroupsTouched).toBe(2)
 })
 
 test("the same two pieces are one group when a ground track joins them: pieces 2, groups 1", () => {
-  const loop = loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT }, track: { from: [20, 10], to: [40, 10], layer: "F.Cu" } }))
-  expect(loop.fillPiecesTouched).toBe(2)
-  expect(loop.connectedGroupsTouched).toBe(1)
+  const best = bestOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT }, track: { from: [20, 10], to: [40, 10], layer: "F.Cu" } }))
+  expect(best.fillPiecesTouched).toBe(2)
+  expect(best.connectedGroupsTouched).toBe(1)
 })
 
 test("vias join them through the other layer's fill, but only when each piece has one", () => {
-  const board = (vias: readonly string[]) => loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT, "B.Cu": [RECTANGLE] }, extraZones: vias, padType: "smd" }))
+  const board = (vias: readonly string[]) => bestOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT, "B.Cu": [RECTANGLE] }, extraZones: vias, padType: "smd" }))
   // One via ties only the right piece to B.Cu: the left is still on its own.
   expect(board([via(45)]).connectedGroupsTouched).toBe(2)
   expect(board([via(45), via(10)]).connectedGroupsTouched).toBe(1)
@@ -218,8 +223,18 @@ test("vias join them through the other layer's fill, but only when each piece ha
 })
 
 test("through-hole ground pads join the fill they sit in on every layer, so a solid back plane joins a split front", () => {
-  // Same board, with through-hole pads: U1's ground pads touch F.Cu's left piece and B.Cu; C1's touches F.Cu's right piece and B.Cu.
-  const loop = loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT, "B.Cu": [RECTANGLE] } }))
-  expect(loop.fillPiecesTouched).toBe(2)
-  expect(loop.connectedGroupsTouched).toBe(1)
+  const best = bestOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT, "B.Cu": [RECTANGLE] } }))
+  expect(best.fillPiecesTouched).toBe(2)
+  expect(best.connectedGroupsTouched).toBe(1)
+})
+
+// --- The result carries numbers and nothing else ----------------------------
+
+test("a continuity reading carries measurements and no verdict, down to the loop: its fields are pinned", () => {
+  const loops = continuityOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, spokes: FOUR }))
+  expect(Object.keys(loops).sort()).toEqual(["bandMm", "best", "profile"])
+  expect(Object.keys(loops.bandMm).sort()).toEqual(["fromMm", "stepMm", "toMm"])
+  const fields = ["breaksMm", "connectedGroupsTouched", "coveredFraction", "fillPiecesTouched", "offsetMm", "uncoveredMm"]
+  expect(Object.keys(loops.best).sort()).toEqual(fields)
+  for (const loop of loops.profile) expect(Object.keys(loop).sort()).toEqual(fields)
 })

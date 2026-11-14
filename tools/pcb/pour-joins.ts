@@ -12,14 +12,13 @@
  *
  * A TRACK JOINS REGIONS when its centreline touches two or more separate
  * polygons on its layer, either by itself or through a chain of ground tracks
- * that share endpoints (within 1 micron). Its width is reported as the narrowest
- * track in the chain, which is NOT necessarily the bottleneck of the path
- * through it: a chain is not walked as a graph. An arc is read as a polyline
- * through its start, midpoint and end, so one that bulges past them is not
- * followed round the bulge.
+ * that share endpoints (within 1 micron). Its width is the bottleneck at which the
+ * chain makes them one (below). An arc is read as a polyline through its start,
+ * midpoint and end, so one that bulges past them is not followed round the bulge.
  *
  * A VIA LINKS when its centre lies in fill of two or more different polygons
- * across the pour layers; this is what ties a back-layer island to a front-layer
+ * on the layers it pierces (its declared span and everything between, in stack
+ * order); this is what ties a back-layer island to a front-layer
  * pour. It carries no width, because a via's neck is not a track width and
  * reporting its diameter as one would be a number with the wrong meaning.
  *
@@ -42,6 +41,7 @@
  * and nearest-approach geometry as well, that is the point to revisit.
  */
 import type { Pt } from "./pour-geometry.ts"
+import { PourRefusal } from "./pour-refusal.ts"
 import type { GroundPour } from "./pour-read.ts"
 import type { GroundTrack, GroundVia } from "./pour-read-pads.ts"
 import { SAMPLE_STEP_MM, polygonAt } from "./pour-sample.ts"
@@ -68,46 +68,86 @@ function endpoints(track: GroundTrack): readonly Pt[] {
   return first === undefined || last === undefined ? [] : [first, last]
 }
 
+/**
+ * Ground track chains that join two or more separate pieces of fill on a layer,
+ * each with the width at which they are joined.
+ *
+ * **THE WIDTH IS THE BOTTLENECK, NOT THE NARROWEST TRACK ANYWHERE IN THE CHAIN.**
+ * Tracks are switched on from the widest down, each joining the tracks it shares an
+ * endpoint with and the fill it touches; the width reported is that of the track
+ * whose switching-on first made all the chain's pieces of fill one. A dead-end stub
+ * hanging off a bridge never joins two pieces of fill, so it never sets the width:
+ * two 0.5 mm tracks bridging two pieces still read 0.5 with a 0.2 mm stub off the
+ * shared endpoint, where "the narrowest track in the chain" read 0.2.
+ */
 export function regionJoins(pour: GroundPour, tracks: readonly GroundTrack[]): readonly RegionJoin[] {
   const joins: RegionJoin[] = []
   for (const layer of pour.layers) {
     const here = tracks.filter((t) => t.layer === layer)
+    const order = here.map((_, i) => i).sort((i, j) => (here[j]?.widthMm ?? 0) - (here[i]?.widthMm ?? 0))
+    // Chains are components of TRACKS joined by shared endpoints. They are deliberately not merged through the
+    // fill they touch: two separate tracks bridging the same two pieces are two bridges, each at its own width.
     const parent = here.map((_, i) => i)
+    const fill = here.map((t) => {
+      const ids = new Set<number>()
+      for (const p of alongPath(t.path)) {
+        const id = polygonAt(pour, layer, p)
+        if (id >= 0) ids.add(id)
+      }
+      return ids
+    })
+    const bottleneck = new Map<number, number>()
     const find = (i: number): number => ((parent[i] ?? i) === i ? i : (parent[i] = find(parent[i] ?? i)))
-    for (let i = 0; i < here.length; i += 1) {
-      for (let j = i + 1; j < here.length; j += 1) {
-        const a = here[i]
-        const b = here[j]
-        if (a === undefined || b === undefined) continue
-        const shared = endpoints(a).some((p) => endpoints(b).some((q) => Math.hypot(p[0] - q[0], p[1] - q[1]) <= SHARED_ENDPOINT_MM))
-        if (shared) parent[find(i)] = find(j)
+    const active: number[] = []
+    for (const i of order) {
+      const track = here[i]
+      if (track === undefined) continue
+      active.push(i)
+      // A single track that already touches two pieces of fill joins them at its own width.
+      if ((fill[i]?.size ?? 0) >= 2) bottleneck.set(i, track.widthMm)
+      for (const j of active) {
+        const other = here[j]
+        if (j === i || other === undefined || find(i) === find(j)) continue
+        const shared = endpoints(track).some((p) => endpoints(other).some((q) => Math.hypot(p[0] - q[0], p[1] - q[1]) <= SHARED_ENDPOINT_MM))
+        if (!shared) continue
+        const [ra, rb] = [find(i), find(j)]
+        const [fa, fb] = [fill[ra] ?? new Set<number>(), fill[rb] ?? new Set<number>()]
+        const union = new Set([...fa, ...fb])
+        // This track is what first joins pieces of fill that neither side joined alone: that is the width.
+        const event = union.size > fa.size && union.size > fb.size
+        const carried = bottleneck.get(ra) ?? bottleneck.get(rb)
+        parent[ra] = rb
+        fill[rb] = union
+        const width = event ? track.widthMm : carried
+        if (width !== undefined) bottleneck.set(rb, width)
       }
     }
-    const groups = new Map<number, number[]>()
-    here.forEach((_, i) => groups.set(find(i), [...(groups.get(find(i)) ?? []), i]))
-    for (const members of groups.values()) {
-      const touched = new Set<number>()
-      let width = Infinity
-      for (const i of members) {
-        const track = here[i]
-        if (track === undefined) continue
-        width = Math.min(width, track.widthMm)
-        for (const p of alongPath(track.path)) {
-          const id = polygonAt(pour, layer, p)
-          if (id >= 0) touched.add(id)
-        }
-      }
-      if (touched.size >= 2) joins.push({ layer, polygons: [...touched].sort((a, b) => a - b), widthMm: width })
+    for (const root of new Set(here.map((_, i) => find(i)))) {
+      const ids = fill[root] ?? new Set<number>()
+      const width = bottleneck.get(root)
+      if (ids.size >= 2 && width !== undefined) joins.push({ layer, polygons: [...ids].sort((x, y) => x - y), widthMm: width })
     }
   }
   return joins
 }
 
-export function viaLinks(pour: GroundPour, vias: readonly GroundVia[]): readonly ViaLink[] {
+/**
+ * Ground vias whose centre lies in fill of two or more polygons ON THE LAYERS THE
+ * VIA PIERCES: its declared span and every pour layer between its two ends in the
+ * stack. A blind via from F.Cu to In1.Cu does not touch a B.Cu pour, and linking it
+ * to one would join pieces of fill that nothing joins.
+ */
+export function viaLinks(pour: GroundPour, vias: readonly GroundVia[], copperStack: readonly string[]): readonly ViaLink[] {
   const links: ViaLink[] = []
   for (const via of vias) {
-    const ids = new Set(pour.layers.map((layer) => polygonAt(pour, layer, via.at)).filter((id) => id >= 0))
-    if (ids.size >= 2) links.push({ at: via.at, polygons: [...ids].sort((a, b) => a - b) })
+    const from = copperStack.indexOf(via.span[0])
+    const to = copperStack.indexOf(via.span[1])
+    if (from === -1 || to === -1) {
+      throw new PourRefusal("board-shape", `a ground via spans ${via.span[0]} to ${via.span[1]}, and one of them is not a copper layer of this board.`)
+    }
+    const pierced = copperStack.slice(Math.min(from, to), Math.max(from, to) + 1)
+    const ids = new Set(pour.layers.filter((l) => pierced.includes(l)).map((layer) => polygonAt(pour, layer, via.at)).filter((id) => id >= 0))
+    if (ids.size >= 2) links.push({ at: via.at, polygons: [...ids].sort((x, y) => x - y) })
   }
   return links
 }

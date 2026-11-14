@@ -92,6 +92,20 @@ test("a box ring covers all four sides at the stated spacing", () => {
   expect(ring.every(on)).toBe(true)
 })
 
+test("a point on an edge belongs to exactly one of two polygons that share it: the left edge is in, the right edge is out", () => {
+  const left: readonly Pt[] = [[0, 0], [5, 0], [5, 10], [0, 10]]
+  const right: readonly Pt[] = [[5, 0], [10, 0], [10, 10], [5, 10]]
+  for (const y of [1, 5, 9.5]) {
+    const inLeft = pointInPolygon([5, y], left)
+    const inRight = pointInPolygon([5, y], right)
+    expect([inLeft, inRight].filter(Boolean).length).toBe(1)
+  }
+  // The convention itself, so a change to it is a change someone meant: on a square's own edges, x = 0 is in and x = 10 is out.
+  const square: readonly Pt[] = [[0, 0], [10, 0], [10, 10], [0, 10]]
+  expect(pointInPolygon([0, 5], square)).toBe(true)
+  expect(pointInPolygon([10, 5], square)).toBe(false)
+})
+
 test("point-in-polygon is even-odd: the hole of a keyholed outline is outside", () => {
   const keyholed: readonly Pt[] = [
     [0, 0], [10, 0], [10, 10], [0, 10],

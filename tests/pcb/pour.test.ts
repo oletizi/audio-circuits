@@ -21,7 +21,7 @@ import { measureLayer } from "../../tools/pcb/pour-bridge.ts"
 import { measurePour, measurePourText, POUR_GUARDS, PT2399_CORE } from "../../tools/pcb/pour.ts"
 import type { PourSubject } from "../../tools/pcb/pour.ts"
 import { LEFT_PLACE, OPEN_PLACE, RECTANGLE, dumbbell, fixtureBoard } from "./pour-fixtures.ts"
-import { QUARTER_MM, measure, near, reasonOf, refusalOf, seenGuards, valueOf } from "./pour-helpers.ts"
+import { measure, near, reasonOf, refusalOf, seenGuards, valueOf } from "./pour-helpers.ts"
 
 /** One spoke is 0.5 mm of arc on a ring of radius 1.05 mm. */
 const PER_SPOKE = 0.5 / (2 * Math.PI * 1.05)
@@ -160,6 +160,21 @@ test("a zone with no thermal gap is refused instead of counting spokes on an ass
   expect(refusal.message).toContain("thermal_gap")
 })
 
+test("two ground zones on one layer that declare different thermal gaps are refused, not averaged or picked between", () => {
+  const second = [
+    '\t(zone (net "GND") (layers "F.Cu") (uuid "dddddddd-0000-4000-8000-000000000001") (name "SYNTHETIC:second-ground")',
+    "\t\t(fill yes (thermal_gap 0.7) (thermal_bridge_width 0.5))",
+    "\t\t(polygon (pts (xy 0 0) (xy 5 0) (xy 5 5) (xy 0 5)))",
+    '\t\t(filled_polygon (layer "F.Cu") (pts (xy 0 0) (xy 5 0) (xy 5 5) (xy 0 5))))',
+  ].join("\n")
+  const refusal = refusalOf(() => measure(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, extraZones: [second] })))
+  expect(refusal.guard).toBe("board-shape")
+  expect(refusal.message).toContain("0.7")
+  // The same gap on both is measured, not refused (its fill lies inside the first, so it adds no region).
+  const same = second.replace("thermal_gap 0.7", "thermal_gap 0.5")
+  expect(measure(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, extraZones: [same] })).regionsByLayer.get("F.Cu")).toBe(1)
+})
+
 test("an arc in a filled polygon, a pad shape that is not read, a back-side footprint, a repeated pad key and a nameless footprint are each refused", () => {
   const text = fixtureBoard(GOOD)
   const arc = text.replace('(filled_polygon (layer "F.Cu") (pts (xy 0 0)', '(filled_polygon (layer "F.Cu") (pts (arc (start 0 0) (mid 1 1) (end 2 0)) (xy 0 0)')
@@ -196,12 +211,12 @@ test("a board with no U1, no through-hole ground pad or no bypass capacitor stil
 
   const noCap = measure(fixtureBoard({ ...GOOD, refs: { c1: "X1" } }))
   expect(reasonOf(noCap.bypassReturn)).toContain("bypass")
-  expect(valueOf(noCap.continuityAroundIc).get("F.Cu")?.coveredFraction).toBe(1)
+  expect(valueOf(noCap.continuityAroundIc).get("F.Cu")?.best.coveredFraction).toBe(1)
 
   // A surface-mount build: no through-hole ground pad, and all the other figures stand.
   const smd = measure(fixtureBoard({ ...GOOD, padType: "smd" }))
   expect(reasonOf(smd.spokesByGroundPad)).toContain("through-hole")
-  expect(valueOf(smd.continuityAroundIc).get("F.Cu")?.coveredFraction).toBe(1)
+  expect(valueOf(smd.continuityAroundIc).get("F.Cu")?.best.coveredFraction).toBe(1)
   expect(smd.regionsByLayer.get("F.Cu")).toBe(1)
 })
 
@@ -220,7 +235,7 @@ test("a board whose rails are not GND and +5V is measured against the nets the c
 })
 
 function measureWith(text: string, subject: PourSubject) {
-  return measurePourText(text, "fixture", subject, QUARTER_MM)
+  return measurePourText(text, "fixture", subject)
 }
 
 // --- The result carries numbers and nothing else -----------------------------

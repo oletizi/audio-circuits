@@ -12,10 +12,13 @@
  * hand a reader a number that looks like an answer and is not.
  *
  * What is joined, here: polygons a ground track chain touches (`./pour-joins.ts`),
- * polygons a ground via sits in on two layers, and the polygons the ring round
- * each ground pad touches on the layers that pad is on. Anything that joins
- * ground by a route this tool does not read is not counted, so `connectedGroups`
- * can overstate separation but never joins two pieces that nothing joins.
+ * polygons a ground via sits in on the layers it pierces, and the polygons the ring
+ * round each ground pad touches on the layers that pad is on. Anything that joins
+ * ground by a route this tool does not read is not counted, so the groups figure
+ * errs toward separation. It is not a guarantee: it joins only through copper it
+ * reads, and two approximations can join pieces the copper does not - an arc track
+ * is read as a polyline through its start, midpoint and end, so its chord can touch
+ * fill its curve does not, and a track is tested by its centreline alone.
  */
 import type { GroundPour } from "./pour-read.ts"
 import type { BoardPad } from "./pour-read-pads.ts"

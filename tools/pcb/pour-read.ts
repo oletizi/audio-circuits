@@ -40,8 +40,6 @@ export interface PourPolygon {
 /** What the ground zone filling one layer declares. */
 export interface ZoneSettings {
   readonly thermalGapMm: number
-  /** The zone's own copper-to-foreign-copper clearance, or null if its (connect_pads ...) declares none. */
-  readonly clearanceMm: number | null
   /** `thermal` when the zone's (connect_pads ...) names no mode (KiCad's default), else `yes`, `no` or `thru_hole_only`. */
   readonly connection: string
 }
@@ -61,7 +59,21 @@ export function num(text: string | undefined, what: string, where: string): numb
   return value
 }
 
-/** Names of the board's copper layers, in the order the board declares them. */
+function stackPosition(layer: string, where: string): number {
+  if (layer === "F.Cu") return -1
+  if (layer === "B.Cu") return Number.MAX_SAFE_INTEGER
+  const inner = /^In(\d+)\.Cu$/.exec(layer)
+  if (inner === null) {
+    throw new PourRefusal("board-shape", `${where}: copper layer "${layer}" is not F.Cu, B.Cu or In<n>.Cu, so its place in the stack is not known.`)
+  }
+  return Number(inner[1])
+}
+
+/**
+ * Names of the board's copper layers in STACK order (F.Cu, In1.Cu ... InN.Cu,
+ * B.Cu), not the order the board declares them in - KiCad lists B.Cu by its id,
+ * ahead of the inner layers - because a via's layer span is a range of the stack.
+ */
 export function copperLayersOf(root: SNode, where: string): readonly string[] {
   const layers = child(root, "layers")
   if (layers === undefined) throw new PourRefusal("board-shape", `${where} declares no (layers ...) table.`)
@@ -69,7 +81,7 @@ export function copperLayersOf(root: SNode, where: string): readonly string[] {
     .filter((n) => ["signal", "power", "mixed", "jumper"].includes(n.atoms[1] ?? ""))
     .map((n) => n.atoms[0] ?? "")
   if (out.length === 0) throw new PourRefusal("board-shape", `${where} declares no copper layer.`)
-  return out
+  return [...out].sort((a, b) => stackPosition(a, where) - stackPosition(b, where))
 }
 
 /** A zone's or a pad's layer names with `*.Cu` and `F&B.Cu` expanded to the board's copper layers. */
@@ -120,11 +132,9 @@ function settingsOf(zone: SNode, where: string): ZoneSettings {
     )
   }
   const connect = child(zone, "connect_pads")
-  const clearanceText = child(connect ?? zone, "clearance")?.atoms[0]
   const mode = connect?.atoms[0]
   return {
     thermalGapMm: num(gapText, "thermal_gap", where),
-    clearanceMm: connect === undefined || clearanceText === undefined ? null : num(clearanceText, "connect_pads clearance", where),
     connection: mode === "yes" || mode === "no" || mode === "thru_hole_only" ? mode : "thermal",
   }
 }

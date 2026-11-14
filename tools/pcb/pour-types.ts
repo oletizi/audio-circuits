@@ -42,23 +42,18 @@ export interface PourSubject {
 export const PT2399_CORE: PourSubject = { groundNet: "GND", supplyNet: "+5V", icReference: "U1" }
 
 /**
- * One closed loop walked around the IC on one pour layer.
+ * One closed loop round the IC, at one offset outside its pad extent, on one pour layer.
  *
- * **TWO ANSWERS TO "IS THE GROUND CONTINUOUS", REPORTED SIDE BY SIDE ON PURPOSE.**
- * "Continuity" was never defined by the owner, who declined to engage with pour
- * metrics (G313), and nobody here has authority to define it for him. It can mean
- * COVERAGE - how much of the way round the IC there is ground under the loop
- * (`coveredFraction`, `breaksMm`) - or CONNECTEDNESS - whether the ground there is
- * one electrical piece (`connectedGroupsTouched`). The result carries both, and
- * whoever reads it, or looks at the render, decides which they meant.
- *
- * **KNOWN LIMIT, STATED WHERE THE NUMBER IS READ:** a pad void belonging to a
- * NEIGHBOUR of the IC that reaches the loop reads as a break. From the fill alone
- * a neighbour's void and a gap in the pour are the same thing, and a way of
- * guessing which is which would be an invention. The break lengths are reported so
- * a reader can see a 1.5 mm void from a 20 mm gap; they are not filtered.
+ * **COVERAGE AND CONNECTEDNESS ARE BOTH REPORTED, SO THAT NOBODY HAS TO DEFINE
+ * "CONTINUITY".** The owner never defined the word and declined to engage with
+ * pour metrics (G313), and an agent may not decide for him what it means. It can
+ * mean COVERAGE - how much of the way round the IC there is ground under the loop
+ * (`coveredFraction`, `breaksMm`, `uncoveredMm`) - or CONNECTEDNESS - whether the
+ * ground there is one electrical piece (`connectedGroupsTouched`). Both are here.
  */
-export interface LoopContinuity {
+export interface LoopAtOffset {
+  /** How far outside the IC's pad extent this loop was walked. */
+  readonly offsetMm: number
   /** Fraction, 0 to 1, of the loop's samples that lie on poured copper. */
   readonly coveredFraction: number
   /**
@@ -66,6 +61,8 @@ export interface LoopContinuity {
    * fraction cannot tell one 5 mm break from fifty 0.1 mm ones, and these can.
    */
   readonly breaksMm: readonly number[]
+  /** The sum of `breaksMm`: how much of the way round has no ground under it. */
+  readonly uncoveredMm: number
   /**
    * How many distinct pieces of FILL (KiCad's filled polygons) the loop touches.
    * This is a count of polygons and says nothing about whether they are joined:
@@ -81,8 +78,40 @@ export interface LoopContinuity {
    * they are joined elsewhere. Only joins this tool reads count (`./pour-joins.ts`).
    */
   readonly connectedGroupsTouched: number
-  /** How far outside the IC's pad extent the loop was walked, and where that came from. */
-  readonly offsetMm: number
+}
+
+/**
+ * THE CONTINUITY FIGURE FOR ONE LAYER: a band of loops, and the one that shows the
+ * most ground.
+ *
+ * **IT DOES NOT PREDICT WHERE THE POUR'S VOIDS WILL BE.** An earlier version placed
+ * a single loop from the clearances the project declares, and the set of things that
+ * move a void is open - zone, netclass, project minimum, rules with conditions,
+ * pad-local overrides, a second zone - so every enumeration left a configuration
+ * where the IC's own pad voids landed on the loop and an unbroken pour read as
+ * broken (0.4221, 0.9563 and 0.7746 on the real board with an unbroken plane, from
+ * three different sources). A loop too far OUT is as wrong as one too near: it walks
+ * off the pour into other parts' voids. So this measures the fill instead of
+ * guessing at it: loops are walked from the pad extent outward in `bandMm` steps,
+ * every one is reported in `profile`, and `best` is the one with the least of the
+ * way round uncovered (ties to the nearest). A real break in the ground depresses
+ * the whole band; the IC's own voids depress only its inner part.
+ *
+ * `best` is a DEFINITION of the headline and not a pass mark: it is the loop that
+ * shows the most ground, and the profile it was chosen from is in the result.
+ *
+ * **KNOWN LIMITS, STATED WHERE THE NUMBER IS READ:** (1) a void belonging to a
+ * NEIGHBOUR of the IC that reaches every loop in the band reads as a break. From the
+ * fill alone a neighbour's void and a gap in the pour are the same thing, and a way
+ * of guessing which is which would be an invention; the break lengths are reported
+ * so a reader can tell a 1.5 mm void from a 20 mm gap. (2) The band is a choice:
+ * the IC's own voids deeper than its outer edge are read as breaks on every loop
+ * (the band, and where it ends, are reported as `bandMm`).
+ */
+export interface LoopContinuity {
+  readonly bandMm: { readonly fromMm: number; readonly toMm: number; readonly stepMm: number }
+  readonly best: LoopAtOffset
+  readonly profile: readonly LoopAtOffset[]
 }
 
 /** What a ground pad's ring read on one pour layer. */

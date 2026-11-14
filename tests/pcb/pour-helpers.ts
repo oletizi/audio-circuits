@@ -3,15 +3,10 @@
  * measurement and nothing here is a threshold.
  */
 import { expect } from "bun:test"
-import { measured, measurePourText, PT2399_CORE, PourRefusal } from "../../tools/pcb/pour.ts"
+import { measurePourText, PT2399_CORE, PourRefusal } from "../../tools/pcb/pour.ts"
 import type { PourGuard, PourMetrics, Reading } from "../../tools/pcb/pour.ts"
-import type { ProjectClearance } from "../../tools/pcb/pour-project.ts"
 
-/** A project whose largest clearance is 0.25 mm, the pt2399-core project's own; below the 0.5 mm every fixture zone declares. */
-export const QUARTER_MM: Reading<ProjectClearance> = measured({ maxMm: 0.25, sources: [{ source: "test fixture", mm: 0.25 }] })
-
-export const measure = (text: string, project: Reading<ProjectClearance> = QUARTER_MM): PourMetrics =>
-  measurePourText(text, "fixture", PT2399_CORE, project)
+export const measure = (text: string): PourMetrics => measurePourText(text, "fixture", PT2399_CORE)
 
 export function near(actual: number | null | undefined, expected: number, tolerance: number): void {
   if (actual === null || actual === undefined) throw new Error(`expected ${expected} but measured ${String(actual)}`)
