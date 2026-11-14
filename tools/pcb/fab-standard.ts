@@ -176,3 +176,41 @@ export function verifyFabStandard(projectPath: string): void {
     )
   }
 }
+
+/**
+ * `bun tools/pcb/fab-standard.ts <project.kicad_pro>` - the same check, on a
+ * project file named directly.
+ *
+ * `./drc.ts` already runs `verifyFabStandard` on the project beside the board it
+ * is grading, which covers a board being graded. What it cannot reach is a
+ * project file that belongs to no graded board: the autorouting engine writes
+ * one beside EVERY intermediate output it produces, and
+ * `circuits/pt2399-core/placement-policy.json`'s `route` and `zone-refill`
+ * post-conditions require that file to still satisfy this standard. Measured on
+ * the pinned engine, 2026-11-14: `route_planes.py` wrote 11 values into its
+ * output's project, among them `severity[courtyards_overlap]: error -> warning`
+ * - a demotion of one of the three `REQUIRED_ACTIVE_CHECKS` - and printed no
+ * `FAB FLOOR RELAXED` line while doing it. That is precisely why the policy
+ * carries a second post-condition on the artifact as well as one on the log, and
+ * it needs a way to be run.
+ */
+function main(): number {
+  const projectPath = process.argv[2]
+  if (projectPath === undefined || process.argv.length > 3) {
+    console.error("usage: bun tools/pcb/fab-standard.ts <project.kicad_pro>")
+    return 2
+  }
+  try {
+    verifyFabStandard(projectPath)
+  } catch (error) {
+    if (error instanceof DrcRefusal) {
+      console.error(`REFUSED (${error.guard}): ${error.message}`)
+      return 1
+    }
+    throw error
+  }
+  console.log(`${projectPath} equals docs/standards/pcbway-fab-rules.md`)
+  return 0
+}
+
+if (import.meta.main) process.exit(main())
