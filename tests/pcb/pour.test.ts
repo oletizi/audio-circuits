@@ -2,160 +2,119 @@
  * THE POUR MEASUREMENT, driven over boards whose copper is known.
  *
  * **EVERY ASSERTION HERE IS A MEASURED NUMBER AGAINST A FIXTURE, NEVER A
- * VERDICT.** "This fixture's narrowest bridge is 0.85 mm" is a fact about the
+ * VERDICT.** "This fixture's narrowest neck is 0.85 mm" is a fact about the
  * fixture; "this fixture fails" would be an acceptance criterion, and the owner
  * declined to set any (`docs/known-gaps.md` G313) while the standing rule is that
  * an agent may not author them for the artifact it is producing. So there is no
- * test below that compares a measurement to a limit, and the last-but-one test
- * pins the SET OF FIELDS a result carries so a `pass` or `ok` cannot be added
- * without this file noticing.
+ * test below that compares a measurement to a limit, and one test pins the SET OF
+ * FIELDS a result carries so a `pass` or `ok` cannot be added without this file
+ * noticing.
  *
  * The geometry behind each number is written out in `./pour-fixtures.ts`; the
  * expected values below are worked from it by hand, not read back from a run.
+ * Continuity, region joins and bypass returns are in
+ * `./pour-continuity.test.ts`, `./pour-joins.test.ts` and
+ * `./pour-layers-and-returns.test.ts`.
  */
 import { test, expect } from "bun:test"
 import { measureLayer } from "../../tools/pcb/pour-bridge.ts"
-import { measurePour, measurePourText, POUR_GUARDS, PourRefusal } from "../../tools/pcb/pour.ts"
-import type { PourGuard } from "../../tools/pcb/pour.ts"
-import {
-  LEFT_PLACE, OPEN_PLACE, RECTANGLE, dumbbell, fixtureBoard,
-} from "./pour-fixtures.ts"
+import { measurePour, measurePourText, POUR_GUARDS, PT2399_CORE } from "../../tools/pcb/pour.ts"
+import type { PourSubject } from "../../tools/pcb/pour.ts"
+import { LEFT_PLACE, OPEN_PLACE, RECTANGLE, dumbbell, fixtureBoard } from "./pour-fixtures.ts"
+import { measure, near, reasonOf, refusalOf, seenGuards, valueOf } from "./pour-helpers.ts"
 
 /** One spoke is 0.5 mm of arc on a ring of radius 1.05 mm. */
 const PER_SPOKE = 0.5 / (2 * Math.PI * 1.05)
 const FOUR = { "U1-3": 4, "U1-4": 4, "C1-2": 4 } as const
 
-const seen = new Set<PourGuard>()
-
-function refusalOf(body: () => unknown): PourRefusal {
-  try {
-    body()
-  } catch (error) {
-    if (error instanceof PourRefusal) {
-      seen.add(error.guard)
-      return error
-    }
-    throw error
-  }
-  throw new Error("expected a PourRefusal but nothing was thrown")
-}
-
-function measure(text: string) {
-  return measurePourText(text, "fixture")
-}
-
-function near(actual: number | null | undefined, expected: number, tolerance: number): void {
-  if (actual === null || actual === undefined) throw new Error(`expected ${expected} but measured ${String(actual)}`)
-  expect(Math.abs(actual - expected)).toBeLessThanOrEqual(tolerance)
-}
-
-function nearEach(actual: ReadonlyMap<string, number>, expected: Readonly<Record<string, number>>): void {
-  expect([...actual.keys()].sort()).toEqual(Object.keys(expected).sort())
-  for (const [key, value] of Object.entries(expected)) expect(actual.get(key)).toBe(value)
-}
-
 // --- Fixture 1: a pour that is a single region ------------------------------
 
-test("a pour that is one region has one region, no bridge to measure, and a covered outline round U1", () => {
+test("a pour that is one region has one region, no bridge to report, and says why", () => {
   const metrics = measure(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] } }))
-  expect(metrics.bridgeByLayer.get("F.Cu")?.regions).toBe(1)
-  // No pair of bodies exists, which is NOT a neck of width zero: it is absent, and reported as absent.
-  expect(metrics.narrowestBridgeMm).toBeNull()
-  expect(metrics.bridgeByLayer.get("F.Cu")?.narrowestBridgeMm).toBeNull()
-  expect(metrics.continuityAroundU1).toBe(1)
-  expect(metrics.bypassReturn).toBe("pour")
-  expect(metrics.bypassReturnByCap.get("C1")).toBe("pour")
+  expect(metrics.regionsByLayer.get("F.Cu")).toBe(1)
+  // There are no separate regions, so there is nothing to bridge. That is reported as a reason, not as a number or a zero.
+  expect(reasonOf(metrics.narrowestBridgeMm)).toContain("no separate regions")
+  // And no constriction between two wide bodies either: one plain rectangle.
+  expect(metrics.narrowestNeckMm).toBeNull()
   expect(metrics.resolutionMm).toBe(0.05)
+  expect(metrics.noiseFloorMm).toBeCloseTo(0.1, 9)
 })
 
-test("a hole in the pour makes two bodies of the copper either side of it, and the bridge is the wider way round", () => {
+test("a hole in the pour makes two bodies of the copper either side of it, and the NECK is the wider way round - not a bridge", () => {
   // U1-3 at (30, 18) has a 1.3 mm-radius void and no spoke: copper spans y 0..16.7 above it and 19.3..40 below.
-  // The two lobes left and right of the hole are joined by both, and the figure is the wider: 40 - 19.3 = 20.7.
+  // The two lobes left and right of the hole are joined by both, and the neck figure is the wider: 40 - 19.3 = 20.7.
   const metrics = measure(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, spokes: { "U1-3": 0 } }))
-  near(metrics.narrowestBridgeMm, 20.7, 0.1)
-  expect(metrics.bridgeByLayer.get("F.Cu")?.regions).toBe(1)
+  near(metrics.narrowestNeckMm, 20.7, 0.1)
+  expect(metrics.regionsByLayer.get("F.Cu")).toBe(1)
+  // The same board has one region, so no bridge: the neck figure and the bridge figure are different things.
+  expect(metrics.narrowestBridgeMm.kind).toBe("unavailable")
 })
 
-test("a uniformly wide strip is not read as a string of bodies: thin, long, and diagonal strips and a round disc all have no bridge", () => {
-  const thin = measureLayer([[[0, 0], [40, 0], [40, 1], [0, 1]]])
-  expect(thin).toEqual({ narrowestBridgeMm: null, regions: 1 })
-  // Diagonal edges put the staircase of the raster on every row, which is where quantisation ripple would show.
-  const diagonal = measureLayer([[[0, 0], [3, 0], [43, 20], [40, 20]]])
-  expect(diagonal).toEqual({ narrowestBridgeMm: null, regions: 1 })
+test("a uniformly wide strip is not read as a string of bodies, at any width or angle, and nor is a round disc", () => {
+  for (const width of [0.3, 0.5, 1, 1.6, 3]) {
+    for (let degrees = 0; degrees < 90; degrees += 7) {
+      const a = (degrees * Math.PI) / 180
+      const rotate = ([x, y]: readonly [number, number]): [number, number] => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)]
+      const strip = measureLayer([[[0, 0], [40, 0], [40, width], [0, width]].map((p) => rotate(p as [number, number]))])
+      if (strip.narrowestNeckMm !== null || strip.regions !== 1) throw new Error(`a ${width} mm strip at ${degrees} degrees read ${JSON.stringify(strip)}`)
+    }
+  }
   const disc = measureLayer([Array.from({ length: 96 }, (_, i): [number, number] => [20 + 15 * Math.cos((i / 96) * 2 * Math.PI), 20 + 15 * Math.sin((i / 96) * 2 * Math.PI)])])
-  expect(disc).toEqual({ narrowestBridgeMm: null, regions: 1 })
+  expect(disc).toEqual({ narrowestNeckMm: null, regions: 1 })
 })
 
-// --- Fixture 2: two regions joined by a deliberately narrow bridge ----------
+// --- Fixture 2: two bodies joined by a deliberately narrow neck --------------
 
-test("two bodies joined by a 0.85 mm neck read a bridge of 0.85 mm, within one pixel", () => {
+test("two bodies joined by a 0.85 mm neck read a neck of 0.85 mm, within one pixel", () => {
   const metrics = measure(fixtureBoard({ place: LEFT_PLACE, pour: { "F.Cu": [dumbbell(19.5795, 20.4295)] }, spokes: FOUR }))
-  near(metrics.narrowestBridgeMm, 0.85, metrics.resolutionMm)
+  near(metrics.narrowestNeckMm, 0.85, 0.05)
   // One piece of copper: the neck is what joins the bodies, so they are one region, not two.
-  expect(metrics.bridgeByLayer.get("F.Cu")?.regions).toBe(1)
+  expect(metrics.regionsByLayer.get("F.Cu")).toBe(1)
 })
 
-test("the bridge figure follows the neck: a 1.75 mm neck reads 1.75 mm, not the same number again", () => {
+test("the neck figure follows the neck: a 1.75 mm neck reads 1.75 mm, not the same number again", () => {
   const metrics = measure(fixtureBoard({ place: LEFT_PLACE, pour: { "F.Cu": [dumbbell(19.1295, 20.8795)] }, spokes: FOUR }))
-  near(metrics.narrowestBridgeMm, 1.75, metrics.resolutionMm)
+  near(metrics.narrowestNeckMm, 1.75, 0.05)
 })
 
 // --- Fixture 3: a ground pad carrying a single spoke ------------------------
 
+function spokesOf(metrics: ReturnType<typeof measure>, pad: string, layer = "F.Cu") {
+  const reading = valueOf(metrics.spokesByGroundPad).get(pad)?.get(layer)
+  if (reading === undefined) throw new Error(`no spoke reading for ${pad} on ${layer}`)
+  return reading
+}
+
 test("spokes are counted per pad: one, four and two on three pads, each with the covered fraction that count implies", () => {
   const metrics = measure(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, spokes: { "U1-3": 1, "U1-4": 4, "C1-2": 2 } }))
-  nearEach(metrics.spokesByGroundPad, { "U1-3": 1, "U1-4": 4, "C1-2": 2 })
+  expect(spokesOf(metrics, "U1-3").spokes).toBe(1)
+  expect(spokesOf(metrics, "U1-4").spokes).toBe(4)
+  expect(spokesOf(metrics, "C1-2").spokes).toBe(2)
+  expect([...valueOf(metrics.spokesByGroundPad).keys()].sort()).toEqual(["C1-2", "U1-3", "U1-4"])
   // The ring is sampled every 0.05 mm, so each spoke's covered arc is good to about one sample (1/132 of the ring).
-  near(metrics.groundPads.get("U1-3")?.[0]?.coveredFraction, 1 * PER_SPOKE, 0.02)
-  near(metrics.groundPads.get("U1-4")?.[0]?.coveredFraction, 4 * PER_SPOKE, 0.02)
-  near(metrics.groundPads.get("C1-2")?.[0]?.coveredFraction, 2 * PER_SPOKE, 0.02)
+  near(spokesOf(metrics, "U1-3").coveredFraction, 1 * PER_SPOKE, 0.02)
+  near(spokesOf(metrics, "U1-4").coveredFraction, 4 * PER_SPOKE, 0.02)
+  near(spokesOf(metrics, "C1-2").coveredFraction, 2 * PER_SPOKE, 0.02)
 })
 
-test("a pad the pour does not touch reads 0 spokes beside 0 coverage; a pad merged into it reads 0 spokes beside full coverage", () => {
-  // U1-3 has a full void and no spoke; U1-4 and C1-2 have no void cut at all.
-  const metrics = measure(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, spokes: { "U1-3": 0 } }))
-  expect(metrics.spokesByGroundPad.get("U1-3")).toBe(0)
-  expect(metrics.groundPads.get("U1-3")?.[0]?.coveredFraction).toBe(0)
-  // KiCad's solid connection: no relief, so the ring is copper all the way round and has no spoke ends to count.
-  expect(metrics.spokesByGroundPad.get("U1-4")).toBe(0)
-  expect(metrics.groundPads.get("U1-4")?.[0]?.coveredFraction).toBe(1)
+test("0 spokes is three different boards, told apart by the covered fraction and the zone's declared connection", () => {
+  // U1-3 has a full void and no spoke; U1-4 and C1-2 have no void cut at all, in a zone that declares thermal relief.
+  const thermal = measure(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, spokes: { "U1-3": 0 } }))
+  expect(spokesOf(thermal, "U1-3")).toEqual({ spokes: 0, coveredFraction: 0, declaredConnection: "thermal" })
+  expect(spokesOf(thermal, "U1-4")).toEqual({ spokes: 0, coveredFraction: 1, declaredConnection: "thermal" })
+  // The board the router writes: `(connect_pads yes ...)`, every pad joined solid, so every pad reads 0 spokes - and says it is solid.
+  const solid = measure(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, connect: "yes" }))
+  for (const pad of ["U1-3", "U1-4", "C1-2"]) {
+    expect(spokesOf(solid, pad)).toEqual({ spokes: 0, coveredFraction: 1, declaredConnection: "yes" })
+  }
 })
 
-test("a through-hole pad's spokes are counted on every pour layer and summed, with each layer kept beside the total", () => {
+test("a through-hole pad's spokes are read on every pour layer and kept per layer, never summed", () => {
   const metrics = measure(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE], "B.Cu": [RECTANGLE] }, spokes: FOUR }))
-  nearEach(metrics.spokesByGroundPad, { "U1-3": 8, "U1-4": 8, "C1-2": 8 })
-  expect(metrics.groundPads.get("U1-3")?.map((r) => [r.layer, r.spokes])).toEqual([["F.Cu", 4], ["B.Cu", 4]])
-  expect([...metrics.continuityAroundU1ByLayer.keys()]).toEqual(["F.Cu", "B.Cu"])
-  expect([...metrics.bridgeByLayer.keys()]).toEqual(["F.Cu", "B.Cu"])
-})
-
-// --- A split pour: continuity, regions, and a return that rides a track -----
-
-/** Two bodies with a 0.99 mm slot at x 30.52..31.51 cutting across U1's courtyard (x 28..32, y 16..26). */
-const SPLIT = [
-  [[0, 0], [30.52, 0], [30.52, 40], [0, 40]],
-  [[31.51, 0], [60, 0], [60, 40], [31.51, 40]],
-] as const
-
-test("a slot across U1's courtyard shortens the covered length by the slot's width on the two edges it crosses", () => {
-  const metrics = measure(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT }, track: true }))
-  // The courtyard outline is 28 mm; the slot crosses the top and bottom edges for 0.99 mm each.
-  near(metrics.continuityAroundU1, 1 - (2 * 0.99) / 28, 0.005)
-  // Two pieces of copper with nothing joining them. Not a bridge of width zero, and not one region.
-  expect(metrics.bridgeByLayer.get("F.Cu")?.regions).toBe(2)
-  expect(metrics.narrowestBridgeMm).toBeNull()
-})
-
-test("a bypass capacitor whose ground pad is on no pour U1 reaches, but ends a ground track, reads as a track", () => {
-  const metrics = measure(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT }, track: true }))
-  expect(metrics.bypassReturnByCap.get("C1")).toBe("track")
-  expect(metrics.bypassReturn).toBe("track")
-})
-
-test("a return that is on neither pour nor track is refused rather than filed under one of them", () => {
-  const refusal = refusalOf(() => measure(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT } })))
-  expect(refusal.guard).toBe("bypass-unconnected")
-  expect(refusal.message).toContain("C1")
+  const pad = valueOf(metrics.spokesByGroundPad).get("U1-3")
+  expect([...(pad ?? [])].map(([layer, r]) => [layer, r.spokes])).toEqual([["F.Cu", 4], ["B.Cu", 4]])
+  expect([...metrics.regionsByLayer.keys()]).toEqual(["F.Cu", "B.Cu"])
+  expect([...metrics.neckByLayer.keys()]).toEqual(["F.Cu", "B.Cu"])
 })
 
 // --- THE REFUSAL THAT MATTERS: a zone nobody refilled ------------------------
@@ -177,15 +136,21 @@ test("a zone filled on one of its layers and not the other is refused, naming th
   expect(refusal.message).not.toContain("on F.Cu, so")
 })
 
-test("a board with no ground zone is refused, and a keepout Rule Area is not a pour", () => {
+test("a board with no ground zone is refused, and a keepout Rule Area is not a pour - even one that still carries a net", () => {
   expect(refusalOf(() => measure(fixtureBoard({ place: OPEN_PLACE, pour: {}, zone: false }))).guard).toBe("no-ground-zone")
   const keepout = ['\t(zone (layers "F.Cu" "B.Cu") (uuid "cccccccc-0000-4000-8000-000000000001") (name "SYNTHETIC:rule-area")',
     "\t\t(keepout (tracks not_allowed) (vias not_allowed) (pads allowed) (copperpour not_allowed) (footprints allowed))",
     "\t\t(polygon (pts (xy 0 0) (xy 5 0) (xy 5 5) (xy 0 5))))"].join("\n")
   expect(refusalOf(() => measure(fixtureBoard({ place: OPEN_PLACE, pour: {}, zone: false, extraZones: [keepout] }))).guard).toBe("no-ground-zone")
+  // KiCad strips the net from a Rule Area when it SAVES; a board that has not been through that save can still carry one.
+  const netted = keepout.replace('(zone (layers', '(zone (net "GND") (layers')
+  expect(netted).not.toBe(keepout)
+  expect(refusalOf(() => measure(fixtureBoard({ place: OPEN_PLACE, pour: {}, zone: false, extraZones: [netted] }))).guard).toBe("no-ground-zone")
+  const beside = measure(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, extraZones: [netted] }))
+  expect(beside.regionsByLayer.get("F.Cu")).toBe(1)
 })
 
-// --- Other refusals: absent or unreadable inputs are never defaulted ---------
+// --- Other refusals: unreadable inputs are never defaulted -------------------
 
 const GOOD = { place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, spokes: FOUR } as const
 
@@ -195,7 +160,7 @@ test("a zone with no thermal gap is refused instead of counting spokes on an ass
   expect(refusal.message).toContain("thermal_gap")
 })
 
-test("an arc in a filled polygon, a pad shape that is not read, a back-side footprint and a repeated pad key are each refused", () => {
+test("an arc in a filled polygon, a pad shape that is not read, a back-side footprint, a repeated pad key and a nameless footprint are each refused", () => {
   const text = fixtureBoard(GOOD)
   const arc = text.replace('(filled_polygon (layer "F.Cu") (pts (xy 0 0)', '(filled_polygon (layer "F.Cu") (pts (arc (start 0 0) (mid 1 1) (end 2 0)) (xy 0 0)')
   expect(arc).not.toBe(text)
@@ -209,36 +174,65 @@ test("an arc in a filled polygon, a pad shape that is not read, a back-side foot
   const twice = text.replace('(pad "4" thru_hole circle (at 0 6)', '(pad "3" thru_hole circle (at 0 6)')
   expect(twice).not.toBe(text)
   expect(refusalOf(() => measure(twice)).message).toContain("U1-3")
-})
-
-test("a board with no U1, no capacitor on the supply, or no through-hole ground pad is refused rather than measured against nothing", () => {
-  const noU1 = refusalOf(() => measure(fixtureBoard({ ...GOOD, refs: { u1: "U9" } })))
-  expect(noU1.guard).toBe("subject-missing")
-  expect(noU1.message).toContain("U1")
-  const noCap = refusalOf(() => measure(fixtureBoard({ ...GOOD, refs: { c1: "X1" } })))
-  expect(noCap.guard).toBe("subject-missing")
-  expect(noCap.message).toContain("bypass")
-  const noThroughHole = refusalOf(() => measure(fixtureBoard({ ...GOOD, padType: "smd" })))
-  expect(noThroughHole.guard).toBe("subject-missing")
-  expect(noThroughHole.message).toContain("through-hole")
+  const nameless = text.replace('(property "Reference" "C1" (at 0 0 0) (layer "F.SilkS") (uuid "22222222-0000-4000-8000-000000000009"))', "")
+  expect(nameless).not.toBe(text)
+  expect(refusalOf(() => measure(nameless)).message).toContain("no Reference")
 })
 
 test("a missing file and text that is not a board are refused as unreadable, not read as an empty board", () => {
-  expect(refusalOf(() => measurePour("/nonexistent/board.kicad_pcb")).guard).toBe("board-unreadable")
+  expect(refusalOf(() => measurePour("/nonexistent/board.kicad_pcb", PT2399_CORE)).guard).toBe("board-unreadable")
   expect(refusalOf(() => measure("this is not a board")).guard).toBe("board-unreadable")
   expect(refusalOf(() => measure("(footprint)")).guard).toBe("board-unreadable")
 })
+
+// --- What is NOT a refusal: an absent subject silences only its own figure ----
+
+test("a board with no U1, no through-hole ground pad or no bypass capacitor still reports every figure it can", () => {
+  const noU1 = measure(fixtureBoard({ ...GOOD, refs: { u1: "U9" } }))
+  expect(reasonOf(noU1.continuityAroundIc)).toContain("U1")
+  expect(reasonOf(noU1.bypassReturn)).toContain("U1")
+  expect(noU1.regionsByLayer.get("F.Cu")).toBe(1)
+  expect(valueOf(noU1.spokesByGroundPad).size).toBe(3)
+
+  const noCap = measure(fixtureBoard({ ...GOOD, refs: { c1: "X1" } }))
+  expect(reasonOf(noCap.bypassReturn)).toContain("bypass")
+  expect(valueOf(noCap.continuityAroundIc).get("F.Cu")?.coveredFraction).toBe(1)
+
+  // A surface-mount build: no through-hole ground pad, and all the other figures stand.
+  const smd = measure(fixtureBoard({ ...GOOD, padType: "smd" }))
+  expect(reasonOf(smd.spokesByGroundPad)).toContain("through-hole")
+  expect(valueOf(smd.continuityAroundIc).get("F.Cu")?.coveredFraction).toBe(1)
+  expect(smd.regionsByLayer.get("F.Cu")).toBe(1)
+})
+
+test("two footprints that are both U1 are an unavailable continuity figure, not a refusal of the board", () => {
+  const metrics = measure(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, refs: { c1: "U1" } }))
+  expect(valueOf(metrics.continuityAroundIc).size).toBe(1)
+})
+
+// --- The subject is a parameter, not an assumption ---------------------------
+
+test("a board whose rails are not GND and +5V is measured against the nets the caller names, and refused for the wrong ones", () => {
+  const text = fixtureBoard(GOOD).replaceAll('(net "GND")', '(net "0V")').replaceAll('(net "+5V")', '(net "VCC")')
+  expect(refusalOf(() => measure(text)).guard).toBe("no-ground-zone")
+  const renamed = measureWith(text, { groundNet: "0V", supplyNet: "VCC", icReference: "U1" })
+  expect(valueOf(renamed.bypassReturn).byCap.get("C1")).toBe("pour")
+})
+
+function measureWith(text: string, subject: PourSubject) {
+  return measurePourText(text, "fixture", subject)
+}
 
 // --- The result carries numbers and nothing else -----------------------------
 
 test("a result carries measurements and no verdict: no field says pass, ok, fail or within", () => {
   const metrics = measure(fixtureBoard(GOOD))
   expect(Object.keys(metrics).sort()).toEqual([
-    "bridgeByLayer", "bypassReturn", "bypassReturnByCap", "continuityAroundU1", "continuityAroundU1ByLayer",
-    "groundPads", "narrowestBridgeMm", "resolutionMm", "spokesByGroundPad",
+    "bypassReturn", "continuityAroundIc", "narrowestBridgeMm", "narrowestNeckMm", "neckByLayer", "noiseFloorMm",
+    "regionJoins", "regionsByLayer", "resolutionMm", "spokesByGroundPad", "viaLinks",
   ])
 })
 
 test("every guard the module declares was reached by a test above", () => {
-  expect([...POUR_GUARDS].filter((g) => !seen.has(g))).toEqual([])
+  expect([...POUR_GUARDS].filter((g) => !seenGuards.has(g))).toEqual([])
 })

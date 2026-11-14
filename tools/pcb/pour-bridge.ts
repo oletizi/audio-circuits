@@ -1,6 +1,18 @@
 /**
- * THE NARROWEST NECK BETWEEN TWO BODIES OF A POUR, measured on a raster of the
- * filled copper - and what that number does and does not claim.
+ * THE NARROWEST CONSTRICTION INSIDE A POUR, measured on a raster of the filled
+ * copper - and what that number does and does not claim.
+ *
+ * **IT IS A NECK WITHIN CONNECTED FILL, NOT A BRIDGE BETWEEN REGIONS.** It was
+ * named `narrowestBridgeMm` until Task 9's review, and `docs/known-gaps.md` G313
+ * records the owner being asked about "the narrowest bridge between pour
+ * regions". This figure is the opposite quantity: on one solid plane with two
+ * pad voids in it, it reads the gap between the voids (2.45 mm on this repository's
+ * own board with a full-board pour, where no bridge exists at all), and on a pour
+ * split into regions it reads nothing for the join, because the regions are not
+ * joined by fill. What joins separate regions is a track or a via, which is not
+ * fill; `./pour-joins.ts` reports that under the name `narrowestBridgeMm`. This
+ * module's figure keeps its own name, `narrowestNeckMm`, because "where is the
+ * pour pinched" is still worth knowing.
  *
  * **WHAT IS MEASURED.** Every filled polygon KiCad saved for one layer is
  * rasterised into a grid of `RESOLUTION_MM` pixels. Each copper pixel is given
@@ -9,39 +21,60 @@
  * visited from the widest outward, joining neighbours into bodies as they go:
  * the pixel that first joins two bodies sits on the widest path between them,
  * and its radius is the half-width of the narrowest point on that path. That is
- * the figure reported, as a width: the neck that the best connection between the
- * two bodies cannot be wider than.
+ * the figure reported, as a width.
  *
- * **WHAT COUNTS AS TWO BODIES.** A body is a copper area at least
+ * **WHAT COUNTS AS TWO BODIES.** A body is a copper area more than
  * `NOISE_FLOOR_PX` pixels wider (in radius) than the neck that joins it. That
- * constant is the resolution of this measuring technique, not an acceptance
- * criterion: without one, the ripple in a uniformly wide strip - a pixel of
- * quantisation here and there - would read as a string of bodies joined by
- * necks one pixel narrower than themselves, and the narrowest of them would be
- * the strip's own width. It decides what the figure resolves, and it is reported
- * with the result as `resolutionMm`. NOTHING HERE COMPARES THE RESULT TO A LIMIT.
- * The owner declined to set one (`docs/known-gaps.md` G313) and an agent may not
- * author the criteria for the artifact it is producing.
+ * constant is the resolution of this technique, not an acceptance criterion: it
+ * decides what the figure resolves, and it is reported as `noiseFloorMm` in the
+ * result. NOTHING HERE COMPARES THE RESULT TO A LIMIT. The owner declined to set
+ * one (G313) and an agent may not author the criteria for the artifact it is
+ * producing.
  *
- * **WHAT IT DOES NOT SEE.** Only fill. A track or a via that joins two bodies of
- * pour is not copper in the fill, so it is not a bridge here; a pour whose bodies
- * are joined only by a track reports them as separate regions. And a body that is
- * not joined to any other has no bridge, so a layer holding a single body reports
- * `null` for it: there is no pair to join, which is a different statement from a
- * neck of width zero.
+ * **WHY 2 AND NOT 1, MEASURED.** The ripple the raster puts on a uniformly wide
+ * strip - the thing the floor exists to suppress - was measured at up to 0.91
+ * pixels, over strips of five widths (0.3 to 3 mm) at thirteen angles (0 to 84
+ * degrees) and over discs. A floor of 1 sits barely above that; 2 is a little over
+ * twice it. `tests/pcb/pour-layers-and-returns.test.ts` pins the constant from
+ * both sides: relief of 3 pixels is a neck at 2 and not at 3, relief of 2 is not
+ * a neck at 2 and is at 1. The price is stated rather than hidden: a 1.0 mm neck
+ * joining bodies 1.2 mm wide is NOT reported, because the bodies are only 2
+ * pixels wider in radius.
+ *
+ * **WHAT IT DOES NOT SEE.** Only fill, and only constrictions: a body that is
+ * not joined to any other has no neck, so a layer holding a single body reports
+ * `null`, which is a different statement from a neck of width zero.
+ *
+ * **REUSE, CHECKED AND DECLINED.** The engine ships `py_placer/plane_score.py`
+ * and `py_router/plane_resistance.py`, and the plan directed that they be
+ * checked before this was written. They were checked after, and neither gives
+ * this figure. `plane_score.py` pours its own full-outline zones on a scratch
+ * copy of a candidate board and reports `islands` (the count of filled polygons,
+ * which is `regions` here) and `neck_sum`, a fragility field summed over the
+ * fill - "meaningful RELATIVELY, candidate vs candidate on the same board", in
+ * its own words, and 374270.95 on this board for one unbroken pour per layer. It
+ * is not a width in mm. `plane_resistance.py` computes resistance and IPC-2221
+ * ampacity along a bounding-box diagonal or a via-tree diameter using an average
+ * width. Neither measures a neck, continuity around an IC, spokes, or a bypass
+ * return. `kicad_exact_fill.exact_clusters` is the engine's real connectivity
+ * oracle (fill, tracks, vias and pads), and it is Python behind the engine's own
+ * venv; `./pour-joins.ts` reads the same facts from the saved board in this
+ * repository's language instead.
  *
  * **ACCURACY.** A width is read off an integer pixel grid, so it can sit up to
  * one pixel (`resolutionMm`) under the true neck: a disc centred on a pixel
  * centre cannot always be centred on the true medial axis. It is never read over.
  */
 import type { Pt } from "./pour-geometry.ts"
+import { PourRefusal } from "./pour-refusal.ts"
 
 export const RESOLUTION_MM = 0.05
 export const NOISE_FLOOR_PX = 2
+export const NOISE_FLOOR_MM = NOISE_FLOOR_PX * RESOLUTION_MM
 
-export interface LayerBridge {
+export interface LayerNeck {
   /** The narrowest neck between two bodies on this layer, or null when there is no pair of bodies to join. */
-  readonly narrowestBridgeMm: number | null
+  readonly narrowestNeckMm: number | null
   /** Connected pieces of fill on this layer: bodies with NO copper joining them count separately. */
   readonly regions: number
 }
@@ -157,9 +190,9 @@ function squaredDistances(grid: Grid): Float64Array {
 }
 
 /** Measures one layer's fill. `resolution` is a parameter so a test can state the quantisation it expects. */
-export function measureLayer(polygons: readonly (readonly Pt[])[], resolution: number = RESOLUTION_MM): LayerBridge {
+export function measureLayer(polygons: readonly (readonly Pt[])[], resolution: number = RESOLUTION_MM): LayerNeck {
   if (polygons.length === 0) {
-    throw new Error("measureLayer was given no polygons. An empty layer is not a pour with no bridge: it is absent.")
+    throw new PourRefusal("board-shape", "measureLayer was given no polygons. An empty layer is not a pour with no neck: it is absent.")
   }
   const grid = rasterise(polygons, resolution)
   const { w, h, inside } = grid
@@ -175,7 +208,8 @@ export function measureLayer(polygons: readonly (readonly Pt[])[], resolution: n
     if (value > maxD2) maxD2 = value
   }
   if (count === 0) {
-    throw new Error(
+    throw new PourRefusal(
+      "board-shape",
       "the filled polygons rasterised to no copper pixels at all, so there is nothing to measure. " +
         "They are degenerate (zero area), and a pour of no area is not reported as having no bridge.",
     )
@@ -236,5 +270,5 @@ export function measureLayer(polygons: readonly (readonly Pt[])[], resolution: n
       regions -= 1
     }
   }
-  return { narrowestBridgeMm: narrowestPx === null ? null : narrowestPx * resolution, regions }
+  return { narrowestNeckMm: narrowestPx === null ? null : narrowestPx * resolution, regions }
 }

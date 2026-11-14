@@ -6,6 +6,15 @@
  *
  * THE GUARDS ARE A RUNTIME ARRAY AND THE TYPE IS DERIVED FROM IT, so a test can
  * iterate every guard and fail until a new one is accounted for.
+ *
+ * **A REFUSAL IS FOR WHAT MAKES EVERY FIGURE MEANINGLESS, AND ONLY THAT.** There
+ * were six guards, and two of them - "this board has no U1 / through-hole ground
+ * pad / bypass capacitor" and "a bypass capacitor's return is on neither pour nor
+ * track" - threw away figures the board could perfectly well answer, so that one
+ * absent subject silenced three others. Those are now `unavailable` readings
+ * beside the figures that were measured (`./pour-types.ts`). What remains is a
+ * board that cannot be read, has no ground zone, was never refilled, or holds
+ * copper this reader does not understand.
  */
 export const POUR_GUARDS = [
   /** The board file is missing, or is not a KiCad board this tool can read. */
@@ -16,10 +25,6 @@ export const POUR_GUARDS = [
   "zone-unfilled",
   /** Something the measurement needs is absent from the board or in a form it does not read. */
   "board-shape",
-  /** The board has no U1, no ground pad on it, or no supply bypass capacitor to ask about. */
-  "subject-missing",
-  /** A bypass capacitor's ground pad is on the pour of no region U1 can reach and touches no track. */
-  "bypass-unconnected",
 ] as const
 
 export type PourGuard = (typeof POUR_GUARDS)[number]

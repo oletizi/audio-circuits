@@ -119,6 +119,8 @@ export interface TrackSpec {
   readonly layer: string
   /** Defaults to GND. */
   readonly net?: string
+  /** Track width in mm; defaults to 0.5. */
+  readonly width?: number
   /** Written as an `(arc ...)` with its midpoint halfway between the ends, not as a `(segment ...)`. */
   readonly arc?: boolean
 }
@@ -149,8 +151,12 @@ export interface FixtureOptions {
   /** Layers that carry a saved fill. Defaults to the layers named in `pour`. Fewer than `zoneLayers` is an unfilled layer. */
   readonly filledLayers?: readonly string[]
   readonly thermalGap?: number | null
+  /** The zone's (connect_pads ...) mode: omitted is KiCad's thermal relief. */
+  readonly connect?: "yes" | "no" | "thru_hole_only"
+  /** The zone's own clearance; null writes a (connect_pads ...) with none. Defaults to 0.5. */
+  readonly clearance?: number | null
   /** `true` runs a ground track on F.Cu from U1's first ground pad to C1's ground pad; a spec places one anywhere. */
-  readonly track?: boolean | TrackSpec
+  readonly track?: boolean | TrackSpec | readonly TrackSpec[]
   /** C1 is a surface-mount part on F.Cu, so only a feature on that layer can touch its pads. */
   readonly c1Smd?: boolean
   readonly extraZones?: readonly string[]
@@ -184,10 +190,14 @@ function pad(number: string, y: number, net: string, shape: string, type: string
   return `  (pad "${number}" ${type} ${shape} (at 0 ${y}${angle}) (size ${turn?.padSize ?? "1.6 1.6"})${drill} (layers ${layers})${ratio} (net "${net}"))`
 }
 
+function isTrackList(track: TrackSpec | readonly TrackSpec[]): track is readonly TrackSpec[] {
+  return Array.isArray(track)
+}
+
 function trackForm(spec: TrackSpec): string {
   const [a, b] = [spec.from, spec.to]
   const mid = spec.arc === true ? ` (mid ${n((a[0] + b[0]) / 2 + 0.01)} ${n((a[1] + b[1]) / 2)})` : ""
-  return `\t(${spec.arc === true ? "arc" : "segment"} (start ${a[0]} ${a[1]})${mid} (end ${b[0]} ${b[1]}) (width 0.5) (layer "${spec.layer}") (net "${spec.net ?? "GND"}") (uuid "bbbbbbbb-0000-4000-8000-000000000001"))`
+  return `\t(${spec.arc === true ? "arc" : "segment"} (start ${a[0]} ${a[1]})${mid} (end ${b[0]} ${b[1]}) (width ${spec.width ?? 0.5}) (layer "${spec.layer}") (net "${spec.net ?? "GND"}") (uuid "bbbbbbbb-0000-4000-8000-000000000001"))`
 }
 
 function capacitor(ref: string, at: Pt, shape: string, type: string, uuid: string): string {
@@ -224,7 +234,7 @@ export function fixtureBoard(opts: FixtureOptions): string {
     '\t\t(uuid "aaaaaaaa-0000-4000-8000-000000000001")',
     '\t\t(name "SYNTHETIC:ground")',
     "\t\t(hatch edge 0.5)",
-    "\t\t(connect_pads (clearance 0.5))",
+    `\t\t(connect_pads${opts.connect === undefined ? "" : ` ${opts.connect}`}${opts.clearance === null ? "" : ` (clearance ${opts.clearance ?? 0.5})`})`,
     "\t\t(min_thickness 0.25)",
     `\t\t${fillForm}`,
     "\t\t(polygon (pts (xy 0 0) (xy 60 0) (xy 60 40) (xy 0 40)))",
@@ -232,12 +242,15 @@ export function fixtureBoard(opts: FixtureOptions): string {
     "\t)",
   ].join("\n")
   const [u, c] = [opts.place.u1, opts.place.c1]
-  const spec: TrackSpec | null =
-    opts.track === true ? { from: u, to: [c[0], c[1] + 5], layer: "F.Cu" } : opts.track === undefined || opts.track === false ? null : opts.track
-  const track =
-    spec === null
-      ? []
-      : [trackForm(spec)]
+  const specs: readonly TrackSpec[] =
+    opts.track === true
+      ? [{ from: u, to: [c[0], c[1] + 5], layer: "F.Cu" }]
+      : opts.track === undefined || opts.track === false
+        ? []
+        : isTrackList(opts.track)
+          ? opts.track
+          : [opts.track]
+  const track = specs.map(trackForm)
   const c2 = opts.place.c2 === undefined ? [] : [capacitor("C2", opts.place.c2, shape, type, "33333333-0000-4000-8000-000000000001")]
   return [
     "(kicad_pcb",

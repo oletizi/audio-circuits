@@ -1,6 +1,6 @@
 /**
- * WHAT `./pour.ts` READS OFF A SAVED BOARD, and every place it refuses rather
- * than reads a guess.
+ * WHAT `./pour.ts` READS OFF A SAVED BOARD'S ZONES, and every place it refuses
+ * rather than reads a guess. Pads, tracks and vias are in `./pour-read-pads.ts`.
  *
  * The board must be one that has ALREADY BEEN THROUGH ZONE REFILL AND SAVED:
  * `kicad-cli pcb drc --refill-zones --save-board <board>` writes the fill back as
@@ -16,20 +16,17 @@
  * carries the old polygons and reads as filled. Refilling is the caller's step,
  * and a measurement is only as fresh as the refill behind it.
  *
- * NET NAMES ARE LITERAL (`GND`, `+5V`) and the reference of the delay IC is `U1`.
- * They are `pt2399-core`'s own, named once below, and a board lacking them is
- * refused by `./pour.ts` with what was missing rather than measured against a
- * different net.
+ * A RULE AREA IS LEFT OUT BY ITS `(keepout ...)` FORM, NOT BY HAVING NO NET.
+ * KiCad 10 strips the net from a Rule Area when it SAVES a board - measured on the
+ * pinned 10.0.5 - so on a board that has been through `--save-board` the net
+ * filter alone would exclude one. This reader is also pointed at boards that have
+ * not been through that save, where a hand-authored keepout can carry a net and
+ * would otherwise read as a ground zone with no fill, and refuse as unfilled.
  */
 import { child, children } from "../../lib/kicad/sexpr.ts"
 import type { SNode } from "../../lib/kicad/sexpr.ts"
-import { toBoard } from "./pour-geometry.ts"
-import type { PadOutline, Pt } from "./pour-geometry.ts"
+import type { Pt } from "./pour-geometry.ts"
 import { PourRefusal } from "./pour-refusal.ts"
-
-export const GROUND_NET = "GND"
-export const SUPPLY_NET = "+5V"
-export const IC_REFERENCE = "U1"
 
 export interface PourPolygon {
   /** Index among this board's ground fill polygons. KiCad writes one polygon per connected piece of copper. */
@@ -40,15 +37,23 @@ export interface PourPolygon {
   readonly bounds: readonly [number, number, number, number]
 }
 
+/** What the ground zone filling one layer declares. */
+export interface ZoneSettings {
+  readonly thermalGapMm: number
+  /** The zone's own copper-to-foreign-copper clearance, or null if its (connect_pads ...) declares none. */
+  readonly clearanceMm: number | null
+  /** `thermal` when the zone's (connect_pads ...) names no mode (KiCad's default), else `yes`, `no` or `thru_hole_only`. */
+  readonly connection: string
+}
+
 export interface GroundPour {
   readonly polygons: readonly PourPolygon[]
   /** Layers carrying ground fill, in board order. */
   readonly layers: readonly string[]
-  /** Each pour layer's thermal gap, as the zone that fills it declares it. */
-  readonly thermalGapMm: ReadonlyMap<string, number>
+  readonly settingsByLayer: ReadonlyMap<string, ZoneSettings>
 }
 
-function num(text: string | undefined, what: string, where: string): number {
+export function num(text: string | undefined, what: string, where: string): number {
   const value = Number(text)
   if (text === undefined || text === "" || !Number.isFinite(value)) {
     throw new PourRefusal("board-shape", `${where}: ${what} is ${JSON.stringify(text)}, not a number.`)
@@ -68,7 +73,7 @@ export function copperLayersOf(root: SNode, where: string): readonly string[] {
 }
 
 /** A zone's or a pad's layer names with `*.Cu` and `F&B.Cu` expanded to the board's copper layers. */
-function expandLayers(names: readonly string[], copper: readonly string[]): readonly string[] {
+export function expandLayers(names: readonly string[], copper: readonly string[]): readonly string[] {
   const out: string[] = []
   for (const name of names) {
     if (name === "*.Cu") out.push(...copper)
@@ -105,18 +110,38 @@ function polygonPoints(fill: SNode, where: string): readonly Pt[] {
   return out
 }
 
-export function readGroundPour(root: SNode, where: string, copper: readonly string[]): GroundPour {
-  // A Rule Area (keepout) carries no net, so the net filter alone leaves it out.
-  const zones = children(root, "zone").filter((z) => child(z, "net")?.atoms[0] === GROUND_NET)
+function settingsOf(zone: SNode, where: string): ZoneSettings {
+  const gapText = child(child(zone, "fill") ?? zone, "thermal_gap")?.atoms[0]
+  if (gapText === undefined) {
+    throw new PourRefusal(
+      "board-shape",
+      `${where} declares no (thermal_gap ...) inside its (fill ...). The ring a pad's spokes are counted on ` +
+        "is placed from that gap, and a gap assumed here would count spokes on a ring the copper was never cut around.",
+    )
+  }
+  const connect = child(zone, "connect_pads")
+  const clearanceText = child(connect ?? zone, "clearance")?.atoms[0]
+  const mode = connect?.atoms[0]
+  return {
+    thermalGapMm: num(gapText, "thermal_gap", where),
+    clearanceMm: connect === undefined || clearanceText === undefined ? null : num(clearanceText, "connect_pads clearance", where),
+    connection: mode === "yes" || mode === "no" || mode === "thru_hole_only" ? mode : "thermal",
+  }
+}
+
+export function readGroundPour(root: SNode, where: string, copper: readonly string[], groundNet: string): GroundPour {
+  const zones = children(root, "zone").filter(
+    (z) => child(z, "keepout") === undefined && child(z, "net")?.atoms[0] === groundNet,
+  )
   if (zones.length === 0) {
     throw new PourRefusal(
       "no-ground-zone",
-      `${where} has no zone on net ${GROUND_NET}, so there is no pour to measure. Rule Areas (keepouts) do not ` +
+      `${where} has no zone on net ${groundNet}, so there is no pour to measure. Rule Areas (keepouts) do not ` +
         "count. A board with no pour is not reported as a pour with nothing in it.",
     )
   }
   const polygons: PourPolygon[] = []
-  const gaps = new Map<string, number>()
+  const settingsByLayer = new Map<string, ZoneSettings>()
   for (const zone of zones) {
     const name = child(zone, "name")?.atoms[0] ?? child(zone, "uuid")?.atoms[0] ?? "(unnamed)"
     const zoneWhere = `${where}: ground zone ${name}`
@@ -135,25 +160,18 @@ export function readGroundPour(root: SNode, where: string, copper: readonly stri
         )
       }
     }
-    const gapText = child(child(zone, "fill") ?? zone, "thermal_gap")?.atoms[0]
-    if (gapText === undefined) {
-      throw new PourRefusal(
-        "board-shape",
-        `${zoneWhere} declares no (thermal_gap ...) inside its (fill ...). The ring a pad's spokes are counted on ` +
-          "is placed from that gap, and a gap assumed here would count spokes on a ring the copper was never cut around.",
-      )
-    }
-    const gap = num(gapText, "thermal_gap", zoneWhere)
+    const settings = settingsOf(zone, zoneWhere)
     for (const layer of layers) {
-      const known = gaps.get(layer)
-      if (known !== undefined && known !== gap) {
+      const known = settingsByLayer.get(layer)
+      if (known !== undefined && known.thermalGapMm !== settings.thermalGapMm) {
         throw new PourRefusal(
           "board-shape",
-          `${where}: two ground zones on ${layer} declare thermal gaps ${known} and ${gap}. Spokes are counted on a ` +
-            "ring placed from the gap, and which zone's ring a pad belongs to is not decided here.",
+          `${where}: two ground zones on ${layer} declare thermal gaps ${known.thermalGapMm} and ${settings.thermalGapMm}. ` +
+            "Spokes are counted on a ring placed from the gap, and which zone's ring a pad belongs to is NOT decided " +
+            "here - it could be, by which zone's polygon contains the pad, and that is not written.",
         )
       }
-      gaps.set(layer, gap)
+      settingsByLayer.set(layer, settings)
     }
     for (const fill of fills) {
       const layer = child(fill, "layer")?.atoms[0]
@@ -170,110 +188,5 @@ export function readGroundPour(root: SNode, where: string, copper: readonly stri
     }
   }
   const layers = copper.filter((l) => polygons.some((p) => p.layer === l))
-  return { polygons, layers, thermalGapMm: gaps }
-}
-
-/** A pad on the ground or supply net, with its copper outline in board coordinates. */
-export interface NetPad {
-  readonly ref: string
-  readonly number: string
-  readonly type: string
-  readonly net: string
-  readonly layers: readonly string[]
-  readonly outline: PadOutline
-}
-
-export function readNetPads(root: SNode, where: string, copper: readonly string[]): readonly NetPad[] {
-  const out: NetPad[] = []
-  for (const footprint of children(root, "footprint")) {
-    const ref =
-      footprint.nodes.find((n) => n.name === "property" && n.atoms[0] === "Reference")?.atoms[1] ?? footprint.atoms[0] ?? "?"
-    for (const pad of children(footprint, "pad")) {
-      const net = child(pad, "net")?.atoms[0]
-      if (net !== GROUND_NET && net !== SUPPLY_NET) continue
-      const number = pad.atoms[0] ?? ""
-      const padWhere = `${where}: pad ${ref}-${number}`
-      if ((child(footprint, "layer")?.atoms[0] ?? "") !== "F.Cu") {
-        throw new PourRefusal(
-          "board-shape",
-          `${padWhere} is on a footprint that is not on F.Cu. A back-side footprint is stored mirrored and this ` +
-            "reader does not unmirror it; it is refused rather than measured at the wrong place.",
-        )
-      }
-      const at = child(footprint, "at")
-      const padAt = child(pad, "at")
-      const size = child(pad, "size")
-      if (at === undefined || padAt === undefined || size === undefined) {
-        throw new PourRefusal("board-shape", `${padWhere} or its footprint lacks an (at ...) or (size ...).`)
-      }
-      const shape = pad.atoms[2] ?? ""
-      const w = num(size.atoms[0], "pad width", padWhere)
-      const h = num(size.atoms[1], "pad height", padWhere)
-      let radius: number
-      if (shape === "circle") radius = Math.min(w, h) / 2
-      else if (shape === "oval") radius = Math.min(w, h) / 2
-      else if (shape === "rect") radius = 0
-      else if (shape === "roundrect") {
-        const ratio = child(pad, "roundrect_rratio")?.atoms[0]
-        if (ratio === undefined) {
-          throw new PourRefusal("board-shape", `${padWhere} is a roundrect with no (roundrect_rratio ...); its corner radius is not guessed.`)
-        }
-        radius = num(ratio, "roundrect_rratio", padWhere) * Math.min(w, h)
-      } else {
-        throw new PourRefusal(
-          "board-shape",
-          `${padWhere} has shape "${shape}". Only circle, oval, rect and roundrect outlines are read; a trapezoid or ` +
-            "custom pad would be approximated, and the ring spokes are counted on is placed from that outline.",
-        )
-      }
-      const centre = toBoard(
-        [num(padAt.atoms[0], "pad x", padWhere), num(padAt.atoms[1], "pad y", padWhere)],
-        [num(at.atoms[0], "footprint x", padWhere), num(at.atoms[1], "footprint y", padWhere)],
-        at.atoms[2] === undefined ? 0 : num(at.atoms[2], "footprint rotation", padWhere),
-      )
-      out.push({
-        ref,
-        number,
-        type: pad.atoms[1] ?? "",
-        net,
-        layers: expandLayers(child(pad, "layers")?.atoms ?? [], copper),
-        // A pad's own angle is absolute in a saved board; see ./pour-geometry.ts.
-        outline: {
-          centre,
-          hx: w / 2,
-          hy: h / 2,
-          radius,
-          degrees: padAt.atoms[2] === undefined ? 0 : num(padAt.atoms[2], "pad angle", padWhere),
-        },
-      })
-    }
-  }
-  return out
-}
-
-/** Where a ground track starts or ends, and how wide it is there. */
-export interface TrackEnd {
-  readonly layer: string
-  readonly point: Pt
-  readonly widthMm: number
-}
-
-export function readGroundTrackEnds(root: SNode, where: string): readonly TrackEnd[] {
-  const out: TrackEnd[] = []
-  for (const track of root.nodes.filter((n) => n.name === "segment" || n.name === "arc")) {
-    if (child(track, "net")?.atoms[0] !== GROUND_NET) continue
-    const layer = child(track, "layer")?.atoms[0]
-    const width = num(child(track, "width")?.atoms[0], "track width", where)
-    if (layer === undefined) throw new PourRefusal("board-shape", `${where}: a ${track.name} on ${GROUND_NET} has no (layer ...).`)
-    for (const end of ["start", "end"]) {
-      const node = child(track, end)
-      if (node === undefined) throw new PourRefusal("board-shape", `${where}: a ${track.name} on ${GROUND_NET} has no (${end} ...).`)
-      out.push({
-        layer,
-        point: [num(node.atoms[0], `track ${end} x`, where), num(node.atoms[1], `track ${end} y`, where)],
-        widthMm: width,
-      })
-    }
-  }
-  return out
+  return { polygons, layers, settingsByLayer }
 }

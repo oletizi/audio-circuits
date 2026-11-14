@@ -1,145 +1,130 @@
 /**
  * THE PARTS OF THE POUR MEASUREMENT THAT DEPEND ON WHICH LAYER, WHICH TRACK AND
- * WHICH CAPACITOR - the ones a mutation sweep of `./pour.test.ts` showed no
- * board there could tell apart, because every fixture in it pours the same shape
- * on every layer and has one capacitor.
+ * WHICH CAPACITOR, and the neck figure's resolution pinned from both sides.
  *
- * Still measurements against hand-built fixtures: a number, or a refusal for a
- * board the measurement has no answer for. There is no verdict here and no limit.
+ * A bypass return is one of four facts - pour, track, via, none found - and the
+ * overall figure is one of them only when every capacitor agrees. It used to be a
+ * refusal when a return was neither pour nor track, which threw away the other
+ * figures of the board and wore an electrical verdict in its name; a board with
+ * its return still to route, or an SMD cap with a via in its pad, is now a
+ * measured fact.
+ *
+ * Numbers against fixtures, never a verdict.
  */
 import { test, expect } from "bun:test"
 import { measureLayer } from "../../tools/pcb/pour-bridge.ts"
-import { measurePourText, PourRefusal } from "../../tools/pcb/pour.ts"
 import type { Pt } from "../../tools/pcb/pour-geometry.ts"
 import { LEFT_PLACE, OPEN_PLACE, RECTANGLE, dumbbell, fixtureBoard } from "./pour-fixtures.ts"
 import type { TrackSpec } from "./pour-fixtures.ts"
+import { measure, near, reasonOf, valueOf } from "./pour-helpers.ts"
 
-const measure = (text: string) => measurePourText(text, "fixture")
-
-function near(actual: number | null | undefined, expected: number, tolerance: number): void {
-  if (actual === null || actual === undefined) throw new Error(`expected ${expected} but measured ${String(actual)}`)
-  expect(Math.abs(actual - expected)).toBeLessThanOrEqual(tolerance)
-}
-
-function refusalOf(body: () => unknown): PourRefusal {
-  try {
-    body()
-  } catch (error) {
-    if (error instanceof PourRefusal) return error
-    throw error
-  }
-  throw new Error("expected a PourRefusal but nothing was thrown")
-}
-
-/** A slot at x 30.52..31.51 across U1's courtyard (x 28..32, y 16..26), as in `./pour.test.ts`. */
+/** A slot at x 30.52..31.51 across U1's loop (x 28.2..31.8, y 16.2..25.8), as in `./pour-continuity.test.ts`. */
 const SPLIT: readonly (readonly Pt[])[] = [
   [[0, 0], [30.52, 0], [30.52, 40], [0, 40]],
   [[31.51, 0], [60, 0], [60, 40], [31.51, 40]],
 ]
 
-// --- Layers measured separately and combined by what each figure means ------
+const returnOf = (text: string, cap = "C1") => valueOf(measure(text).bypassReturn).byCap.get(cap)
 
-test("the narrowest bridge is the narrowest over the layers, and each layer keeps its own", () => {
+// --- Layers measured separately and never folded into one figure -------------
+
+test("the narrowest neck is the narrowest over the layers, and each layer keeps its own", () => {
   const metrics = measure(
     fixtureBoard({ place: LEFT_PLACE, pour: { "F.Cu": [dumbbell(19.1295, 20.8795)], "B.Cu": [dumbbell(19.5795, 20.4295)] } }),
   )
-  near(metrics.bridgeByLayer.get("F.Cu")?.narrowestBridgeMm, 1.75, 0.05)
-  near(metrics.bridgeByLayer.get("B.Cu")?.narrowestBridgeMm, 0.85, 0.05)
-  near(metrics.narrowestBridgeMm, 0.85, 0.05)
+  near(metrics.neckByLayer.get("F.Cu"), 1.75, 0.05)
+  near(metrics.neckByLayer.get("B.Cu"), 0.85, 0.05)
+  near(metrics.narrowestNeckMm, 0.85, 0.05)
 })
 
-test("continuity is the covered fraction on ANY pour layer, each layer's own figure kept beside it", () => {
-  // F.Cu has the slot across U1's courtyard; B.Cu is solid. A point on the slot is covered by B.Cu.
+test("continuity is read per layer and not folded: a slot across the loop on F.Cu is not covered by a solid B.Cu", () => {
   const metrics = measure(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT, "B.Cu": [RECTANGLE] } }))
-  near(metrics.continuityAroundU1ByLayer.get("F.Cu"), 1 - (2 * 0.99) / 28, 0.005)
-  expect(metrics.continuityAroundU1ByLayer.get("B.Cu")).toBe(1)
-  expect(metrics.continuityAroundU1).toBe(1)
-  // The B.Cu pour reaches both U1's ground pins and C1's ground pad, so the return rides a pour.
-  expect(metrics.bypassReturnByCap.get("C1")).toBe("pour")
-})
-
-test("a layer's figures are read from that layer's own polygons, not from whichever polygon is found first", () => {
-  const metrics = measure(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT, "B.Cu": [RECTANGLE] } }))
-  expect(metrics.bridgeByLayer.get("F.Cu")?.regions).toBe(2)
-  expect(metrics.bridgeByLayer.get("B.Cu")?.regions).toBe(1)
+  const loops = valueOf(metrics.continuityAroundIc)
+  near(loops.get("F.Cu")?.coveredFraction, 1 - 1.98 / 26.4, 0.01)
+  expect(loops.get("F.Cu")?.breaksMm.length).toBe(2)
+  expect(loops.get("B.Cu")?.coveredFraction).toBe(1)
+  // Each layer's figures come from that layer's own polygons.
+  expect(metrics.regionsByLayer.get("F.Cu")).toBe(2)
+  expect(metrics.regionsByLayer.get("B.Cu")).toBe(1)
 })
 
 // --- What counts as touching a pad ------------------------------------------
 
 /** F.Cu pour only, split so C1's side is not U1's, and C1 a surface-mount part on F.Cu. */
-function splitWithTrack(track: TrackSpec) {
-  return fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT }, c1Smd: true, track })
-}
+const splitWith = (track?: TrackSpec | readonly TrackSpec[], extra: readonly string[] = []) =>
+  fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT }, c1Smd: true, ...(track === undefined ? {} : { track }), extraZones: extra })
 
-test("a ground track that ends on the capacitor's pad, on the pad's layer, is what its return rides", () => {
+test("a ground track that ends on the capacitor's pad, on the pad's layer, is its return", () => {
   // C1's ground pad is at (45, 28), 0.8 mm radius; the track ends 0.5 mm from its centre.
-  const metrics = measure(splitWithTrack({ from: [30, 18], to: [45.5, 28], layer: "F.Cu" }))
-  expect(metrics.bypassReturnByCap.get("C1")).toBe("track")
+  expect(returnOf(splitWith({ from: [30, 18], to: [45.5, 28], layer: "F.Cu" }))).toBe("track")
 })
 
-test("a ground track that stops short of the pad, or ends on the wrong layer, does not touch it", () => {
-  // 0.4 mm clear of the pad's rim.
-  const short = refusalOf(() => measure(splitWithTrack({ from: [30, 18], to: [45, 29.2], layer: "F.Cu" })))
-  expect(short.guard).toBe("bypass-unconnected")
+test("a ground track that stops short of the pad, or ends on the wrong layer, does not touch it: none found", () => {
+  // 0.4 mm clear of the pad's rim, and the track is 0.25 mm to a side.
+  expect(returnOf(splitWith({ from: [30, 18], to: [45, 29.2], layer: "F.Cu" }))).toBe("none-found")
   // On the pad's centre exactly, but on a layer an F.Cu surface-mount pad is not on.
-  const wrongLayer = refusalOf(() => measure(splitWithTrack({ from: [30, 18], to: [45, 28], layer: "B.Cu" })))
-  expect(wrongLayer.guard).toBe("bypass-unconnected")
+  expect(returnOf(splitWith({ from: [30, 18], to: [45, 28], layer: "B.Cu" }))).toBe("none-found")
 })
 
 test("only a GROUND track counts, and an arc is a track as much as a straight segment is", () => {
-  const onPad: Pt = [45, 28]
-  // The same track on a signal net does not return anything to ground.
-  expect(refusalOf(() => measure(splitWithTrack({ from: [30, 18], to: onPad, layer: "F.Cu", net: "SIG" }))).guard).toBe("bypass-unconnected")
-  expect(measure(splitWithTrack({ from: [30, 18], to: onPad, layer: "F.Cu", arc: true })).bypassReturnByCap.get("C1")).toBe("track")
+  expect(returnOf(splitWith({ from: [30, 18], to: [45, 28], layer: "F.Cu", net: "SIG" }))).toBe("none-found")
+  expect(returnOf(splitWith({ from: [30, 18], to: [45, 28], layer: "F.Cu", arc: true }))).toBe("track")
+})
+
+test("a ground via in the pad is its own fact: via, which is neither pour nor track and is not refused", () => {
+  const via = '\t(via (at 45 28) (size 0.8) (drill 0.4) (layers "F.Cu" "B.Cu") (net "GND") (uuid "eeeeeeee-0000-4000-8000-000000000001"))'
+  const metrics = measure(splitWith(undefined, [via]))
+  expect(valueOf(metrics.bypassReturn).byCap.get("C1")).toBe("via")
+  // And it did not silence the other figures, which the refusal it replaces did.
+  expect(valueOf(metrics.continuityAroundIc).get("F.Cu")?.breaksMm.length).toBe(2)
+  expect(valueOf(metrics.spokesByGroundPad).size).toBe(2)
+  // A via that is not in the pad is not its return.
+  const away = '\t(via (at 20 5) (size 0.8) (drill 0.4) (layers "F.Cu" "B.Cu") (net "GND") (uuid "eeeeeeee-0000-4000-8000-000000000001"))'
+  expect(returnOf(splitWith(undefined, [away]))).toBe("none-found")
 })
 
 test("a surface-mount pad on F.Cu is not on a B.Cu pour: a pour there does not carry its return", () => {
   // F.Cu is split so C1's side is not U1's; B.Cu is one solid pour that WOULD reach both if the pad were on it.
-  const refusal = refusalOf(() =>
-    measure(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT, "B.Cu": [RECTANGLE] }, c1Smd: true })),
-  )
-  expect(refusal.guard).toBe("bypass-unconnected")
+  const text = fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT, "B.Cu": [RECTANGLE] }, c1Smd: true })
+  expect(returnOf(text)).toBe("none-found")
 })
 
-test("a C-numbered part with no ground pad is not a bypass capacitor, and with nothing else to ask about the board is refused", () => {
+test("a return that is on the pour and also has a track reads pour: the pour is checked first and the order is not a preference the reader sees", () => {
+  expect(returnOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, track: true }))).toBe("pour")
+})
+
+test("a C-numbered part with no ground pad is not a bypass capacitor, and with nothing else to ask about the figure is unavailable", () => {
   const text = fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] } })
   const signal = text.replace('(pad "2" thru_hole circle (at 0 5) (size 1.6 1.6) (drill 0.8) (layers "*.Cu" "*.Mask") (net "GND"))', '(pad "2" thru_hole circle (at 0 5) (size 1.6 1.6) (drill 0.8) (layers "*.Cu" "*.Mask") (net "SIG"))')
   expect(signal).not.toBe(text)
-  const refusal = refusalOf(() => measure(signal))
-  expect(refusal.guard).toBe("subject-missing")
-  expect(refusal.message).toContain("bypass")
+  expect(reasonOf(measure(signal).bypassReturn)).toContain("bypass")
 })
 
 // --- More than one bypass capacitor ------------------------------------------
 
-test("with one return on the pour and one on a track, the overall figure is track and each capacitor is kept", () => {
+const TWO = { u1: [30, 18], c1: [45, 23], c2: [10, 25] } as const
+
+test("with one return on the pour and one on a track the overall figure is mixed, and each capacitor is kept", () => {
   // C2 sits in the left body with U1, so it shares U1's piece of pour; C1 is across the slot, on a track.
-  const place = { u1: [30, 18], c1: [45, 23], c2: [10, 25] } as const
-  const metrics = measure(fixtureBoard({ place, pour: { "F.Cu": SPLIT }, track: true }))
-  expect(metrics.bypassReturnByCap.get("C1")).toBe("track")
-  expect(metrics.bypassReturnByCap.get("C2")).toBe("pour")
-  expect(metrics.bypassReturn).toBe("track")
+  const metrics = valueOf(measure(fixtureBoard({ place: TWO, pour: { "F.Cu": SPLIT }, track: true })).bypassReturn)
+  expect(metrics.byCap.get("C1")).toBe("track")
+  expect(metrics.byCap.get("C2")).toBe("pour")
+  expect(metrics.overall).toBe("mixed")
 })
 
-test("two footprints that are both U1 are refused: the figure is about one IC", () => {
-  const refusal = refusalOf(() => measure(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, refs: { c1: "U1" } })))
-  expect(refusal.guard).toBe("subject-missing")
-  expect(refusal.message).toContain("2 footprint(s)")
+test("when every capacitor agrees the overall figure is that answer, whichever answer it is", () => {
+  const twoTracks = fixtureBoard({
+    place: { u1: [30, 18], c1: [45, 23], c2: [50, 23] }, pour: { "F.Cu": SPLIT },
+    track: [{ from: [30, 18], to: [45, 28], layer: "F.Cu" }, { from: [30, 18], to: [50, 28], layer: "F.Cu" }],
+  })
+  expect(valueOf(measure(twoTracks).bypassReturn).overall).toBe("track")
+  const twoPours = fixtureBoard({ place: TWO, pour: { "F.Cu": [RECTANGLE] } })
+  expect(valueOf(measure(twoPours).bypassReturn).overall).toBe("pour")
+  const neither = fixtureBoard({ place: { u1: [30, 18], c1: [45, 23], c2: [50, 23] }, pour: { "F.Cu": SPLIT } })
+  expect(valueOf(measure(neither).bypassReturn).overall).toBe("none-found")
 })
 
-test("two ground zones on one layer that declare different thermal gaps are refused, not averaged or picked between", () => {
-  const second = [
-    '\t(zone (net "GND") (layers "F.Cu") (uuid "dddddddd-0000-4000-8000-000000000001") (name "SYNTHETIC:second-ground")',
-    "\t\t(fill yes (thermal_gap 0.7) (thermal_bridge_width 0.5))",
-    "\t\t(polygon (pts (xy 0 0) (xy 5 0) (xy 5 5) (xy 0 5)))",
-    '\t\t(filled_polygon (layer "F.Cu") (pts (xy 0 0) (xy 5 0) (xy 5 5) (xy 0 5))))',
-  ].join("\n")
-  const refusal = refusalOf(() => measure(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, extraZones: [second] })))
-  expect(refusal.guard).toBe("board-shape")
-  expect(refusal.message).toContain("0.7")
-})
-
-// --- What a neck is: bodies only a little wider than the neck still count ----
+// --- What a neck is: the resolution pinned from both sides -------------------
 
 /** Two square-ended arms `arm` mm tall joined by a 3 mm long neck `neck` mm tall. */
 function armsAndNeck(neck: number, arm: number): readonly Pt[] {
@@ -150,9 +135,20 @@ function armsAndNeck(neck: number, arm: number): readonly Pt[] {
   ]
 }
 
-test("a 1.0 mm neck between arms 1.4 mm tall is a bridge: bodies need only be a few pixels wider than the neck", () => {
-  // 0.2 mm of relief each side is four pixels at the 0.05 mm pitch, the narrowest relief this test pins.
-  const measured = measureLayer([armsAndNeck(1.0, 1.4)])
-  near(measured.narrowestBridgeMm, 0.95, 0.06)
-  expect(measured.regions).toBe(1)
+test("arms 3 pixels wider in radius than the neck make a neck, and arms 2 pixels wider do not: the floor is pinned at 2", () => {
+  // A 1.0 mm neck: arms 1.3 mm tall are 0.15 mm = 3 pixels wider in radius; arms 1.2 mm tall are 2 pixels wider.
+  // A floor of 3 or more hides the first; a floor of 1 or less reveals the second. Neither is a verdict.
+  const three = measureLayer([armsAndNeck(1.0, 1.3)])
+  near(three.narrowestNeckMm, 0.95, 0.06)
+  expect(measureLayer([armsAndNeck(1.0, 1.2)]).narrowestNeckMm).toBeNull()
+  expect(measureLayer([armsAndNeck(1.0, 1.4)]).narrowestNeckMm).not.toBeNull()
+})
+
+test("the neck figure carries a literal accuracy of one pixel: 0.85 reads 0.85, and a 0.8 neck reads 0.75 or 0.8, never over", () => {
+  const odd = measureLayer([armsAndNeck(0.85, 2.0)])
+  near(odd.narrowestNeckMm, 0.85, 0.001)
+  const even = measureLayer([armsAndNeck(0.8, 2.0)]).narrowestNeckMm
+  if (even === null) throw new Error("expected a neck")
+  expect(even).toBeGreaterThanOrEqual(0.75 - 1e-9)
+  expect(even).toBeLessThanOrEqual(0.8 + 1e-9)
 })

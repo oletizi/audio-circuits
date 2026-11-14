@@ -8,12 +8,13 @@
  */
 import { test, expect } from "bun:test"
 import { parseSexpr } from "../../lib/kicad/sexpr.ts"
-import { copperLayersOf, readNetPads } from "../../tools/pcb/pour-read.ts"
+import { copperLayersOf } from "../../tools/pcb/pour-read.ts"
+import { readPads } from "../../tools/pcb/pour-read-pads.ts"
 import { OPEN_PLACE, RECTANGLE, fixtureBoard } from "./pour-fixtures.ts"
 
 function pads(options: Parameters<typeof fixtureBoard>[0]) {
   const root = parseSexpr(fixtureBoard(options))
-  return readNetPads(root, "fixture", copperLayersOf(root, "fixture"))
+  return readPads(root, "fixture", copperLayersOf(root, "fixture"), (_ref, net) => net === "GND" || net === "+5V")
 }
 
 const BASE = { place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] } } as const

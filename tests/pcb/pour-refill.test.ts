@@ -21,9 +21,10 @@ import fs from "node:fs"
 import path from "node:path"
 import { spawnSync } from "node:child_process"
 import { defaultKicadCli } from "../../lib/kicad/install.ts"
-import { measurePour, PourRefusal } from "../../tools/pcb/pour.ts"
+import { measurePour, PourRefusal, PT2399_CORE } from "../../tools/pcb/pour.ts"
 import { cleanUpTempScratch, freshTempScratch } from "../support/temp-scratch.ts"
 import { OPEN_PLACE, fixtureBoard } from "./pour-fixtures.ts"
+import { valueOf } from "./pour-helpers.ts"
 
 afterAll(cleanUpTempScratch)
 
@@ -46,7 +47,7 @@ test("the board as written, with a zone and no fill, is refused; after KiCad ref
   const board = unfilledBoard()
   let refusal: unknown
   try {
-    measurePour(board)
+    measurePour(board, PT2399_CORE)
   } catch (error) {
     refusal = error
   }
@@ -56,17 +57,19 @@ test("the board as written, with a zone and no fill, is refused; after KiCad ref
   refill(board)
   expect(fs.readFileSync(board, "utf8")).toContain("(filled_polygon")
 
-  const metrics = measurePour(board)
-  // KiCad's default thermal relief on a 1.6 mm through-hole pad: four spokes, on each of the two layers.
-  expect(metrics.spokesByGroundPad.get("U1-3")).toBe(8)
-  expect(metrics.spokesByGroundPad.get("U1-4")).toBe(8)
-  expect(metrics.spokesByGroundPad.get("C1-2")).toBe(8)
-  expect(metrics.groundPads.get("U1-3")?.map((r) => [r.layer, r.spokes])).toEqual([["F.Cu", 4], ["B.Cu", 4]])
+  const metrics = measurePour(board, PT2399_CORE)
+  // KiCad's default thermal relief on a 1.6 mm through-hole pad: four spokes, on each of the two layers, kept per layer.
+  const spokes = valueOf(metrics.spokesByGroundPad)
+  for (const pad of ["U1-3", "U1-4", "C1-2"]) {
+    expect([...(spokes.get(pad) ?? [])].map(([layer, r]) => [layer, r.spokes, r.declaredConnection])).toEqual([
+      ["F.Cu", 4, "thermal"], ["B.Cu", 4, "thermal"],
+    ])
+  }
   // Both layers were poured, and each is measured.
-  expect([...metrics.bridgeByLayer.keys()]).toEqual(["F.Cu", "B.Cu"])
-  expect([...metrics.continuityAroundU1ByLayer.keys()]).toEqual(["F.Cu", "B.Cu"])
+  expect([...metrics.regionsByLayer.keys()]).toEqual(["F.Cu", "B.Cu"])
+  expect([...valueOf(metrics.continuityAroundIc).keys()]).toEqual(["F.Cu", "B.Cu"])
   // One continuous zone, so U1's ground pins and C1's ground pad share a piece of it.
-  expect(metrics.bypassReturn).toBe("pour")
+  expect(valueOf(metrics.bypassReturn).overall).toBe("pour")
 })
 
 /**
@@ -91,13 +94,58 @@ test("an oval pad turned 0, 90 and 270 degrees reads the four spokes KiCad cut r
       }),
     )
     refill(board)
-    const metrics = measurePour(board)
+    const metrics = measurePour(board, PT2399_CORE)
     for (const pad of ["U1-3", "U1-4"]) {
-      expect(metrics.groundPads.get(pad)?.map((r) => [r.layer, r.spokes])).toEqual([["F.Cu", 4], ["B.Cu", 4]])
-      for (const reading of metrics.groundPads.get(pad) ?? []) fractions.push(reading.coveredFraction)
+      const layers = valueOf(metrics.spokesByGroundPad).get(pad)
+      expect([...(layers ?? [])].map(([layer, r]) => [layer, r.spokes])).toEqual([["F.Cu", 4], ["B.Cu", 4]])
+      for (const reading of layers?.values() ?? []) fractions.push(reading.coveredFraction)
     }
   }
   // Four 0.5 mm spokes on a ring of 2.8 + 2 pi (0.8 + 0.25) = 9.4 mm.
   for (const f of fractions) expect(Math.abs(f - 2 / 9.4)).toBeLessThanOrEqual(0.03)
   expect(Math.max(...fractions) - Math.min(...fractions)).toBeLessThanOrEqual(0.001)
+})
+
+/**
+ * THE BOARD THAT SHOWED THE FIRST CONTINUITY FIGURE WAS WRONG. A copy of this
+ * repository's real board with one full-board ground zone on both layers, filled
+ * by the pinned `kicad-cli`: an unbroken plane, so a figure that reads anything
+ * but full coverage is reading something other than the pour. The first version
+ * walked the courtyard's bounding box, which sits 1.055 mm from U1's pad centres
+ * inside the 1.3 mm void round each, and read 0.593.
+ *
+ * The real board is only COPIED, into scratch; it has no pour and is not changed.
+ */
+test("the real board with an unbroken full-board pour reads full coverage round U1 on both layers, one region, and no bridge", () => {
+  const circuit = path.resolve(import.meta.dir, "../../circuits/pt2399-core")
+  const dir = freshTempScratch("pcb-pour-refill-")
+  const board = path.join(dir, "pt2399-core.kicad_pcb")
+  const source = fs.readFileSync(path.join(circuit, "pt2399-core.kicad_pcb"), "utf8")
+  const zone = [
+    "\t(zone",
+    '\t\t(net "GND")',
+    '\t\t(layers "F.Cu" "B.Cu")',
+    '\t\t(uuid "aaaaaaaa-0000-4000-8000-000000000001")',
+    "\t\t(hatch edge 0.5)",
+    "\t\t(connect_pads (clearance 0.5))",
+    "\t\t(min_thickness 0.25)",
+    "\t\t(fill yes (thermal_gap 0.5) (thermal_bridge_width 0.5))",
+    "\t\t(polygon (pts (xy 11 11) (xy 159 11) (xy 159 109) (xy 11 109)))",
+    "\t)",
+  ].join("\n")
+  const end = source.lastIndexOf(")")
+  fs.writeFileSync(board, `${source.slice(0, end)}${zone}\n${source.slice(end)}`)
+  fs.copyFileSync(path.join(circuit, "pt2399-core.kicad_pro"), path.join(dir, "pt2399-core.kicad_pro"))
+  refill(board)
+
+  const metrics = measurePour(board, PT2399_CORE)
+  const loops = valueOf(metrics.continuityAroundIc)
+  for (const layer of ["F.Cu", "B.Cu"]) {
+    expect(loops.get(layer)?.coveredFraction).toBe(1)
+    expect(loops.get(layer)?.breaksMm).toEqual([])
+    expect(metrics.regionsByLayer.get(layer)).toBe(1)
+  }
+  expect(metrics.narrowestBridgeMm.kind).toBe("unavailable")
+  // The constriction between pad voids is a figure of its own, and is not a bridge.
+  expect(metrics.narrowestNeckMm).not.toBeNull()
 })
