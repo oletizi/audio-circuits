@@ -34,10 +34,12 @@ import { loadCatalog } from "../../tools/bom/catalog.ts"
 import { topLevelForms } from "../../tools/pcb/board-forms.ts"
 import { footprintInstanceForm } from "../../tools/pcb/footprint-instance.ts"
 import {
-  MOUNTING_FOOTPRINT, PROJECT_LIBRARY, POLYGON_SIDES, containingPolygon, mountingHoleRule,
-  mountingHoles, readMountingFootprint, ruleAreaForm,
+  MOUNTING_FOOTPRINT, POLYGON_SIDES, PROJECT_LIBRARY, mountingHoleRule, mountingHoles,
 } from "../../tools/pcb/mounting-hardware.ts"
-import { FIXTURE_ROOT, fixtures } from "../../tools/pcb/mounting-envelope-fixtures.ts"
+import {
+  containingPolygon, readMountingFootprint, ruleAreaForm,
+} from "../../tools/pcb/mounting-hardware-forms.ts"
+import { FIXTURE_ROOT, fixtureFiles, fixtures } from "../../tools/pcb/mounting-envelope-fixtures.ts"
 import { footprintFile } from "../kicad/footprint-library.ts"
 
 const REPO = path.resolve(import.meta.dir, "../..")
@@ -186,13 +188,17 @@ test("the envelope is the catalogued washer's outside diameter, not a number of 
 })
 
 test("the four hole centres are derived from an outline and the rule, and refuse an outline too small", () => {
-  // A PURE derivation over a stated outline. It is NOT the board's outline:
-  // that geometry is on hold - the owner added a hand-assembly clearance
-  // criterion on 2026-11-13 ("remember that I have fingers, so I need enough
-  // room between parts to use my fingers. I'm not a pick and place machine"),
-  // which changes the placement the final extent is derived from. A coordinate
-  // asserted against the board today would be derived from a placement that is
-  // already superseded.
+  // A PURE derivation over an ARBITRARY stated outline, deliberately not the
+  // board's own 150 x 100 mm: what this asserts is the rule's arithmetic over
+  // any rectangle, including the refusal for one too small to hold four
+  // envelopes. `tests/pcb/settled-mounting-holes.test.ts` is where the SAME
+  // function is run against the real outline and compared with the four holes
+  // actually on the board, so neither file has to stand in for the other.
+  //
+  // THIS COMMENT SAID THE BOARD'S GEOMETRY WAS "ON HOLD" UNTIL THE REVIEW
+  // CAUGHT IT. It was, for part of this task, and the hold was lifted in the
+  // same session - so the sentence outlived its cause and told a reader the
+  // board had no mounting holes when it has four.
   const outline = { x0: 10, y0: 20, x1: 90, y1: 70 }
   const holes = mountingHoles(outline, rule)
   expect(holes.map((h) => h.corner)).toEqual(["nw", "ne", "se", "sw"])
@@ -273,7 +279,9 @@ test("a footprint instance is built from the library file, and refuses a name th
   })
   expect(instance).toContain(`(footprint "${PROJECT_LIBRARY}:${MOUNTING_FOOTPRINT}"`)
   expect(instance).toContain("(locked yes)")
-  expect(instance).toContain("(at 12.5 30)")
+  // Six decimals, which is the spelling a board carries an origin in - see
+  // `coord` in footprint-instance.ts for why that is not a preference.
+  expect(instance).toContain("(at 12.500000 30.000000)")
   expect(instance).toContain('"MH1"')
   expect(instance).not.toContain("REF**")
   expect(instance).toContain("(attr board_only exclude_from_pos_files exclude_from_bom)")
@@ -292,21 +300,44 @@ test("a footprint instance is built from the library file, and refuses a name th
   ).toThrow(/declares footprint/)
 })
 
-test("the committed fixtures are what the generator produces, and carry the library's own bytes", () => {
+test("EVERY file the generator writes into a fixture is what the committed fixture holds", () => {
+  // ITERATED FROM THE GENERATOR'S OWN FILE MAP, not from a list here. This test
+  // compared two of the five files - the board and the library copy - and left
+  // the `.kicad_pro`, the `fp-lib-table` and `NOTES.txt` unchecked. The
+  // `.kicad_pro` is derived from the project's with a filename substitution, so
+  // a change to the project's DRC severities would not have propagated and
+  // nothing would have gone red; `NOTES.txt` carries the component fixture's
+  // generation-time measurements, so a stale copy would claim a geometry the
+  // fixture no longer has.
+  //
+  // COMPARED BY CONTENT, never by timestamp: git does not preserve mtimes, so
+  // an mtime comparison makes stale look current.
   const library = readMountingFootprint(PROJECT_FOOTPRINT)
+  let compared = 0
   for (const fixture of fixtures()) {
     const dir = path.join(FIXTURE_ROOT, fixture.name)
-    const board = path.join(dir, "envelope.kicad_pcb")
-    const copy = path.join(dir, "pt2399-core.pretty", `${MOUNTING_FOOTPRINT}.kicad_mod`)
-    if (!fs.existsSync(board)) {
-      throw new Error(`${board} is missing. Regenerate with: bun tools/pcb/mounting-envelope-fixtures.ts --write`)
+    const files = fixtureFiles(fixture)
+    console.log(`  ${fixture.name}: ${files.size} file(s)`)
+    // A floor on the set, so a generator that stopped writing most of a fixture
+    // would fail here rather than make this loop vacuous.
+    expect(files.size).toBeGreaterThanOrEqual(5)
+    for (const [relative, content] of files) {
+      const target = path.join(dir, relative)
+      if (!fs.existsSync(target)) {
+        throw new Error(
+          `${target} is missing. Regenerate with: bun tools/pcb/mounting-envelope-fixtures.ts --write`,
+        )
+      }
+      expect(fs.readFileSync(target, "utf8"), `${fixture.name}/${relative}`).toBe(content)
+      compared += 1
     }
-    // REGENERATED AND COMPARED BY CONTENT, never by timestamp: git does not
-    // preserve mtimes, so an mtime comparison makes stale look current.
-    expect(fs.readFileSync(board, "utf8")).toBe(fixture.text)
-    // The fixture's library copy exists so DRC does not add a
-    // lib_footprint_issues warning, and it must not become a second source of
-    // truth for the courtyard.
-    expect(fs.readFileSync(copy, "utf8")).toBe(library)
+    // The library copy must not become a second source of truth for the
+    // courtyard, which is a stronger statement than "it matches the generator":
+    // it matches the PROJECT library the board itself uses.
+    expect(
+      fs.readFileSync(path.join(dir, "pt2399-core.pretty", `${MOUNTING_FOOTPRINT}.kicad_mod`), "utf8"),
+    ).toBe(library)
   }
+  console.log(`  ${compared} file(s) compared by content`)
+  expect(compared).toBeGreaterThanOrEqual(15)
 })

@@ -55,7 +55,12 @@ import { verifyFabStandard } from "../../tools/pcb/fab-standard.ts"
 import { runDrc } from "../../tools/pcb/drc.ts"
 import { withTopLevelForms } from "../../tools/pcb/board-forms.ts"
 import { BOARD_BASENAME, FIXTURE_ROOT } from "../../tools/pcb/mounting-envelope-fixtures.ts"
-import { MOUNTING_FOOTPRINT, mountingFootprintForm, readMountingFootprint } from "../../tools/pcb/mounting-hardware.ts"
+import {
+  MOUNTING_FOOTPRINT,
+} from "../../tools/pcb/mounting-hardware.ts"
+import {
+  mountingFootprintForm, readMountingFootprint,
+} from "../../tools/pcb/mounting-hardware-forms.ts"
 
 afterAll(cleanUpTempScratch)
 
@@ -132,14 +137,43 @@ test("INTEGRATION, real kicad-cli: the CLEAN CONTROL produces zero violations", 
 })
 
 test("INTEGRATION, real kicad-cli: missing_courtyard is ENABLED in the run that produced the report", () => {
-  const report = drcOf(scratchFixture(CLEAN))
-  console.log(`  ignored_checks: ${report.ignoredChecks.join(", ")}`)
-  // Read from the REPORT, not from the project: a report can come from a run
-  // whose severities disagree with any .kicad_pro on disk.
-  for (const check of REQUIRED_ACTIVE_CHECKS) expect(report.ignoredChecks).not.toContain(check)
-  // KiCad ignores missing_courtyard by DEFAULT, so this is the one of the three
-  // that the project has to turn on rather than leave alone.
-  expect(report.ignoredChecks).not.toContain("missing_courtyard")
+  // **WHAT ESTABLISHES THIS IS THE RETURN, NOT AN ASSERTION ON THE RESULT, and
+  // the previous version of this test got that backwards.** It asserted that
+  // none of `REQUIRED_ACTIVE_CHECKS` appears in `report.ignoredChecks` - but
+  // `parseReport` (`tools/pcb/drc-report.ts:172`) THROWS
+  // `DrcRefusal("ignored-checks", ...)` in exactly that case, so `drcOf` can
+  // never return such a report and the two assertions were unreachable. They
+  // were redundant rather than dangerous, since the refusal fails the test too
+  // and an ABSENT `ignored_checks` key is refused as well (`arrayField`: "A
+  // missing field is not zero") - but the test's own name presented them as the
+  // load-bearing part, and an unreachable assertion reads as coverage.
+  //
+  // So: reaching the next line at all is the finding. What IS asserted is that
+  // the field was populated and read - a report whose `ignored_checks` came
+  // back empty would mean KiCad had stopped reporting the list, and the
+  // refusal above would then have nothing to search.
+  const board = scratchFixture(CLEAN)
+  const report = drcOf(board)
+  console.log(`  parseReport accepted the report; ignored_checks: ${report.ignoredChecks.join(", ")}`)
+  expect(report.ignoredChecks.length).toBeGreaterThan(0)
+  // KiCad ignores missing_courtyard by DEFAULT, so the project has to turn it
+  // on. That the run above did not refuse is the proof it is on; this records
+  // which of the three that argument is about.
+  expect(REQUIRED_ACTIVE_CHECKS).toContain("missing_courtyard")
+
+  // AND THE REFUSAL ITSELF, exercised rather than assumed - so the mechanism
+  // the paragraph above relies on is shown to fire, from this file, on a report
+  // shaped exactly like the one just parsed.
+  const ignored = { ...JSON.parse(fs.readFileSync(path.join(path.dirname(board), "drc.json"), "utf8")) }
+  ignored["ignored_checks"] = [{ key: "missing_courtyard", description: "x" }]
+  let guard = ""
+  try {
+    parseReport(JSON.stringify(ignored), "ignored-probe")
+  } catch (error) {
+    guard = error instanceof Error ? error.message : String(error)
+  }
+  expect(guard).toContain("missing_courtyard")
+  expect(guard).toContain("hardware-envelope gate")
 })
 
 test("INTEGRATION, real kicad-cli: a part whose BODY overlaps the washer is caught, pads clear", () => {

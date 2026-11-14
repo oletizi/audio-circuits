@@ -28,9 +28,7 @@
  * Edge.Cuts and refuses a board that has none, naming whose decision that is.
  */
 import fs from "node:fs"
-import path from "node:path"
 import { parseSexpr, child, type SNode } from "../../lib/kicad/sexpr.ts"
-import { derivedHardware, mountingHoleRule } from "./mounting-hardware.ts"
 
 /** The outline's bounding box, in board millimetres. */
 export interface Bounds {
@@ -191,9 +189,15 @@ export const SIZE_TOLERANCE_MM = 0.001
  * THIS IS THE GUARD THE APPROVED INTENT ASKED FOR AND SAID DID NOT EXIST:
  * *"No tool compares this size to the board's Edge.Cuts today... until it exists
  * this number is authored and unchecked."* It lives in the resolver because the
- * resolver is already the thing that opens the board and reads its outline, and
- * because EVERY consumer of the resolved intent goes through here - so a board
- * quietly resized cannot reach the seeder or the grader without passing this.
+ * resolver is already the thing that opens the board and reads its outline.
+ *
+ * **WHAT IT DOES NOT BUY, corrected: this docstring claimed that "EVERY consumer
+ * of the resolved intent goes through here - so a board quietly resized cannot
+ * reach the seeder or the grader without passing this".** It cannot. The
+ * resolved intent is a separate file handed to the engine as a separate
+ * argument, so a resolved file left on disk from before an outline change
+ * reaches the grader without passing anything. This guard binds the RESOLUTION;
+ * `verifyResolvedIntent` and `make grade-pt2399-core` are what bind the use.
  *
  * It compares the SIZE and ignores the origin, deliberately: the intent declares
  * a size precisely so that moving the rectangle on the sheet is not a change to
@@ -364,94 +368,4 @@ export function resolveIntentZones(intent: unknown, bounds: Bounds, where: strin
 
 function round4(value: number): number {
   return Math.round(value * 10000) / 10000
-}
-
-/**
- * The resolved intent with the mounting hardware's keepouts and `must_lock`
- * references added, derived from the outline and the approved rule.
- *
- * WHY THIS IS A SECOND DERIVATION IN THE SAME FILE AND NOT A SECOND TOOL. The
- * approved `floorplan-intent.json` says of its own empty `keepouts` array that
- * the four coordinates are derived *"exactly as the mounting-hole keepouts
- * are"* - the same construct as the zone fractions, for the same reason: a
- * coordinate approved before the outline existed would be stale the moment the
- * outline moved. One resolver means one place where the approved file turns
- * into the file the engine reads, so the two halves cannot disagree about which
- * outline they resolved against.
- */
-function withHardware(resolved: Record_, boardText: string, boardWhere: string, rulesPath: string, bounds: Bounds): Record_ {
-  const rule = mountingHoleRule(JSON.parse(fs.readFileSync(rulesPath, "utf8")), rulesPath)
-  const hardware = derivedHardware(boardText, boardWhere, bounds, rule)
-  const existing = asArray(resolved["keepouts"], `${boardWhere}: keepouts`)
-  if (existing.length > 0) {
-    throw new Error(
-      `the intent already carries ${existing.length} keepout(s). The approved file declares none, ` +
-        "so a keepout in it is either this tool's own output being resolved a second time or a " +
-        "hand-written coordinate. Resolve from the approved file, never from a resolved one.",
-    )
-  }
-  const mustLock = asArray(resolved["must_lock"], `${boardWhere}: must_lock`).map(String)
-  // De-duplicated, because a must_lock entry repeated is a rule stated twice
-  // and a reader cannot tell which one is the derived half.
-  const locks = [...new Set([...mustLock, ...hardware.mustLock])]
-  return { ...resolved, keepouts: hardware.keepouts, must_lock: locks }
-}
-
-/** Read the board and the approved intent, write the resolved intent, return where it went. */
-export function resolveToFile(
-  boardPath: string,
-  intentPath: string,
-  outPath: string,
-  rulesPath: string,
-): string {
-  for (const file of [boardPath, intentPath, rulesPath]) {
-    if (!fs.existsSync(file)) throw new Error(`${file} does not exist`)
-  }
-  const boardText = fs.readFileSync(boardPath, "utf8")
-  const bounds = outlineBounds(boardText, boardPath)
-  const intent: unknown = JSON.parse(fs.readFileSync(intentPath, "utf8"))
-  // THE GUARD AGAINST A RESIZED BOARD, and it is here rather than inside
-  // `resolveIntentZones` because this is the function that has a real board.
-  // Every consumer of a resolved intent goes through this path - the CLI below,
-  // and anything that resolves from files - so a board quietly resized away
-  // from the owner's declared size cannot reach the seeder or the grader.
-  requireDeclaredSize(intent, bounds, intentPath, boardPath)
-  const zoned = resolveIntentZones(intent, bounds, intentPath)
-  const resolved = withHardware(zoned, boardText, boardPath, rulesPath, bounds)
-  fs.mkdirSync(path.dirname(outPath), { recursive: true })
-  fs.writeFileSync(outPath, `${JSON.stringify(resolved, null, 2)}\n`)
-  return outPath
-}
-
-if (import.meta.main) {
-  const [board, intent, out, rules] = process.argv.slice(2)
-  if (board === undefined || intent === undefined || out === undefined || rules === undefined) {
-    throw new Error(
-      "usage: bun tools/pcb/resolve-intent-zones.ts <board.kicad_pcb> <approved-intent.json> " +
-        "<resolved-intent.json> <placement-rules.json>\n" +
-        "  The resolved file is a derived artifact: it belongs in a run directory under build/, " +
-        "never beside the approved one.\n" +
-        "  <placement-rules.json> is REQUIRED and not optional, because the mounting-hole " +
-        "keepouts are derived from its anchors.mounting_holes rule. An optional rules file would " +
-        "mean a run that silently resolved to zero keepouts and graded a board with no " +
-        "hardware clearance at all, which reads exactly like a clean pass.",
-    )
-  }
-  const written = resolveToFile(board, intent, out, rules)
-  const bounds = outlineBounds(fs.readFileSync(board, "utf8"), board)
-  console.log(
-    `resolved against ${(bounds.x1 - bounds.x0).toFixed(2)} x ${(bounds.y1 - bounds.y0).toFixed(2)} mm ` +
-      `outline at (${bounds.x0.toFixed(2)}, ${bounds.y0.toFixed(2)}); long edge ${longEdge(bounds)}`,
-  )
-  // SAID OUT LOUD EITHER WAY. An intent with no declared size is a legitimate
-  // state - the engine reads the outline from the board and most boards' sizes
-  // are nobody's ruling - but a guard that does not run must never read like one
-  // that passed.
-  const size = declaredEnvelopeSize(JSON.parse(fs.readFileSync(intent, "utf8")), intent)
-  console.log(
-    size === undefined
-      ? `${intent} declares no envelope.size_mm, so THE OUTLINE SIZE WAS NOT CHECKED against anything`
-      : `outline size matches the declared envelope.size_mm of ${size[0]} x ${size[1]} mm`,
-  )
-  console.log(`wrote ${written}`)
 }
