@@ -24,7 +24,7 @@ import { PEDAL_BLOCKS, PEDAL_GROUPS } from "../../circuits/h7-platform/pedal/bui
 import { SHARED_NETS, contractNet, sharedNet } from "../../circuits/h7-platform/pedal/nets.ts"
 import { DATASHEET_PIN_NAMES } from "../../circuits/h7-platform/pedal-parts.ts"
 import {
-  AWAITING_NETS, DESIGNATORS, PAGE_GROUPS, PIN_NUMBERS, SOCKET_ONLY_NETS, UNDRAWN_CONNECTOR_NETS, drawingPages, h7Pedal,
+  DESIGNATORS, PAGE_GROUPS, PIN_NUMBERS, SOCKET_ONLY_NETS, UNDRAWN_CONNECTOR_NETS, drawingPages, h7Pedal,
 } from "../../circuits/h7-platform/pedal-board.ts"
 import { MIDI } from "../../circuits/h7-platform/pedal-population.ts"
 import { provenanceProblems } from "./h7-pedal-provenance.ts"
@@ -84,6 +84,10 @@ describe("h7 pedal skeleton", () => {
     expect(body).toContain("Costs if wrong")
     for (const b of PEDAL_BLOCKS) expect([b.prefix, body.includes(`\`${b.prefix}\``)]).toEqual([b.prefix, true])
   })
+
+  test("every one of the 19 blocks is included exactly once, in CR-PEDAL-BLOCKS' order", () => {
+    expect(PEDAL.blocks.map((b) => b.prefix)).toEqual(PEDAL_BLOCKS.map((b) => b.prefix))
+  })
 })
 
 describe("the interface block (J_MOD_A, J_MOD_B)", () => {
@@ -109,6 +113,17 @@ describe("the interface block (J_MOD_A, J_MOD_B)", () => {
     expect([bound, reserved]).toEqual([36, 4])
   })
 
+  test("control (G4): each reserved pin, 16 to 19, given any net fails the whole board's check", () => {
+    const reserved = loadContract().pins.filter((p) => p.signal === null).map((p) => p.pin)
+    expect(reserved).toEqual([16, 17, 18, 19])
+    for (const pin of reserved) {
+      for (const net of ["GND", "RELAY_EN", "3V3_D"]) {
+        expect(checkInterface(withPad(SOCKETS.J_MOD_A, String(pin), { kind: "net", net }), "pedal", SOCKETS).mismatches)
+          .toEqual([`contract pin ${pin} (J_MOD_A pad ${pin}): reserved pin must be nc on a pedal, found "${net}"`])
+      }
+    }
+  })
+
   test("control: a reserved pin given a net fails, and a signal pin on the wrong net fails", () => {
     expect(checkInterface(withPad(SOCKETS.J_MOD_A, "17", { kind: "net", net: "GND" }), "pedal", SOCKETS).mismatches)
       .toEqual(['contract pin 17 (J_MOD_A pad 17): reserved pin must be nc on a pedal, found "GND"'])
@@ -127,15 +142,15 @@ describe("the interface block (J_MOD_A, J_MOD_B)", () => {
   })
 })
 
-describe("contract nets nothing on the pedal loads yet", () => {
-  test("with the pedal nets awaiting their other block, are exactly the root ports, and each is on one pad and nothing else", () => {
-    expect(Object.keys(PEDAL.ports).sort()).toEqual([...SOCKET_ONLY_NETS, ...AWAITING_NETS, ...UNDRAWN_CONNECTOR_NETS].sort())
+describe("contract nets nothing on the pedal loads", () => {
+  test("with the nets running on to an undrawn connector, are exactly the root ports, and each is on one pad and nothing else", () => {
+    expect(Object.keys(PEDAL.ports).sort()).toEqual([...SOCKET_ONLY_NETS, ...UNDRAWN_CONNECTOR_NETS].sort())
     for (const net of SOCKET_ONLY_NETS) {
       expect([net, PEDAL.ports[net], pinsOn(PEDAL, net)]).toEqual([net, net, 1])
     }
   })
-  test("include the five spares for good, which carry no pedal-board load (architecture.md:181)", () => {
-    for (const net of ["SPARE1", "SPARE2", "SPARE3", "SPARE4", "SPARE5"]) expect(SOCKET_ONLY_NETS).toContain(net)
+  test("are the five spares and nothing else, which carry no pedal-board load (architecture.md:181)", () => {
+    expect([...SOCKET_ONLY_NETS]).toEqual(["SPARE1", "SPARE2", "SPARE3", "SPARE4", "SPARE5"])
   })
   test("every other contract net has two or more members (until a group loads it, two socket pads can be its only members)", () => {
     const signals = [...new Set(loadContract().pins.flatMap((p) => (p.signal === null ? [] : [p.signal])))]
@@ -145,12 +160,12 @@ describe("contract nets nothing on the pedal loads yet", () => {
   })
 })
 
-describe("pedal nets awaiting their other block (CR-PEDAL-NETS)", () => {
-  const built = new Set(PEDAL.blocks.map((b) => b.prefix))
-  test("each is a shared net on exactly one pin, which a block not yet built will load", () => {
-    for (const net of AWAITING_NETS) {
-      expect([net, PEDAL.ports[net], pinsOn(PEDAL, net)]).toEqual([net, net, 1])
-      expect([net, sharedNet(net).blocks.some((b) => !built.has(b))]).toEqual([net, true])
+describe("no pedal net awaits its other block (CR-PEDAL-NETS; every block built since Task 10)", () => {
+  test("every shared net but the spares reaches two or more pins, and every block it lists is built", () => {
+    const built = new Set(PEDAL.blocks.map((b) => b.prefix))
+    for (const n of SHARED_NETS) {
+      expect([n.net, n.blocks.filter((b) => !built.has(b))]).toEqual([n.net, []])
+      if (!SOCKET_ONLY_NETS.includes(n.net)) expect([n.net, pinsOn(PEDAL, n.net) >= 2]).toEqual([n.net, true])
     }
   })
 })
@@ -200,6 +215,18 @@ describe("shared nets reach the blocks section 1.2 lists, and no others (built b
     expect(sharedNet("3V3_CODEC").blocks).toEqual(["codec_sup", "codec", "sai_iso"])
     expect(sharedNet("5V_A_CODEC").blocks).toEqual(["ldo_vmid", "codec_sup", "codec"])
     expect(sharedNet("PF_TRIP").blocks).toEqual(["pf", "modsw", "prail", "codec_sup", "jacks_byp"])
+  })
+  test("the analog group is built: in_fe, adc_drv, out, jacks_byp", () => {
+    for (const b of ["in_fe", "adc_drv", "out", "jacks_byp"]) expect([b, built.has(b)]).toEqual([b, true])
+  })
+  test("the analog path's nets: the inventory's section 1.2 lists, as SHARED_NETS carries them", () => {
+    expect(sharedNet("VMID_L").blocks).toEqual(["ldo_vmid", "in_fe", "out"])
+    expect(sharedNet("FX_IN_R").blocks).toEqual(["jacks_byp", "in_fe"])
+    expect(sharedNet("FX_OUT_L").blocks).toEqual(["out", "jacks_byp"])
+    expect(sharedNet("IN_FOLLOW_R").blocks).toEqual(["in_fe", "adc_drv"])
+    expect(sharedNet("VINL").blocks).toEqual(["adc_drv", "codec"])
+    expect(sharedNet("VOUTR-").blocks).toEqual(["codec", "out"])
+    expect(sharedNet("RELAY_EN").blocks).toEqual(["jacks_byp", "interface"])
   })
   test("VIN_A, VIN_MOD, 5V_A and 3V3_P: the inventory's section 1.2 lists, as SHARED_NETS carries them", () => {
     expect(sharedNet("VIN_A").blocks).toEqual(["entry", "ldo_vmid", "in_fe", "out"])

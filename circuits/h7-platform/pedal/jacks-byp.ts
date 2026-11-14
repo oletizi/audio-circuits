@@ -22,8 +22,8 @@
  *   the Zener's anode on 3V3_P (bypass-relay.md:102, :244-245; parts.md:124-125).
  *
  * Block-private nets: IN_TIP_x, OUT_JACK_x, BYP_x and RELAY_DRV are bypass-relay.md:90-95's names;
- * RELAY_GATE, SUP_IN and SUP_OUT are CR-PEDAL-ANALOG-READINGS'. IN_TIP_L is listed as a shared net
- * (pedal/nets.ts) only because the inventory lists it; it stays inside this block.
+ * RELAY_GATE, SUP_IN and SUP_OUT are CR-PEDAL-ANALOG-READINGS'. IN_TIP_L stays inside this block; the
+ * inventory's section 1.2 lists it, but no other block carries it (pedal/nets.ts).
  */
 import { NC } from "../../../lib/model/index.ts"
 import type { Network } from "../../../lib/model/index.ts"

@@ -86,5 +86,5 @@ for (const entry of driven) {
 }
 writeFileSync(join(outDir, `${board}.kicad_sch`), blankRootSheet(board))
 writeFileSync(join(outDir, `${board}.json`), JSON.stringify({ ...base, ops: [...base.ops, ...flags, ...standIns] }, null, 1) + "\n")
-const driverText = driven.map((e) => `${e.net} (for ${e.block} ${e.designator} ${e.pinName}${standInKind(e, loaded) === "pwr_flag" ? ", a PWR_FLAG" : ""})`).join(", ") || "none"
+const driverText = driven.map((e) => `${e.net} (for ${e.block} ${e.designator} ${e.pinName === "" ? `pin ${e.pin}` : e.pinName}${standInKind(e, loaded) === "pwr_flag" ? ", a PWR_FLAG" : ""})`).join(", ") || "none"
 console.log(`${board}: one sheet "${block}" with pins ${Object.keys(record.ports).sort().join(", ")}; stub PWR_FLAGs on ${[...flagged].sort().join(", ") || "none"}; stand-in drivers on ${driverText}`)

@@ -52,9 +52,17 @@ export interface CrossPageDriver {
   readonly block: string
   /** The driving component's reference designator (`DESIGNATORS`). */
   readonly designator: string
-  /** The driving pin's number: the model's pin key, which is the KiCad symbol's pin number. */
+  /**
+   * The driving pin's number on the KiCad symbol. Usually also the model's pin key; for a part the
+   * model keys by name (a resistor's `a`/`b`), it is resolved through the board's PIN_NUMBERS
+   * (`symbolPinConnection`).
+   */
   readonly pin: string
-  /** The driving pin's name on the KiCad symbol, for a reader; checked against the symbol's library. */
+  /**
+   * The driving pin's name on the KiCad symbol, for a reader; checked against the symbol's library.
+   * Empty where the symbol names the pin nothing, as `Device:R`'s two pins are (KiCad 10.0.5's
+   * `(name "")`), so the check still compares it with the library.
+   */
   readonly pinName: string
   /** Where the model takes the assignment from. */
   readonly source: string
@@ -71,13 +79,22 @@ export const STAND_IN_LIB_ID = "Connector:TestPoint"
 const KICAD_CLI = "/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli"
 const OVERRIDE_ENV = "PAGES_CROSS_PAGE_DRIVERS_TABLE"
 
+/** A string field that must be present but may be empty (an unnamed symbol pin's name). */
+function presentString(entry: Record<string, unknown>, key: string, where: string): string {
+  const value = entry[key]
+  if (typeof value !== "string") {
+    throw new Error(`${where}: "${key}" must be a string (empty for a symbol pin with no name); got ${JSON.stringify(value)}`)
+  }
+  return value
+}
+
 function parseDriver(entry: Record<string, unknown>, where: string): CrossPageDriver {
   return {
     net: requiredString(entry, "net", where),
     block: requiredString(entry, "block", where),
     designator: requiredString(entry, "designator", where),
     pin: requiredString(entry, "pin", where),
-    pinName: requiredString(entry, "pinName", where),
+    pinName: presentString(entry, "pinName", where),
     source: requiredString(entry, "source", where),
   }
 }
@@ -112,6 +129,25 @@ export function pinConnection(component: Component, pin: string): string | null 
 }
 
 /**
+ * The net the component's KiCad symbol pin `number` is on in the model: a net name, null for a
+ * no-connect, undefined for no such pin. Read by the model's own key where the model keys the pin by
+ * its number (an `ic`, a connector, a switch); otherwise through the board's PIN_NUMBERS for the
+ * component's kind, the table every page is lowered with, which must give exactly one of the
+ * component's pins that number (a resistor's `b` is `Device:R` pin 2 in the h7-pedal's table). Added
+ * by the h7 pedal pages plan's Task 10, whose VINL and VINR entries name a resistor's pin: the only
+ * parts on those nets in the driving block are R_O and C_VIN, both keyed `a`/`b`.
+ */
+export function symbolPinConnection(board: PageBoard, component: Component, number: string): string | null | undefined {
+  const direct = pinConnection(component, number)
+  if (direct !== undefined) return direct
+  const keys = Object.entries(board.pinNumbers[component.kind] ?? {})
+    .filter(([key, n]) => n === number && pinConnection(component, key) !== undefined)
+    .map(([key]) => key)
+  const key = keys[0]
+  return keys.length === 1 && key !== undefined ? pinConnection(component, key) : undefined
+}
+
+/**
  * The pin with this number on the symbol as the drawing resolves it, or undefined: a stock symbol from
  * the INSTALLED KiCad library (not a vendored copy), a project symbol (its nickname is the board's
  * `PROJECT_SYMBOL_LIBRARY` file stem, `h7-platform` for the module; design change C4) from that
@@ -140,9 +176,9 @@ function problemsWith(entry: CrossPageDriver, board: PageBoard): string[] {
   const component = module.components.find((c) => c.id === id)
   if (component === undefined) return [`${id} is in block "${entry.block}" but not in ${board.modelName}'s components`]
   const problems: string[] = []
-  const on = pinConnection(component, entry.pin)
+  const on = symbolPinConnection(board, component, entry.pin)
   if (on === undefined) {
-    problems.push(`${entry.designator} has no pin "${entry.pin}" in the model`)
+    problems.push(`${entry.designator} has no pin "${entry.pin}" in the model (by its own key, or by PIN_NUMBERS["${component.kind}"])`)
   } else if (on !== entry.net) {
     problems.push(`${entry.designator} pin ${entry.pin} is on ${on === null ? "no net (not connected)" : `net ${on}`} in the model, not on ${entry.net}`)
   }

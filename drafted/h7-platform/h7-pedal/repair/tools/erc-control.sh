@@ -31,13 +31,14 @@
 #     that pin_to_pin.
 #  9. negative: an allowance naming U12 pin 4 (N/C, on GND, typed free) is refused by the model check.
 # 10. negative: an allowance whose PWR_FLAG partner is not the flag's pin 1 is refused.
-# 11. positive (Task 9c): the committed codec page verifies, its two ERC errors, pin_not_driven on U9's
-#     VINL and VINR (inputs whose driver is in a block the model does not hold yet), excused by
-#     CR-PEDAL-CODEC-VIN-AWAITING-ERC, a one-item allowance each.
-# 12. negative: the same page with no allowance fails on exactly those two.
-# 13. negative: a one-item allowance for VINL naming U9 pin 15 (RST, on CODEC_RST_N) is refused by the
-#     model check.
-# 14. negative: a one-item allowance of a two-item type (pin_to_pin) is refused.
+# 11. positive (Task 10): the committed codec page verifies at 0 errors and 0 warnings, with no
+#     allowance, U9's VINL and VINR each met by a TestPoint stand-in for its cross-page driver,
+#     adc_drv's R_O (R107 and R112, pin 2). Until Task 10 these two were one-item ERC allowances
+#     (CR-PEDAL-CODEC-VIN-AWAITING-ERC, temporary); the allowances and their controls are gone.
+# 12. negative: the same page with the driver table overridden to the committed entries less VINL and
+#     VINR fails on exactly U9's VINL and VINR (pin_not_driven), so it is those entries that clear them.
+# 13. negative: a VINL entry naming R107 pin 1 (R_O's other end, on ADC_OUT_L) is refused by the model
+#     check: a resistor's pin is resolved through PIN_NUMBERS and held to its net.
 #
 # usage: sh erc-control.sh
 set -eu
@@ -182,26 +183,35 @@ grep -q "a PWR_FLAG partner is the flag's pin 1, not pin 2" "$work/er-flag2.log"
   || { cat "$work/er-flag2.log" >&2; bad "the allowance was not refused for the partner's pin"; }
 echo "   refused as expected"
 
-# Controls 11 to 14 (h7 pedal pages plan, Task 9c): the one-item allowance (pin_not_driven) and the
-# codec page's two, ruling CR-PEDAL-CODEC-VIN-AWAITING-ERC (U9's VINL and VINR, inputs whose driver is
-# in the adc_drv block, which the model does not hold yet).
+# Controls 11 to 13 (h7 pedal pages plan, Task 10): the codec page's VINL and VINR, met by their
+# cross-page drivers in adc_drv. They replace Task 9c's controls of the one-item allowance, deleted
+# with it (CR-PEDAL-CODEC-VIN-AWAITING-ERC, as amended).
 cd_="$board/codec.kicad_sch"
 VINL='Symbol U9 Pin 25 \[V_{IN}L, Input, Line\]'
 VINR='Symbol U9 Pin 26 \[V_{IN}R, Input, Line\]'
 
-echo "== 11. the committed codec page verifies, its two ERC errors excused by CR-PEDAL-CODEC-VIN-AWAITING-ERC"
+echo "== 11. the committed codec page verifies at 0 errors, VINL and VINR stood in for by adc_drv's R_O"
 sh "$pages/verify.sh" "$board" codec "$cd_" >"$work/cd.log" 2>&1 || { cat "$work/cd.log" >&2; bad "the committed codec page did not verify"; }
-grep -q '^sheet /codec/: errors 2 (2 excused by a declared allowance), warnings 0' "$work/cd.log" \
-  || { cat "$work/cd.log" >&2; bad "/codec/ is not at 2 errors, both excused, and 0 warnings"; }
-grep -q "^excused: error pin_not_driven on /codec/ under CR-PEDAL-CODEC-VIN-AWAITING-ERC: $VINL" "$work/cd.log" \
-  || { cat "$work/cd.log" >&2; bad "U9's VINL is not among the excused errors"; }
-grep -q "^excused: error pin_not_driven on /codec/ under CR-PEDAL-CODEC-VIN-AWAITING-ERC: $VINR" "$work/cd.log" \
-  || { cat "$work/cd.log" >&2; bad "U9's VINR is not among the excused errors"; }
-echo "   pass: $(grep -c '^excused: ' "$work/cd.log") excused, U9 pins 25 and 26"
+grep -q '^sheet /codec/: errors 0, warnings 0' "$work/cd.log" || { cat "$work/cd.log" >&2; bad "/codec/ is not at 0 errors, 0 warnings"; }
+grep -q 'VINL (for adc_drv R107 pin 2), VINR (for adc_drv R112 pin 2)' "$work/cd.log" \
+  || { cat "$work/cd.log" >&2; bad "the one-block root did not stand in for VINL and VINR with adc_drv's R_O"; }
+grep -q '^verify.sh: no ERC error excused by a declared allowance' "$work/cd.log" || { cat "$work/cd.log" >&2; bad "an allowance excused an error on the codec page"; }
+echo "   pass: /codec/ errors 0, warnings 0; stand-ins for R107 and R112 pin 2"
 
-echo "== 12. no allowance (test override, an empty table): the codec page fails on U9's VINL and VINR"
-if PAGES_ERC_ALLOWANCES_TABLE="$work/no-allow.json" sh "$pages/verify.sh" "$board" codec "$cd_" >"$work/cd-none.log" 2>&1; then
-  cat "$work/cd-none.log" >&2; bad "verify.sh passed the codec page with no allowance"
+# The committed driver table as JSON, with some entries dropped or one changed (the announced override).
+drivers() {
+  (cd "$root" && bun -e "
+    const { CROSS_PAGE_DRIVERS } = await import('$here/cross-page-drivers.ts')
+    const drop = new Set(process.argv[1].split(',').filter((x) => x !== ''))
+    const pin1 = process.argv[2] === 'pin1'
+    const out = CROSS_PAGE_DRIVERS.filter((e) => !drop.has(e.net)).map((e) => (pin1 && e.net === 'VINL' ? { ...e, pin: '1' } : e))
+    console.log(JSON.stringify(out))
+  " "$1" "$2")
+}
+echo "== 12. the driver table less VINL and VINR (test override): the codec page fails on U9's VINL and VINR"
+drivers VINL,VINR keep >"$work/no-vin.json" || bad "could not write the driver override"
+if PAGES_CROSS_PAGE_DRIVERS_TABLE="$work/no-vin.json" sh "$pages/verify.sh" "$board" codec "$cd_" >"$work/cd-none.log" 2>&1; then
+  cat "$work/cd-none.log" >&2; bad "verify.sh passed the codec page with no driver for VINL and VINR"
 fi
 grep -q 'TEST OVERRIDE' "$work/cd-none.log" || { cat "$work/cd-none.log" >&2; bad "the override was not announced"; }
 grep -q "at pin_not_driven: $VINL" "$work/cd-none.log" && grep -q "at pin_not_driven: $VINR" "$work/cd-none.log" \
@@ -209,26 +219,13 @@ grep -q "at pin_not_driven: $VINL" "$work/cd-none.log" && grep -q "at pin_not_dr
 grep -q '^sheet /codec/: errors 2, warnings 0' "$work/cd-none.log" || { cat "$work/cd-none.log" >&2; bad "/codec/ carries errors other than the two"; }
 echo "   fails as expected: /codec/ errors 2, pin_not_driven on U9 pins 25 and 26"
 
-# A one-item allowance on the codec page; the model check or the parse must refuse each.
-one() {
-  printf '[{"ruling":"erc-control.sh","sheet":"/codec/","type":"%s","pins":[{"designator":"U9","pin":"%s"}],"net":"VINL","symbolPinType":"input","source":"erc-control.sh, a control"}]\n' "$1" "$2"
-}
-echo "== 13. a one-item allowance naming U9 pin 15 (RST, an input on CODEC_RST_N) for VINL is refused by the model check"
-one pin_not_driven 15 >"$work/rst.json"
-if PAGES_ERC_ALLOWANCES_TABLE="$work/rst.json" sh "$pages/verify.sh" "$board" codec "$cd_" >"$work/cd-rst.log" 2>&1; then
-  cat "$work/cd-rst.log" >&2; bad "verify.sh accepted a VINL allowance naming U9 pin 15"
+echo "== 13. a VINL entry naming R107 pin 1 (on ADC_OUT_L) is refused by the model check"
+drivers "" pin1 >"$work/pin1.json" || bad "could not write the driver override"
+if PAGES_CROSS_PAGE_DRIVERS_TABLE="$work/pin1.json" sh "$pages/verify.sh" "$board" codec "$cd_" >"$work/cd-pin1.log" 2>&1; then
+  cat "$work/cd-pin1.log" >&2; bad "verify.sh accepted a VINL driver on R107 pin 1"
 fi
-grep -q 'U9 pin 15 is on net CODEC_RST_N in the model, not on VINL' "$work/cd-rst.log" \
-  || { cat "$work/cd-rst.log" >&2; bad "the allowance was not refused for pin 15's net"; }
-echo "   refused as expected"
-
-echo "== 14. a one-item allowance of a two-item type (pin_to_pin) is refused"
-one pin_to_pin 25 >"$work/one-p2p.json"
-if PAGES_ERC_ALLOWANCES_TABLE="$work/one-p2p.json" sh "$pages/verify.sh" "$board" codec "$cd_" >"$work/cd-p2p.log" 2>&1; then
-  cat "$work/cd-p2p.log" >&2; bad "verify.sh accepted a one-item pin_to_pin allowance"
-fi
-grep -q '"pins" must be an array of exactly two (designator, pin) objects' "$work/cd-p2p.log" \
-  || { cat "$work/cd-p2p.log" >&2; bad "the allowance was not refused for its item count"; }
+grep -q 'R107 pin 1 is on net adc_drv_ADC_OUT_L in the model, not on VINL' "$work/cd-pin1.log" \
+  || { cat "$work/cd-pin1.log" >&2; bad "the entry was not refused for pin 1's net"; }
 echo "   refused as expected"
 
 echo "erc-control.sh: every control came out as stated"

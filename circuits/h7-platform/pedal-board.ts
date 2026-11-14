@@ -4,10 +4,10 @@
  * the drawing is derived from this file (TOOLING.md step 0).
  *
  * THE BLOCKS are controller ruling CR-PEDAL-BLOCKS (`pedal/build.ts`, `PEDAL_BLOCKS`): 19, in three
- * groups and the interface. This file includes a block once its task has built it, so `h7Pedal()`
- * grows as each group lands: Task 5 the interface, Task 6 the power group, Task 8 the digital and
- * controls group, Task 10 the analog group. `BLOCKS`, `DESIGNATORS`, `PIN_NUMBERS` and `PAGE_GROUPS`
- * hold only what is built.
+ * groups and the interface. This file included a block once its task had built it, so `h7Pedal()`
+ * grew as each group landed: Task 5 the interface, Task 6 the power group, Task 8 the digital and
+ * controls group, Task 10 the analog group. Since Task 10 every one of the 19 is built, in
+ * `PEDAL_BLOCKS`' order, and the board test holds that each is included exactly once.
  *
  * NET NAMES are `pedal/nets.ts`: the contract's names where a net crosses the interface, the
  * documents' names inside the pedal, and CR-PEDAL-NETS where the documents give none. Every block
@@ -31,6 +31,10 @@ import { ldoVmidBlock } from "./pedal/ldo-vmid.ts"
 import { codecSupBlock } from "./pedal/codec-sup.ts"
 import { codecBlock } from "./pedal/codec.ts"
 import { saiIsoBlock } from "./pedal/sai-iso.ts"
+import { inFeBlock } from "./pedal/in-fe.ts"
+import { adcDrvBlock } from "./pedal/adc-drv.ts"
+import { outBlock } from "./pedal/out.ts"
+import { jacksBypBlock } from "./pedal/jacks-byp.ts"
 import { exprRefBlock } from "./pedal/expr-ref.ts"
 import { controlsABlock, controlsBBlock } from "./pedal/controls.ts"
 import { fswLedBlock } from "./pedal/fsw-led.ts"
@@ -45,7 +49,7 @@ export { PROJECT_SYMBOL_LIBRARY } from "./parts.ts"
 /** Pin numbers by kind (`pedal/build.ts`). */
 export const PIN_NUMBERS = PEDAL_PIN_NUMBERS
 
-/** Block prefix -> its builder and the caption copperhead draws around its page. Built blocks only. */
+/** Block prefix -> its builder and the caption copperhead draws around its page: all 19, in CR-PEDAL-BLOCKS' order. */
 const BLOCKS: readonly (readonly [string, () => Network, string])[] = [
   ["entry", entryBlock, "Power entry"],
   ["pf", pfBlock, "Power-fail supervisor"],
@@ -55,6 +59,10 @@ const BLOCKS: readonly (readonly [string, () => Network, string])[] = [
   ["codec_sup", codecSupBlock, "Codec supply, clock and reset"],
   ["codec", codecBlock, "Codec PCM3060"],
   ["sai_iso", saiIsoBlock, "SAI domain isolation"],
+  ["in_fe", inFeBlock, "Input front ends"],
+  ["adc_drv", adcDrvBlock, "ADC drivers"],
+  ["out", outBlock, "Output stages"],
+  ["jacks_byp", jacksBypBlock, "Jacks and bypass relays"],
   ["expr_ref", exprRefBlock, "Expression input and HW_REV"],
   ["controls_a", controlsABlock, "Control positions 1-3"],
   ["controls_b", controlsBBlock, "Control positions 4-6"],
@@ -73,35 +81,19 @@ for (const [prefix] of BLOCKS) {
 export const PAGE_GROUPS: Readonly<Record<string, string>> = Object.fromEntries(BLOCKS.map(([p, , caption]) => [p, caption]))
 
 /**
- * The contract nets nothing on the pedal loads yet: on the board, each reaches only its socket pad.
- * A one-pin net is refused by validation unless it is a port, and these nets do leave the board, on
- * to the module, so each is a port of the board itself (CR-PEDAL-NETS, "Socket-only nets").
+ * The contract nets nothing on the pedal loads: on the board, each reaches only its socket pad. A
+ * one-pin net is refused by validation unless it is a port, and these nets do leave the board, on to
+ * the module, so each is a port of the board itself (CR-PEDAL-NETS, "Socket-only nets"). Since Task
+ * 10 built the last loading block (`jacks_byp`, RELAY_EN) only the five spares are left, and they stay
+ * for good: "SPARE1-SPARE5: signal pins, GPIO inputs, no pedal-board load" (architecture.md:181). The
+ * board test refuses a net listed here that reaches more than its pad, and validation refuses one
+ * left out that reaches only its pad.
  *
- * - The five spares stay here for good: "SPARE1-SPARE5: signal pins, GPIO inputs, no pedal-board
- *   load" (architecture.md:181).
- * - The rest wait for the block that loads them (`pedal/nets.ts` lists which). The task that builds
- *   that block removes the net here; the board test refuses a net listed here that reaches more than
- *   its pad, and validation refuses one left out that reaches only its pad.
+ * The construction-state list beside it, AWAITING_NETS (CR-PEDAL-NETS, "Nets awaiting their other
+ * block"), is deleted: with every block built no pedal-internal net waits for one (the amendment of
+ * CR-PEDAL-CODEC-VIN-AWAITING-ERC in decisions.md records it).
  */
-export const SOCKET_ONLY_NETS: readonly string[] = [
-  // For good (architecture.md:181).
-  "SPARE1", "SPARE2", "SPARE3", "SPARE4", "SPARE5",
-  // Until Task 10 (analog group): jacks_byp.
-  "RELAY_EN",
-].map(contractNet)
-
-/**
- * Pedal nets that, on the board as built so far, reach one pin only: a block has built one end and
- * the block that loads the other is a later task's. Validation refuses a one-pin net that is not a
- * port, so each is a port of the board until that block lands, and that task removes it here
- * (CR-PEDAL-NETS, "Nets awaiting their other block"). Unlike SOCKET_ONLY_NETS these do not leave
- * the board; the list is a construction state, and the board test refuses an entry that reaches
- * more than one pin or whose loading block is already built.
- */
-export const AWAITING_NETS: readonly string[] = [
-  // Until Task 10 (adc_drv, out): the codec's analog inputs and outputs (schematic-checklist.md:110).
-  "VINL", "VINR", "VOUTL+", "VOUTL-", "VOUTR+", "VOUTR-",
-]
+export const SOCKET_ONLY_NETS: readonly string[] = ["SPARE1", "SPARE2", "SPARE3", "SPARE4", "SPARE5"].map(contractNet)
 
 /**
  * Pedal nets that run on to a connector no source names, so on the board they reach only the parts
@@ -119,7 +111,7 @@ export function h7Pedal(): Network {
     const net = build()
     builder.include(prefix, net, Object.fromEntries(Object.keys(net.ports).map((port) => [port, port])))
   }
-  for (const net of [...SOCKET_ONLY_NETS, ...AWAITING_NETS, ...UNDRAWN_CONNECTOR_NETS]) builder.port(net, net)
+  for (const net of [...SOCKET_ONLY_NETS, ...UNDRAWN_CONNECTOR_NETS]) builder.port(net, net)
   return builder.done()
 }
 
@@ -186,6 +178,29 @@ export const DESIGNATORS: Readonly<Record<string, string>> = {
   midi_i2c_u_mididrv: "U16", midi_i2c_c_mididrv: "C61", midi_i2c_r_txpu: "R86", midi_i2c_q_midi: "Q9", midi_i2c_r_mgp: "R87",
   midi_i2c_r_ra1: "R88", midi_i2c_r_ra2: "R89", midi_i2c_r_ra3: "R90", midi_i2c_r_ra4: "R91", midi_i2c_r_rc: "R92",
   midi_i2c_j_midi: "J8", midi_i2c_r_scl_pu: "R93", midi_i2c_r_sda_pu_exp: "R94", midi_i2c_tp_3v3_d: "TP6",
+  // in_fe
+  in_fe_r_rf_l: "R95", in_fe_c_rf_l: "C62", in_fe_r_pd_l: "R96", in_fe_c_in_l: "C63", in_fe_r_div1_l: "R97", in_fe_c_comp_l: "C64",
+  in_fe_r_div2_l: "R98", in_fe_c_t_l: "C65", in_fe_tp_in_l: "TP7", in_fe_tp_in_l_gnd: "TP8",
+  in_fe_r_rf_r: "R99", in_fe_c_rf_r: "C66", in_fe_r_pd_r: "R100", in_fe_c_in_r: "C67", in_fe_r_div1_r: "R101", in_fe_c_comp_r: "C68",
+  in_fe_r_div2_r: "R102", in_fe_c_t_r: "C69", in_fe_tp_in_r: "TP9", in_fe_tp_in_r_gnd: "TP10",
+  in_fe_u_in: "U17", in_fe_c_uin_hf: "C70", in_fe_c_uin_bulk: "C71",
+  // adc_drv
+  adc_drv_c_ac_l: "C72", adc_drv_r_in_l: "R103", adc_drv_r_fa_l: "R104", adc_drv_c_fa_l: "C73", adc_drv_r_vbias_top_l: "R105",
+  adc_drv_r_vbias_bot_l: "R106", adc_drv_c_vbias_l: "C74", adc_drv_r_o_l: "R107", adc_drv_c_vin_l: "C75",
+  adc_drv_c_ac_r: "C76", adc_drv_r_in_r: "R108", adc_drv_r_fa_r: "R109", adc_drv_c_fa_r: "C77", adc_drv_r_vbias_top_r: "R110",
+  adc_drv_r_vbias_bot_r: "R111", adc_drv_c_vbias_r: "C78", adc_drv_r_o_r: "R112", adc_drv_c_vin_r: "C79",
+  adc_drv_u_adc: "U18", adc_drv_c_uadc_hf: "C80", adc_drv_c_uadc_bulk: "C81",
+  // out
+  out_c_ap_l: "C82", out_c_am_l: "C83", out_r_d1_l: "R113", out_r_d2_l: "R114", out_r_fo_l: "R115", out_c_fo_l: "C84", out_r_go_l: "R116",
+  out_c_go_l: "C85", out_r_s_l: "R117", out_c_out_l: "C86", out_c_dc_l: "C87", out_r_b_l: "R118", out_tp_out_l: "TP11", out_tp_out_l_gnd: "TP12",
+  out_c_ap_r: "C88", out_c_am_r: "C89", out_r_d1_r: "R119", out_r_d2_r: "R120", out_r_fo_r: "R121", out_c_fo_r: "C90", out_r_go_r: "R122",
+  out_c_go_r: "C91", out_r_s_r: "R123", out_c_out_r: "C92", out_c_dc_r: "C93", out_r_b_r: "R124", out_tp_out_r: "TP13", out_tp_out_r_gnd: "TP14",
+  out_u_out: "U19", out_c_uout_hf: "C94", out_c_uout_bulk: "C95",
+  // jacks_byp
+  jacks_byp_j_in_l: "J9", jacks_byp_j_in_r: "J10", jacks_byp_j_out_l: "J11", jacks_byp_j_out_r: "J12",
+  jacks_byp_d_esd_in_l: "D12", jacks_byp_d_esd_in_r: "D13", jacks_byp_d_esd_out_l: "D14", jacks_byp_d_esd_out_r: "D15",
+  jacks_byp_k_byp_in: "K1", jacks_byp_k_byp_out: "K2", jacks_byp_q_byp: "Q10", jacks_byp_r_relay_en: "R125", jacks_byp_r_bpd: "R126",
+  jacks_byp_q_pfg: "Q11", jacks_byp_d_bf_in: "D16", jacks_byp_d_bz_in: "D17", jacks_byp_d_bf_out: "D18", jacks_byp_d_bz_out: "D19",
 }
 
 /** One page per block (design change C3). */

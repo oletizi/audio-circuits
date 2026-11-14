@@ -19,38 +19,19 @@
  * from the pin typing, not from the circuit. Its partner is the flag, so the entry names it as
  * `PWR_FLAG` (`draughting/pages/erc-allowances.ts`, the PWR_FLAG partner).
  *
- * Task 9c (the codec page) added two, ruling CR-PEDAL-CODEC-VIN-AWAITING-ERC (adopted by the
- * controller as temporary, 2026-11-13 (d3e0e95); Task 10 removes it). U9's VINL (pin 25) and VINR
- * (pin 26) are typed `input` (`h7-platform:PCM3060PW`), and
- * what drives them is in the adc_drv block, which the model does not hold yet: the nets are ports of
- * `h7Pedal()` only as a construction state (`AWAITING_NETS`, `circuits/h7-platform/pedal-board.ts`:
- * "Until Task 10 (adc_drv, out)"). A cross-page driver entry is held to the model and so cannot name
- * the driver. Under the codec page's one-block root `/codec/` reported exactly two errors,
- * `pin_not_driven` on "Symbol U9 Pin 25 [V_{IN}L, Input, Line]" and "Symbol U9 Pin 26 [V_{IN}R,
- * Input, Line]". The allowance must go when adc_drv is built:
- * `tests/draught/erc-allowances-one-item.test.ts` fails while an entry under that ruling names a net no longer in `AWAITING_NETS`. (The guard is a
- * test, not code here: this table is imported from scratch copies of the drafted directory, as
- * `erc-control.sh` makes, where a runtime import of the circuit does not resolve.)
+ * Task 9c (the codec page) added two one-item allowances, ruling CR-PEDAL-CODEC-VIN-AWAITING-ERC
+ * (adopted by the controller as temporary, d3e0e95): U9's VINL (pin 25) and VINR (pin 26), typed
+ * `input`, reported `pin_not_driven` under the codec page's one-block root while their driver, the
+ * adc_drv block, was not yet in the model. Task 10 built adc_drv and removed both: VINL and VINR are
+ * now cross-page driver entries naming adc_drv's R_O pins (`cross-page-drivers.ts`), and the one-item
+ * allowance support is deleted from the shared tools (the amendment of that ruling in
+ * docs/h7-platform/decisions.md records it). The table holds the expr_ref entry alone.
  *
  * DATA ONLY. How narrowly an allowance matches, and the model check every entry is held to, are
  * `draughting/pages/erc-allowances.ts`; the shared tools read this table through the board's drafted
  * directory, and refuse a board without it, naming the file.
  */
 import type { ErcAllowance } from "../../../../../draughting/pages/erc-allowances.ts"
-
-/** CR-PEDAL-CODEC-VIN-AWAITING-ERC: U9's analog input `pin` on `net`, undriven until adc_drv is built. */
-const CODEC_VIN = (net: string, pin: string, name: string): ErcAllowance => ({
-  ruling: "CR-PEDAL-CODEC-VIN-AWAITING-ERC",
-  sheet: "/codec/",
-  type: "pin_not_driven",
-  pins: [{ designator: "U9", pin }],
-  net,
-  symbolPinType: "input",
-  source:
-    `circuits/h7-platform/pedal/codec.ts:56 (u_codec pin ${pin}, ${name}, on ${net}; schematic-checklist.md:110, CODEC-12); ` +
-    "h7-platform:PCM3060PW types it input (CR-PEDAL-SYMBOL-PCM3060); its driver is in the adc_drv block, which the model " +
-    `holds from Task 10 (AWAITING_NETS); ruling CR-PEDAL-CODEC-VIN-AWAITING-ERC in docs/h7-platform/decisions.md`,
-})
 
 export const ERC_ALLOWANCES: readonly ErcAllowance[] = [
   {
@@ -68,6 +49,4 @@ export const ERC_ALLOWANCES: readonly ErcAllowance[] = [
       "h7-platform:LM66100DCK types ST open_collector (SLVSEZ8A; CR-PEDAL-SYMBOL-LM66100, CR-PEDAL-PIN-MATCH clause 5); " +
       "GND's one PWR_FLAG is on the root (pwr-flag-homes.ts); ruling CR-PEDAL-LM66100-ST-ERC in docs/h7-platform/decisions.md",
   },
-  CODEC_VIN("VINL", "25", "VINL"),
-  CODEC_VIN("VINR", "26", "VINR"),
 ]

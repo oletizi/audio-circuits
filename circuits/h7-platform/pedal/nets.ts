@@ -102,8 +102,9 @@ export const SHARED_NETS: readonly SharedNet[] = [
   R("VOUTL-", ["codec", "out"]),
   R("VOUTR+", ["codec", "out"]),
   R("VOUTR-", ["codec", "out"]),
-  // Inventory section 1.2 lists IN_TIP_L although only jacks_byp carries it (the right input's tip-normal).
-  D("IN_TIP_L", [`${BYPASS}:125`], "IN_TIP_L", ["jacks_byp"]),
+  // Inventory section 1.2 lists IN_TIP_L (the right input's tip-normal, bypass-relay.md:125), but only jacks_byp
+  // carries it, so it is that block's private net and not a port: a shared net is one more than one block carries.
+  // Removed by Task 10, which built jacks_byp and found the one-block entry naming a net no port binds.
   // SAI: the codec side of the isolation (after the 33 ohm on BCK, LRCK, DOUT; DIN into the codec), then the contract nets.
   R("BCK_CODEC", ["codec", "sai_iso"]),
   R("LRCK_CODEC", ["codec", "sai_iso"]),

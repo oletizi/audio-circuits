@@ -33,8 +33,17 @@
  *   codec page's one-block root. CODEC_RST_N is driven by U8's RESET on the codec_sup page
  *   (`open_collector`; Q5's drain beside it is passive), XO_OUT by U7's OUT on the codec_sup page
  *   (`output`), DIN_CODEC by U11's Y on the sai_iso page (`output`); each stand-in is a TestPoint.
- *   VINL and VINR, U9's other two inputs, have no entry: their driver is the adc_drv block, which the
- *   model does not hold until Task 10, and an entry is held to the model.
+ *   VINL and VINR, U9's other two inputs, had no entry then: their driver is the adc_drv block, which
+ *   the model did not hold until Task 10, and an entry is held to the model. The two one-item ERC
+ *   allowances that stood in for them (CR-PEDAL-CODEC-VIN-AWAITING-ERC) are gone.
+ * Task 10 added, for the codec page:
+ * - VINL and VINR, driven from the adc_drv block. On each net adc_drv carries only R_O (R107 on VINL,
+ *   R112 on VINR; pin b, `Device:R` pin 2) and C_VIN, both passive; R_O is named, as the series
+ *   element from U_ADC's output (schematic-checklist.md:162, AIO-12). Its pin has no name on the
+ *   symbol (`Device:R`, `(name "")`), so pinName is empty, and the model's `b` is resolved to pin 2
+ *   through PIN_NUMBERS (`symbolPinConnection`, `draughting/pages/cross-page-drivers.ts`). The stand-in
+ *   is a TestPoint, a passive pin, which KiCad counts as driving an input (CR-MODULE-CROSS-PAGE-DRIVERS'
+ *   measurement).
  *
  * DATA ONLY; the shared tools read it through the board's drafted directory, and refuse a board
  * without it, naming the file.
@@ -100,5 +109,21 @@ export const CROSS_PAGE_DRIVERS: readonly CrossPageDriver[] = [
     pin: "4",
     pinName: "Y",
     source: "circuits/h7-platform/pedal/sai-iso.ts:61 (u_iso_c pin 4, Y, on DIN_CODEC; architecture.md:256, R-10); h7-platform:SN74LVC1G34DBV types pin 4 output (CR-PEDAL-SYMBOL-SN74LVC1G34)",
+  },
+  {
+    net: "VINL",
+    block: "adc_drv",
+    designator: "R107",
+    pin: "2",
+    pinName: "",
+    source: "circuits/h7-platform/pedal/adc-drv.ts (r_o_l, pin b = Device:R pin 2, on VINL: U_ADC's output through R_O 100 Ohm to VINL; schematic-checklist.md:162, AIO-12; analog.md:176); Device:R types pin 2 passive and names it nothing",
+  },
+  {
+    net: "VINR",
+    block: "adc_drv",
+    designator: "R112",
+    pin: "2",
+    pinName: "",
+    source: "circuits/h7-platform/pedal/adc-drv.ts (r_o_r, pin b = Device:R pin 2, on VINR: U_ADC's output through R_O 100 Ohm to VINR; schematic-checklist.md:162, AIO-12; analog.md:176); Device:R types pin 2 passive and names it nothing",
   },
 ]
