@@ -19,8 +19,9 @@
  *    `(locked yes)`, none of which a library file has;
  *  - the name becomes `Library:Name`, and `REF**` becomes a real designator.
  *
- * Children are copied as TEXT, with one tab added: a library file indents a
- * footprint's children once and a board indents them twice.
+ * Children are copied as TEXT and re-indented from library depth to board
+ * depth: a library file indents a footprint's children once and a board indents
+ * them twice. See `indented` for why that is not one tab added to every line.
  */
 import { parseSexpr } from "../../lib/kicad/sexpr.ts"
 import { topLevelForms } from "./board-forms.ts"
@@ -66,6 +67,48 @@ export interface FootprintInstanceOptions {
 /** Children of a `.kicad_mod` root that describe the FILE rather than the part. */
 const FILE_ONLY = new Set(["version", "generator", "generator_version"])
 
+/**
+ * A footprint origin, in the spelling a board carries it in: six decimal places.
+ *
+ * **NOT COSMETIC, AND MEASURED.** `pcbnew` and the routing engine both write a
+ * footprint's `(at x y)` with six decimals, and the engine rewrites EVERY
+ * footprint when it re-places a board - the locked mounting holes included. So
+ * a tool that emitted `(at 14 14)` produced a board that, once the engine had
+ * been over it, read `(at 14.000000 14.000000)`, and re-running the documented
+ * `make geometry-pt2399-core` then rewrote those four lines back. Four hunks of
+ * churn, a dirty tree, and `tests/pcb/settled-geometry.test.ts`'s mutation going
+ * red for a reason unrelated to what it checks - so the documented regeneration
+ * path broke the suite, which is a trap rather than an inconvenience.
+ *
+ * Writing the board's own spelling makes the geometry step byte-idempotent, and
+ * `tests/pcb/mounting-hole-placement.test.ts` pins that against the committed
+ * board. If a KiCad or engine release changes the format, that test goes red and
+ * names it instead of the churn reappearing silently.
+ */
+function coord(value: number): string {
+  return value.toFixed(6)
+}
+
+/**
+ * One copied child form, re-indented from library depth to board depth.
+ *
+ * **THE FIRST LINE NEEDS TWO TABS AND THE REST NEED ONE, which is why this is
+ * not `map(line => "\t" + line)`.** `topLevelForms` returns a span that STARTS
+ * AT THE `(`, so the form's opening line arrives with no leading whitespace
+ * while its continuation lines keep the library file's own indentation. Adding
+ * one tab to every line therefore put each child's opening line at depth 1 and
+ * its children at depth 3 - a form that reads as mis-nested to anyone scanning
+ * the committed board, and flatly contradicting this module's own stated
+ * contract. KiCad parses it either way and rewrites it on save, so this was
+ * cosmetic; the docstring saying otherwise was not.
+ */
+function indented(body: string): string {
+  return body
+    .split("\n")
+    .map((line, index) => (index === 0 ? `\t\t${line}` : `\t${line}`))
+    .join("\n")
+}
+
 export function footprintInstanceForm(
   libraryText: string,
   where: string,
@@ -84,8 +127,8 @@ export function footprintInstanceForm(
   }
   const at =
     opts.rotation === undefined || opts.rotation === 0
-      ? `(at ${Number(opts.x.toFixed(4))} ${Number(opts.y.toFixed(4))})`
-      : `(at ${Number(opts.x.toFixed(4))} ${Number(opts.y.toFixed(4))} ${Number(opts.rotation.toFixed(4))})`
+      ? `(at ${coord(opts.x)} ${coord(opts.y)})`
+      : `(at ${coord(opts.x)} ${coord(opts.y)} ${Number(opts.rotation.toFixed(4))})`
   const lines: string[] = [`(footprint "${opts.library}:${opts.name}"`]
   if (opts.locked) lines.push("\t\t(locked yes)")
   lines.push(`\t\t(uuid "${opts.uuid}")`)
@@ -131,21 +174,27 @@ export function footprintInstanceForm(
       sawAttr = true
       if (opts.boardOnly && !body.includes("board_only")) body = body.replace("(attr ", "(attr board_only ")
     }
-    lines.push(body.split("\n").map((line) => `\t${line}`).join("\n"))
+    lines.push(indented(body))
   }
   if (!sawReference) {
     throw new Error(`${where}: no (property "Reference" ...) form to rename to "${opts.reference}".`)
   }
-  if (!sawAttr && (opts.boardOnly || opts.library !== "")) {
-    // A footprint with no (attr ...) at all is through-hole-by-default and is
-    // included in position files and the BOM. For a mounting hole that is
-    // wrong in two ways at once, so it is named rather than silently accepted.
-    if (opts.boardOnly) {
-      throw new Error(
-        `${where}: boardOnly was asked for but the file has no (attr ...) form to add it to. ` +
-          "Add one to the library footprint rather than having this function invent attributes.",
-      )
-    }
+  // A footprint with no (attr ...) at all is through-hole-by-default and is
+  // included in position files and the BOM. The ONLY case this function can do
+  // anything about is `boardOnly`, which needs a form to add the flag to; for
+  // everything else there is nothing to say that the library file does not
+  // already say, so there is no branch for it.
+  //
+  // THE CONDITION HERE WAS `!sawAttr && (opts.boardOnly || opts.library !== "")`
+  // WITH THE SAME `boardOnly` TEST NESTED INSIDE IT. The second disjunct made
+  // the outer branch reachable with `boardOnly` false, where the body did
+  // nothing at all - a condition that reads as a guard and is not one, and it
+  // contradicted its own comment. Flattened to the one case that acts.
+  if (!sawAttr && opts.boardOnly) {
+    throw new Error(
+      `${where}: boardOnly was asked for but the file has no (attr ...) form to add it to. ` +
+        "Add one to the library footprint rather than having this function invent attributes.",
+    )
   }
   lines.push("\t)")
   return lines.join("\n")

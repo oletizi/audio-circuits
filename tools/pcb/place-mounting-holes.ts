@@ -32,12 +32,15 @@
 import fs from "node:fs"
 import path from "node:path"
 import { assertStillParses, withoutTopLevelForms, withTopLevelForms } from "./board-forms.ts"
+import { parseSexpr } from "../../lib/kicad/sexpr.ts"
 import { outlineBounds } from "./resolve-intent-zones.ts"
 import { describeBounds } from "./board-outline.ts"
 import {
-  MOUNTING_FOOTPRINT, inwardLabelOffsetY, mountingHoleRule, mountingHoles, mountingFootprintForm,
-  placedMountingHoles, readMountingFootprint, referenceLabelOffsetY, ruleAreaForm,
+  MOUNTING_FOOTPRINT, isMountingHoleFootprint, mountingHoleRule, mountingHoles, placedMountingHoles,
 } from "./mounting-hardware.ts"
+import {
+  inwardLabelOffsetY, mountingFootprintForm, readMountingFootprint, referenceLabelOffsetY, ruleAreaForm,
+} from "./mounting-hardware-forms.ts"
 
 /** `MH1`..`MH4`, in the order `mountingHoles` returns the corners. */
 export const REFERENCES = ["MH1", "MH2", "MH3", "MH4"] as const
@@ -87,9 +90,28 @@ export function withMountingHardware(
   // REMOVE FIRST, by what the form IS rather than by its uuid: a hole placed by
   // an earlier run of this tool at a stale corner must go, and so must one
   // placed by hand in pcbnew.
+  //
+  // **THE REMOVAL TEST IS THE DETECTION TEST, and it is one function so the two
+  // cannot drift.** This predicate was its own regex -
+  // `/\(pad\s+""\s+np_thru_hole/` over the form's text - which is `some` where
+  // `isMountingHoleFootprint` is `every`, so it matched any part carrying one
+  // mechanical hole beside its electrical pads and DELETED IT SILENTLY. A
+  // vertical pot with an anti-rotation pin, an audio jack, a panel switch: 128
+  // of them across four installed libraries. The read-back check below could not
+  // catch it, because a part that was never a hole does not change "wrote 4,
+  // found 4". `tests/pcb/mounting-hole-placement.test.ts` puts a real
+  // mixed-pad footprint from the installed library on a board and asserts it
+  // survives; a hand-built fixture would not have established it.
+  //
+  // The library-name clause stays as a second, NARROWER reason to remove: a
+  // stale instance of this exact footprint that somehow stopped looking like a
+  // hole must still go, or the board would carry two MH1s. It matches on the
+  // footprint's own library id, not on the form containing the string anywhere.
   const withoutHoles = withoutTopLevelForms(boardText, boardWhere, (form, body) => {
     if (form.name !== "footprint") return false
-    return body.includes(`:${MOUNTING_FOOTPRINT}"`) || /\(pad\s+""\s+np_thru_hole/.test(body)
+    const node = parseSexpr(body)
+    if ((node.atoms[0] ?? "").endsWith(`:${MOUNTING_FOOTPRINT}`)) return true
+    return isMountingHoleFootprint(node)
   })
   const withoutZones = withoutTopLevelForms(withoutHoles.text, boardWhere, (form, body) => {
     if (form.name !== "zone") return false

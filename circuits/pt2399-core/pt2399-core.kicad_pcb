@@ -9441,10 +9441,10 @@
 		(locked yes)
 		(uuid "3c0a0000-0000-4000-8000-000001000001")
 		(at 14.000000 14.000000)
-	(layer "F.Cu")
-	(descr "M3 mounting hole, 3.2mm non-plated drill, WITH ITS COURTYARD SET TO THE WASHER instead of the screw head: 7.0mm, the maximum outside diameter of an M3 DIN 125 Type A / ISO 7089 flat washer (parts/washer-m3-flat-din125a-7mm-steel-zinc.json). Derived from MountingHole:MountingHole_3.2mm_M3 by changing ONE number - the F.CrtYd circle's radius, 3.45 to 3.5 - because that stock courtyard is 6.9mm and models the SCREW HEAD, which is 5.40mm across on the fastener this board fits. courtyards_overlap is the only DRC check that catches a part whose body overlaps the washer while its origin and pads sit clear, and it compares courtyards, so the courtyard IS the envelope. The drill, the np_thru_hole pad and the attributes come across untouched. tests/pcb/mounting-hardware.test.ts re-derives all of this from the installed library and the parts catalogue on every run.")
-	(tags "mountinghole M3 washer envelope DIN125")
-	(property "Reference" "MH1"
+		(layer "F.Cu")
+		(descr "M3 mounting hole, 3.2mm non-plated drill, WITH ITS COURTYARD SET TO THE WASHER instead of the screw head: 7.0mm, the maximum outside diameter of an M3 DIN 125 Type A / ISO 7089 flat washer (parts/washer-m3-flat-din125a-7mm-steel-zinc.json). Derived from MountingHole:MountingHole_3.2mm_M3 by changing ONE number - the F.CrtYd circle's radius, 3.45 to 3.5 - because that stock courtyard is 6.9mm and models the SCREW HEAD, which is 5.40mm across on the fastener this board fits. courtyards_overlap is the only DRC check that catches a part whose body overlaps the washer while its origin and pads sit clear, and it compares courtyards, so the courtyard IS the envelope. The drill, the np_thru_hole pad and the attributes come across untouched. tests/pcb/mounting-hardware.test.ts re-derives all of this from the installed library and the parts catalogue on every run.")
+		(tags "mountinghole M3 washer envelope DIN125")
+		(property "Reference" "MH1"
 			(at 0 4.15 0)
 			(layer "F.SilkS")
 			(effects
@@ -9454,7 +9454,7 @@
 				)
 			)
 		)
-	(property "Value" "MountingHole_3.2mm_M3_Washer7.0mm"
+		(property "Value" "MountingHole_3.2mm_M3_Washer7.0mm"
 			(at 0 4.15 0)
 			(layer "F.Fab")
 			(effects
@@ -9464,9 +9464,9 @@
 				)
 			)
 		)
-	(attr board_only exclude_from_pos_files exclude_from_bom)
-	(duplicate_pad_numbers_are_jumpers no)
-	(fp_circle
+		(attr board_only exclude_from_pos_files exclude_from_bom)
+		(duplicate_pad_numbers_are_jumpers no)
+		(fp_circle
 			(center 0 0)
 			(end 3.2 0)
 			(stroke
@@ -9476,7 +9476,7 @@
 			(fill no)
 			(layer "Cmts.User")
 		)
-	(fp_circle
+		(fp_circle
 			(center 0 0)
 			(end 3.5 0)
 			(stroke
@@ -9486,7 +9486,7 @@
 			(fill no)
 			(layer "F.CrtYd")
 		)
-	(fp_text user "${REFERENCE}"
+		(fp_text user "${REFERENCE}"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(effects
@@ -9496,13 +9496,13 @@
 				)
 			)
 		)
-	(pad "" np_thru_hole circle
+		(pad "" np_thru_hole circle
 			(at 0 0)
 			(size 3.2 3.2)
 			(drill 3.2)
 			(layers "*.Cu" "*.Mask")
 		)
-	(embedded_fonts no)
+		(embedded_fonts no)
 	)
 	(zone
 		(net 0)
@@ -9568,10 +9568,10 @@
 		(locked yes)
 		(uuid "3c0a0000-0000-4000-8000-000001000002")
 		(at 156.000000 14.000000)
-	(layer "F.Cu")
-	(descr "M3 mounting hole, 3.2mm non-plated drill, WITH ITS COURTYARD SET TO THE WASHER instead of the screw head: 7.0mm, the maximum outside diameter of an M3 DIN 125 Type A / ISO 7089 flat washer (parts/washer-m3-flat-din125a-7mm-steel-zinc.json). Derived from MountingHole:MountingHole_3.2mm_M3 by changing ONE number - the F.CrtYd circle's radius, 3.45 to 3.5 - because that stock courtyard is 6.9mm and models the SCREW HEAD, which is 5.40mm across on the fastener this board fits. courtyards_overlap is the only DRC check that catches a part whose body overlaps the washer while its origin and pads sit clear, and it compares courtyards, so the courtyard IS the envelope. The drill, the np_thru_hole pad and the attributes come across untouched. tests/pcb/mounting-hardware.test.ts re-derives all of this from the installed library and the parts catalogue on every run.")
-	(tags "mountinghole M3 washer envelope DIN125")
-	(property "Reference" "MH2"
+		(layer "F.Cu")
+		(descr "M3 mounting hole, 3.2mm non-plated drill, WITH ITS COURTYARD SET TO THE WASHER instead of the screw head: 7.0mm, the maximum outside diameter of an M3 DIN 125 Type A / ISO 7089 flat washer (parts/washer-m3-flat-din125a-7mm-steel-zinc.json). Derived from MountingHole:MountingHole_3.2mm_M3 by changing ONE number - the F.CrtYd circle's radius, 3.45 to 3.5 - because that stock courtyard is 6.9mm and models the SCREW HEAD, which is 5.40mm across on the fastener this board fits. courtyards_overlap is the only DRC check that catches a part whose body overlaps the washer while its origin and pads sit clear, and it compares courtyards, so the courtyard IS the envelope. The drill, the np_thru_hole pad and the attributes come across untouched. tests/pcb/mounting-hardware.test.ts re-derives all of this from the installed library and the parts catalogue on every run.")
+		(tags "mountinghole M3 washer envelope DIN125")
+		(property "Reference" "MH2"
 			(at 0 4.15 0)
 			(layer "F.SilkS")
 			(effects
@@ -9581,7 +9581,7 @@
 				)
 			)
 		)
-	(property "Value" "MountingHole_3.2mm_M3_Washer7.0mm"
+		(property "Value" "MountingHole_3.2mm_M3_Washer7.0mm"
 			(at 0 4.15 0)
 			(layer "F.Fab")
 			(effects
@@ -9591,9 +9591,9 @@
 				)
 			)
 		)
-	(attr board_only exclude_from_pos_files exclude_from_bom)
-	(duplicate_pad_numbers_are_jumpers no)
-	(fp_circle
+		(attr board_only exclude_from_pos_files exclude_from_bom)
+		(duplicate_pad_numbers_are_jumpers no)
+		(fp_circle
 			(center 0 0)
 			(end 3.2 0)
 			(stroke
@@ -9603,7 +9603,7 @@
 			(fill no)
 			(layer "Cmts.User")
 		)
-	(fp_circle
+		(fp_circle
 			(center 0 0)
 			(end 3.5 0)
 			(stroke
@@ -9613,7 +9613,7 @@
 			(fill no)
 			(layer "F.CrtYd")
 		)
-	(fp_text user "${REFERENCE}"
+		(fp_text user "${REFERENCE}"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(effects
@@ -9623,13 +9623,13 @@
 				)
 			)
 		)
-	(pad "" np_thru_hole circle
+		(pad "" np_thru_hole circle
 			(at 0 0)
 			(size 3.2 3.2)
 			(drill 3.2)
 			(layers "*.Cu" "*.Mask")
 		)
-	(embedded_fonts no)
+		(embedded_fonts no)
 	)
 	(zone
 		(net 0)
@@ -9695,10 +9695,10 @@
 		(locked yes)
 		(uuid "3c0a0000-0000-4000-8000-000001000003")
 		(at 156.000000 106.000000)
-	(layer "F.Cu")
-	(descr "M3 mounting hole, 3.2mm non-plated drill, WITH ITS COURTYARD SET TO THE WASHER instead of the screw head: 7.0mm, the maximum outside diameter of an M3 DIN 125 Type A / ISO 7089 flat washer (parts/washer-m3-flat-din125a-7mm-steel-zinc.json). Derived from MountingHole:MountingHole_3.2mm_M3 by changing ONE number - the F.CrtYd circle's radius, 3.45 to 3.5 - because that stock courtyard is 6.9mm and models the SCREW HEAD, which is 5.40mm across on the fastener this board fits. courtyards_overlap is the only DRC check that catches a part whose body overlaps the washer while its origin and pads sit clear, and it compares courtyards, so the courtyard IS the envelope. The drill, the np_thru_hole pad and the attributes come across untouched. tests/pcb/mounting-hardware.test.ts re-derives all of this from the installed library and the parts catalogue on every run.")
-	(tags "mountinghole M3 washer envelope DIN125")
-	(property "Reference" "MH3"
+		(layer "F.Cu")
+		(descr "M3 mounting hole, 3.2mm non-plated drill, WITH ITS COURTYARD SET TO THE WASHER instead of the screw head: 7.0mm, the maximum outside diameter of an M3 DIN 125 Type A / ISO 7089 flat washer (parts/washer-m3-flat-din125a-7mm-steel-zinc.json). Derived from MountingHole:MountingHole_3.2mm_M3 by changing ONE number - the F.CrtYd circle's radius, 3.45 to 3.5 - because that stock courtyard is 6.9mm and models the SCREW HEAD, which is 5.40mm across on the fastener this board fits. courtyards_overlap is the only DRC check that catches a part whose body overlaps the washer while its origin and pads sit clear, and it compares courtyards, so the courtyard IS the envelope. The drill, the np_thru_hole pad and the attributes come across untouched. tests/pcb/mounting-hardware.test.ts re-derives all of this from the installed library and the parts catalogue on every run.")
+		(tags "mountinghole M3 washer envelope DIN125")
+		(property "Reference" "MH3"
 			(at 0 -4.15 0)
 			(layer "F.SilkS")
 			(effects
@@ -9708,7 +9708,7 @@
 				)
 			)
 		)
-	(property "Value" "MountingHole_3.2mm_M3_Washer7.0mm"
+		(property "Value" "MountingHole_3.2mm_M3_Washer7.0mm"
 			(at 0 4.15 0)
 			(layer "F.Fab")
 			(effects
@@ -9718,9 +9718,9 @@
 				)
 			)
 		)
-	(attr board_only exclude_from_pos_files exclude_from_bom)
-	(duplicate_pad_numbers_are_jumpers no)
-	(fp_circle
+		(attr board_only exclude_from_pos_files exclude_from_bom)
+		(duplicate_pad_numbers_are_jumpers no)
+		(fp_circle
 			(center 0 0)
 			(end 3.2 0)
 			(stroke
@@ -9730,7 +9730,7 @@
 			(fill no)
 			(layer "Cmts.User")
 		)
-	(fp_circle
+		(fp_circle
 			(center 0 0)
 			(end 3.5 0)
 			(stroke
@@ -9740,7 +9740,7 @@
 			(fill no)
 			(layer "F.CrtYd")
 		)
-	(fp_text user "${REFERENCE}"
+		(fp_text user "${REFERENCE}"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(effects
@@ -9750,13 +9750,13 @@
 				)
 			)
 		)
-	(pad "" np_thru_hole circle
+		(pad "" np_thru_hole circle
 			(at 0 0)
 			(size 3.2 3.2)
 			(drill 3.2)
 			(layers "*.Cu" "*.Mask")
 		)
-	(embedded_fonts no)
+		(embedded_fonts no)
 	)
 	(zone
 		(net 0)
@@ -9822,10 +9822,10 @@
 		(locked yes)
 		(uuid "3c0a0000-0000-4000-8000-000001000004")
 		(at 14.000000 106.000000)
-	(layer "F.Cu")
-	(descr "M3 mounting hole, 3.2mm non-plated drill, WITH ITS COURTYARD SET TO THE WASHER instead of the screw head: 7.0mm, the maximum outside diameter of an M3 DIN 125 Type A / ISO 7089 flat washer (parts/washer-m3-flat-din125a-7mm-steel-zinc.json). Derived from MountingHole:MountingHole_3.2mm_M3 by changing ONE number - the F.CrtYd circle's radius, 3.45 to 3.5 - because that stock courtyard is 6.9mm and models the SCREW HEAD, which is 5.40mm across on the fastener this board fits. courtyards_overlap is the only DRC check that catches a part whose body overlaps the washer while its origin and pads sit clear, and it compares courtyards, so the courtyard IS the envelope. The drill, the np_thru_hole pad and the attributes come across untouched. tests/pcb/mounting-hardware.test.ts re-derives all of this from the installed library and the parts catalogue on every run.")
-	(tags "mountinghole M3 washer envelope DIN125")
-	(property "Reference" "MH4"
+		(layer "F.Cu")
+		(descr "M3 mounting hole, 3.2mm non-plated drill, WITH ITS COURTYARD SET TO THE WASHER instead of the screw head: 7.0mm, the maximum outside diameter of an M3 DIN 125 Type A / ISO 7089 flat washer (parts/washer-m3-flat-din125a-7mm-steel-zinc.json). Derived from MountingHole:MountingHole_3.2mm_M3 by changing ONE number - the F.CrtYd circle's radius, 3.45 to 3.5 - because that stock courtyard is 6.9mm and models the SCREW HEAD, which is 5.40mm across on the fastener this board fits. courtyards_overlap is the only DRC check that catches a part whose body overlaps the washer while its origin and pads sit clear, and it compares courtyards, so the courtyard IS the envelope. The drill, the np_thru_hole pad and the attributes come across untouched. tests/pcb/mounting-hardware.test.ts re-derives all of this from the installed library and the parts catalogue on every run.")
+		(tags "mountinghole M3 washer envelope DIN125")
+		(property "Reference" "MH4"
 			(at 0 -4.15 0)
 			(layer "F.SilkS")
 			(effects
@@ -9835,7 +9835,7 @@
 				)
 			)
 		)
-	(property "Value" "MountingHole_3.2mm_M3_Washer7.0mm"
+		(property "Value" "MountingHole_3.2mm_M3_Washer7.0mm"
 			(at 0 4.15 0)
 			(layer "F.Fab")
 			(effects
@@ -9845,9 +9845,9 @@
 				)
 			)
 		)
-	(attr board_only exclude_from_pos_files exclude_from_bom)
-	(duplicate_pad_numbers_are_jumpers no)
-	(fp_circle
+		(attr board_only exclude_from_pos_files exclude_from_bom)
+		(duplicate_pad_numbers_are_jumpers no)
+		(fp_circle
 			(center 0 0)
 			(end 3.2 0)
 			(stroke
@@ -9857,7 +9857,7 @@
 			(fill no)
 			(layer "Cmts.User")
 		)
-	(fp_circle
+		(fp_circle
 			(center 0 0)
 			(end 3.5 0)
 			(stroke
@@ -9867,7 +9867,7 @@
 			(fill no)
 			(layer "F.CrtYd")
 		)
-	(fp_text user "${REFERENCE}"
+		(fp_text user "${REFERENCE}"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(effects
@@ -9877,13 +9877,13 @@
 				)
 			)
 		)
-	(pad "" np_thru_hole circle
+		(pad "" np_thru_hole circle
 			(at 0 0)
 			(size 3.2 3.2)
 			(drill 3.2)
 			(layers "*.Cu" "*.Mask")
 		)
-	(embedded_fonts no)
+		(embedded_fonts no)
 	)
 	(zone
 		(net 0)

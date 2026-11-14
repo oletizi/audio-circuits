@@ -16,7 +16,7 @@ PT2399_INTENT := $(PCB_REPO_ROOT)/circuits/pt2399-core/floorplan-intent.json
 PT2399_RULES := $(PCB_REPO_ROOT)/circuits/pt2399-core/placement-rules.json
 
 .PHONY: parity-pt2399-core drc-pt2399-core drc-unrouted-pt2399-core update-pt2399-core
-.PHONY: courtyard-rule-pt2399-core geometry-pt2399-core resolve-pt2399-core
+.PHONY: courtyard-rule-pt2399-core geometry-pt2399-core resolve-pt2399-core grade-pt2399-core
 
 # The headless Tools > Update PCB from Schematic (tools/pcb/update-from-schematic.ts):
 # puts every schematic component on the board, with its fields, its schematic
@@ -97,6 +97,23 @@ drc-pt2399-core: courtyard-rule-pt2399-core
 #   .venv/bin/python py_tools/check_floorplan.py <board> --intent <resolved> \
 #       --require-rules 1
 #
+# THE SEED STEP'S INPUT MUST BE A BOARD WITH NO PLACEMENT LOCKS, and the
+# committed board is not one. The seeder STAMPS `(locked yes)` on the intent's
+# must_lock refs, so the committed board carries a lock on J1 (plus the four
+# holes, which this tool writes locked on purpose) - and `seed_from_intent`
+# treats a file-locked ref as ALREADY PLACED, so re-seeding from the committed
+# board leaves J1 wherever it is instead of seating it on its edge, and the
+# whole packing comes out different. Measured: seeding from the committed board
+# gives hpwl 525.433 and a decap_distance failure, while seeding from the
+# pre-placement board gives the committed hpwl 532.594 and a clean grade. This
+# task's reviewer hit it independently. The board to start from is one that has
+# never been seeded - `make update-pt2399-core` on the empty fixture produces
+# one, and so does `git show <pre-placement commit>:<board>`.
+#
+# geometry-pt2399-core above is NOT affected: it rewrites only the outline and
+# the holes, is byte-idempotent against the committed board, and
+# tests/pcb/mounting-hole-placement.test.ts pins that.
+#
 # where <resolved> is written by resolve-pt2399-core below. place_seed exits 4
 # on this board and the board is still correct: its internal grade takes
 # `margin = max(clearance, board_edge_clearance)`, so --clearance 2.0 also
@@ -108,12 +125,29 @@ geometry-pt2399-core:
 	    "$(PT2399_INTENT)" 10 10 "7a110000-0000-4000-8000-00000000ed9e"
 	@bun "$(PCB_REPO_ROOT)/tools/pcb/place-mounting-holes.ts" "$(PT2399_BOARD)" "$(PT2399_RULES)" --write
 
+# GRADE THE BOARD. This is the documented grading path, and it RESOLVES FIRST
+# rather than trusting whatever resolved intent is on disk.
+#
+# The engine's grader takes the board and the resolved intent as two separate
+# arguments and never re-derives the outline to check that they belong together,
+# so a resolved file from before an outline change grades the OLD zone rect and
+# the OLD keepout circles against the NEW board - and can report a pass. The
+# engine is pinned and not ours to change, so the binding is on this side: every
+# resolved file carries a sha256 of the board it came from, and this target
+# re-resolves and verifies before grading. tools/pcb/grade-cli.ts states what
+# remains unguarded (a hand-run of check_floorplan.py against a file nobody
+# re-resolved) rather than implying it cannot happen.
+grade-pt2399-core:
+	@bun "$(PCB_REPO_ROOT)/tools/pcb/grade-cli.ts" "$(PT2399_BOARD)" "$(PT2399_INTENT)" \
+	    "$(PT2399_RULES)" "$(PCB_REPO_ROOT)/build/pcb/pt2399-core"
+
 # The resolved intent is a DERIVED artifact and is not committed: the approved
 # floorplan-intent.json declares fractions and no coordinates, and the rects,
 # the compass edge and the mounting-hole keepouts are computed from the board's
-# own outline every run.
+# own outline every run. `grade-pt2399-core` above is the path that uses it;
+# this target is for looking at it.
 resolve-pt2399-core:
-	@bun "$(PCB_REPO_ROOT)/tools/pcb/resolve-intent-zones.ts" "$(PT2399_BOARD)" "$(PT2399_INTENT)" \
+	@bun "$(PCB_REPO_ROOT)/tools/pcb/resolved-intent.ts" "$(PT2399_BOARD)" "$(PT2399_INTENT)" \
 	    "$(PCB_REPO_ROOT)/build/pcb/pt2399-core/resolved-intent.json" "$(PT2399_RULES)"
 
 endif

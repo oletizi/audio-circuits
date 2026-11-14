@@ -46,8 +46,11 @@ import { placedCourtyards, placedPads, withOutlineRect } from "./board-outline.t
 import { withTopLevelForms } from "./board-forms.ts"
 import { footprintInstanceForm } from "./footprint-instance.ts"
 import {
-  MOUNTING_FOOTPRINT, mountingHoleRule, readMountingFootprint, ruleAreaForm,
+  MOUNTING_FOOTPRINT, mountingHoleRule,
 } from "./mounting-hardware.ts"
+import {
+  readMountingFootprint, ruleAreaForm,
+} from "./mounting-hardware-forms.ts"
 import { LIBRARY_ROOT } from "../../lib/kicad/pin-pattern-sources.ts"
 import type { Bounds } from "./resolve-intent-zones.ts"
 
@@ -292,26 +295,49 @@ export const FIXTURE_LIB_TABLE = [
   ")",
 ].join("\n")
 
-if (import.meta.main) {
-  const write = process.argv.includes("--write")
+/**
+ * EVERY file one fixture directory holds, as `relative path -> content`.
+ *
+ * **ONE FUNCTION PRODUCES THE SET, so `--write` and the test cannot disagree
+ * about what a fixture IS.** They did: `--write` wrote five files per fixture
+ * and the test compared two of them by content, leaving the `.kicad_pro`, the
+ * `fp-lib-table` and `NOTES.txt` unchecked. The `.kicad_pro` is derived from the
+ * project's with a filename substitution, so a change to the project's DRC
+ * severities would not have propagated and nothing would have gone red;
+ * `NOTES.txt` carries the component fixture's generation-time measurements, so
+ * a stale copy would claim a geometry the fixture no longer has. Now the test
+ * iterates this map, and a sixth file added here is compared without anyone
+ * remembering to add it there.
+ */
+export function fixtureFiles(fixture: { readonly name: string; readonly text: string; readonly notes: string }): ReadonlyMap<string, string> {
   const project = fs.readFileSync(PROJECT, "utf8")
-  const library = readMountingFootprint(LIBRARY)
-  for (const fixture of fixtures()) {
-    const dir = path.join(FIXTURE_ROOT, fixture.name)
-    console.log(`${fixture.name}: ${fixture.text.split("\n").length} lines`)
-    if (!write) continue
-    fs.mkdirSync(path.join(dir, "pt2399-core.pretty"), { recursive: true })
-    fs.writeFileSync(path.join(dir, "pt2399-core.pretty", `${MOUNTING_FOOTPRINT}.kicad_mod`), library)
-    fs.writeFileSync(path.join(dir, "fp-lib-table"), `${FIXTURE_LIB_TABLE}\n`)
-    fs.writeFileSync(path.join(dir, `${BOARD_BASENAME}.kicad_pcb`), fixture.text)
+  return new Map([
+    [`${BOARD_BASENAME}.kicad_pcb`, fixture.text],
     // The project file is the pt2399-core one with its filename corrected: the
     // three gate-critical severities must be at `error` here too, and
     // ./fab-standard.ts is what checks that in the test.
-    fs.writeFileSync(
-      path.join(dir, `${BOARD_BASENAME}.kicad_pro`),
+    [
+      `${BOARD_BASENAME}.kicad_pro`,
       project.replace('"filename": "pt2399-core.kicad_pro"', `"filename": "${BOARD_BASENAME}.kicad_pro"`),
-    )
-    fs.writeFileSync(path.join(dir, "NOTES.txt"), `${fixture.notes}\n`)
+    ],
+    ["fp-lib-table", `${FIXTURE_LIB_TABLE}\n`],
+    [path.join("pt2399-core.pretty", `${MOUNTING_FOOTPRINT}.kicad_mod`), readMountingFootprint(LIBRARY)],
+    ["NOTES.txt", `${fixture.notes}\n`],
+  ])
+}
+
+if (import.meta.main) {
+  const write = process.argv.includes("--write")
+  for (const fixture of fixtures()) {
+    const dir = path.join(FIXTURE_ROOT, fixture.name)
+    const files = fixtureFiles(fixture)
+    console.log(`${fixture.name}: ${fixture.text.split("\n").length} lines, ${files.size} file(s)`)
+    if (!write) continue
+    for (const [relative, content] of files) {
+      const target = path.join(dir, relative)
+      fs.mkdirSync(path.dirname(target), { recursive: true })
+      fs.writeFileSync(target, content)
+    }
     console.log(`  wrote ${dir}`)
   }
   if (!write) console.log("nothing written; pass --write to rewrite the fixtures")
