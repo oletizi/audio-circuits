@@ -74,10 +74,10 @@ committed bytes, with the pinned kicad-cli.
 | codec_sup | UNREVIEWED (Task 9c); `verify.sh` exits 0 | `codec_sup.svg` |
 | sai_iso | UNREVIEWED (Task 9c); `verify.sh` exits 0 | `sai_iso.svg` |
 | codec | UNREVIEWED (Task 9c); `verify.sh` exits 0 | `codec.svg` |
-| jacks_byp | UNREVIEWED (Task 11a); `verify.sh` exits 0 | `jacks_byp.svg` |
-| in_fe | UNREVIEWED (Task 11a); `verify.sh` exits 0 | `in_fe.svg` |
-| adc_drv | UNREVIEWED (Task 11a); `verify.sh` exits 0 | `adc_drv.svg` |
-| out | UNREVIEWED (Task 11a); `verify.sh` exits 0 | `out.svg` |
+| jacks_byp | **REVIEWED, 2026-11-13** (Task 11a); `verify.sh` exits 0 | `jacks_byp.svg` |
+| in_fe | **REVIEWED, 2026-11-13** (Task 11a); `verify.sh` exits 0 | `in_fe.svg` |
+| adc_drv | **REVIEWED, 2026-11-13** (Task 11a); `verify.sh` exits 0 | `adc_drv.svg` |
+| out | **REVIEWED, 2026-11-13** (Task 11a); `verify.sh` exits 0 | `out.svg` |
 
 ## The drafts every repair starts from
 
@@ -2629,7 +2629,7 @@ drafted/h7-platform/h7-pedal/codec.kicad_sch` at Task 10, against the Task 9c pa
 
 ## jacks_byp: the audio jacks and the bypass relays (Task 11a)
 
-**Status: UNREVIEWED.** sha256 `2ad7be98ed45efb192ccd5dc4a56f892bc009c6b3c98beb4d3d3a0de7565c489`.
+**Status: REVIEWED, 2026-11-13.** The owner's verdict, verbatim: *"four pages approved"* (`docs/schematic/verdicts.md`). sha256 `2ad7be98ed45efb192ccd5dc4a56f892bc009c6b3c98beb4d3d3a0de7565c489`.
 Render: `jacks_byp.svg` beside it.
 
 The block: `circuits/h7-platform/pedal/jacks-byp.ts`, 18 parts. The input jacks J9 (`j_in_l`) and J10
@@ -2800,7 +2800,7 @@ over their bodies to the outer GND verticals rather than across their tips.
 
 ## in_fe: the input front ends (Task 11a)
 
-**Status: UNREVIEWED.** sha256 `37049f7c8c5bb7894936c2ae6df4e62d10ef8aceaa6d7e939ad224e11bb196d2`.
+**Status: REVIEWED, 2026-11-13.** The owner's verdict, verbatim: *"four pages approved"* (`docs/schematic/verdicts.md`). sha256 `37049f7c8c5bb7894936c2ae6df4e62d10ef8aceaa6d7e939ad224e11bb196d2`.
 Render: `in_fe.svg` beside it.
 
 The block: `circuits/h7-platform/pedal/in-fe.ts`, 23 parts. Per channel, left then right: R95 and
@@ -2936,7 +2936,7 @@ no other wire uses.
 
 ## adc_drv: the ADC drivers (Task 11a)
 
-**Status: UNREVIEWED.** sha256 `7b35259f9717da2d34344fb030f0ba8d46db3c6001b41a04aa9c092a49da5079`.
+**Status: REVIEWED, 2026-11-13.** The owner's verdict, verbatim: *"four pages approved"* (`docs/schematic/verdicts.md`). sha256 `7b35259f9717da2d34344fb030f0ba8d46db3c6001b41a04aa9c092a49da5079`.
 Render: `adc_drv.svg` beside it.
 
 The block: `circuits/h7-platform/pedal/adc-drv.ts`, 21 parts. Per channel, left then right: C72 and
@@ -3070,7 +3070,7 @@ input and VIN labels.
 
 ## out: the output stages (Task 11a)
 
-**Status: UNREVIEWED.** sha256 `3bd4e4a006bdb52f2bd8bf21b81eafdbc85dc964bfc5285d60c14d06efa4da0a`.
+**Status: REVIEWED, 2026-11-13.** The owner's verdict, verbatim: *"four pages approved"* (`docs/schematic/verdicts.md`). sha256 `3bd4e4a006bdb52f2bd8bf21b81eafdbc85dc964bfc5285d60c14d06efa4da0a`.
 Render: `out.svg` beside it.
 
 The block: `circuits/h7-platform/pedal/out.ts`, 31 parts. Per channel, left then right: C82 and C88

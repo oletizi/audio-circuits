@@ -806,6 +806,31 @@ stays open.
 
 ---
 
+## h7-pedal jacks_byp, in_fe, adc_drv and out pages, copperhead drafts repaired with akcli
+
+- **Sheets:**
+  - `drafted/h7-platform/h7-pedal/jacks_byp.kicad_sch` sha256 `2ad7be98ed45efb192ccd5dc4a56f892bc009c6b3c98beb4d3d3a0de7565c489` (commit `c0a6f39`)
+  - `drafted/h7-platform/h7-pedal/in_fe.kicad_sch` sha256 `37049f7c8c5bb7894936c2ae6df4e62d10ef8aceaa6d7e939ad224e11bb196d2` (commit `5e0496d`)
+  - `drafted/h7-platform/h7-pedal/adc_drv.kicad_sch` sha256 `7b35259f9717da2d34344fb030f0ba8d46db3c6001b41a04aa9c092a49da5079` (commit `f9e0df6`)
+  - `drafted/h7-platform/h7-pedal/out.kicad_sch` sha256 `3bd4e4a006bdb52f2bd8bf21b81eafdbc85dc964bfc5285d60c14d06efa4da0a` (commit `e8c8f63`)
+- **Produced by** as the other pedal pages; the pedal's `RECORD.md` and `repair/<block>/` have the detail.
+- **Shown** 2026-11-13 as 150 dpi PNGs with only the question *"What is your verdict on each of these four
+  pedal pages: the jacks and bypass relays (jacks_byp), the audio input (in_fe), the codec-input drivers
+  (adc_drv), and the output stage (out)?"*
+- **Verdict, verbatim** (2026-11-13):
+
+  > *"four pages approved"*
+
+**WHAT THIS ENTRY DOES NOT CLAIM.** The verdict is recorded against each of the four sheets; the owner
+may correct it for any one of them. It records no owner decision on the controller rulings these pages
+rest on (CR-PEDAL-ANALOG-READINGS, among them the R_O and output-ESD readings; CR-PEDAL-NETS-AMENDED;
+the relays as `ic` packages), each of which stays the controller's and the owner may override. It
+covers neither the codec_sup, sai_iso and codec pages, whose verdicts are still open, nor the pedal's
+root. It is not a clearance of the circuit: PEDAL-ANALOG-PARTS-TO-MODEL, BYPASS-PARTS-TO-MODEL, the
+relay footprint check and the failsafe half of CONTRACT-MODEL-CHECK stay open.
+
+---
+
 ## Microsoft SchGen's attempts at the five approved Pultec boards
 
 - **Date:** 2026-11-10.
