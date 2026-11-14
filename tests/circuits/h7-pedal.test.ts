@@ -29,6 +29,9 @@ import {
 import { MIDI } from "../../circuits/h7-platform/pedal-population.ts"
 import { provenanceProblems } from "./h7-pedal-provenance.ts"
 import { symbolProblems } from "./h7-module-checks.ts"
+import { placedReferences, registerDraftedProjectTests, type ProjectModel } from "./drafted-project.ts"
+import os from "node:os"
+import { pinNumbersFromTable } from "../../lib/kicad/from-network.ts"
 
 const REPO = path.join(import.meta.dir, "../..")
 const DECISIONS = fs.readFileSync(path.join(REPO, "docs/h7-platform/decisions.md"), "utf8")
@@ -347,4 +350,43 @@ describe("symbols and pages", () => {
       }
     }
   })
+})
+
+/**
+ * THE DRAWN PROJECT (Task 11b): the root `drafted/h7-platform/h7-pedal/h7-pedal.kicad_sch` and its 19
+ * block sheets, bound by `registerDraftedProjectTests` - kicad-cli's export of the root against the
+ * whole model (0 disagreements), every component drawn exactly once on its block's sheet, every
+ * sheet's sha256 against RECORD.md, and the committed fixture `tests/fixtures/h7-pedal.net`
+ * (`make netlist-agrees`). The model declares no footprint, so none is compared.
+ */
+function projectModel(): ProjectModel {
+  const network = h7Pedal()
+  return { network, designators: new Map(Object.entries(DESIGNATORS)), pinNumbers: pinNumbersFromTable(network, PIN_NUMBERS) }
+}
+
+registerDraftedProjectTests({
+  board: "h7-pedal",
+  circuit: "h7-platform",
+  netlist: "tests/fixtures/h7-pedal.net",
+  model: projectModel,
+  pinDisagreements: [],
+  valueDisagreements: [],
+  footprintComparisons: "none",
+  footprintlessParts: PEDAL.components.map((c) => c.id).sort(),
+})
+
+test("a multi-unit part is one part on its sheet, and a unit placed twice throws - the control", () => {
+  const sheet = path.join(REPO, "drafted/h7-platform/h7-pedal/ldo_vmid.kicad_sch")
+  expect(placedReferences(sheet).filter((r) => r === "U5")).toEqual(["U5"])
+  const text = fs.readFileSync(sheet, "utf8")
+  const unit2 = "(at 238.76 99.06 0)" + String.fromCharCode(10) + String.fromCharCode(9, 9) + "(unit 2)"
+  expect(text.split(unit2).length).toBe(2)
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "h7-pedal-unit-twice-"))
+  try {
+    const twice = path.join(dir, "ldo_vmid.kicad_sch")
+    fs.writeFileSync(twice, text.replace(unit2, unit2.replace("(unit 2)", "(unit 1)")))
+    expect(() => placedReferences(twice)).toThrow("U5 unit 1 is placed more than once")
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
 })

@@ -1,5 +1,7 @@
 {
   "kind": "pcb",
+  "sch": "../../drafted/h7-platform/h7-pedal/h7-pedal.kicad_sch",
   "circuit": "../../circuits/h7-platform/pedal-board.ts",
-  "export": "h7Pedal"
+  "export": "h7Pedal",
+  "netlist": "../../tests/fixtures/h7-pedal.net"
 }

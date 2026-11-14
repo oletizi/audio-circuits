@@ -5,8 +5,8 @@
 board adds). It grows one block at a time as each page is repaired (h7 pedal pages plan, Task 7:
 7a interface and entry, 7b pf and modsw, 7c prail and ldo_vmid; Task 9a, usb, midi_i2c and
 fsw_led; Task 9b, controls_a, controls_b and expr_ref; Task 9c, codec_sup, sai_iso and codec; Task
-11a, the analog group's pages, jacks_byp first; each added as it is repaired). The root sheet and its
-`.kicad_pro` come once every page is drawn.
+11a, the analog group's pages, jacks_byp first; each added as it is repaired). Task 11b assembles the
+root sheet over the nineteen pages and writes its `.kicad_pro`.
 
 | | sha256 |
 | --- | --- |
@@ -30,6 +30,9 @@ fsw_led; Task 9b, controls_a, controls_b and expr_ref; Task 9c, codec_sup, sai_i
 | end: `in_fe.kicad_sch` (Task 11a) | `37049f7c8c5bb7894936c2ae6df4e62d10ef8aceaa6d7e939ad224e11bb196d2` |
 | end: `adc_drv.kicad_sch` (Task 11a) | `7b35259f9717da2d34344fb030f0ba8d46db3c6001b41a04aa9c092a49da5079` |
 | end: `out.kicad_sch` (Task 11a) | `3bd4e4a006bdb52f2bd8bf21b81eafdbc85dc964bfc5285d60c14d06efa4da0a` |
+| start: the root's blank text, `assemble-root.ts blank h7-pedal` (Task 11b) | `70d5c6ba659b35e44d8215c9bcfae33b0caa693e342d76791209e80fd65c47d5` |
+| end: `h7-pedal.kicad_sch`, the root (Task 11b) | `d45839b414cced93c076514fc225cbcb82385e20bf55b7454ad9ebbdf5531d37` |
+| end: `h7-pedal.kicad_pro`, the root's project file (Task 11b) | `f2c88fa30a87d948403e3cfd36d4d4e0a52e85a7fe804fb022280d10e28c194b` |
 
 ## Replay
 
@@ -44,8 +47,9 @@ bash drafted/h7-platform/h7-pedal/repair/replay.sh <work-dir>
 `replay.sh` does, in order:
 
 1. `make -C boards/h7-pedal draw` (this writes `build/draw/h7-pedal*` inside the repository,
-   overwriting any draft already there). Checks it printed the `NO INDEPENDENT NETLIST:` block (the
-   board declares no `"netlist"`: there is no root sheet yet to export one from), that each draft's
+   overwriting any draft already there). Checks it printed no `NO INDEPENDENT NETLIST:` block (since
+   Task 11b the board declares the root's export, `tests/fixtures/h7-pedal.net`, as its netlist, so
+   make draw checks each page's partition against it; until then it printed one), that each draft's
    sha256 is the recorded one, and that each repaired block's generated intent is byte-identical to
    `<block>/intent.json`. A model change since this record stops the replay here, by block.
 2. Each repaired page, in the order of the table above, by `repair_block` with the shared tools in
@@ -59,6 +63,14 @@ bash drafted/h7-platform/h7-pedal/repair/replay.sh <work-dir>
 3. Makes the `sym-lib-table` (one row, `h7-platform`, naming
    `circuits/h7-platform/h7-platform.kicad_sym` in place in the repository; design change C4) and
    checks it is byte-identical to `../sym-lib-table`.
+4. The root (Task 11b), each op-list checked against `root/` and applied as above:
+   `assemble-root.ts blank` (its sha256 checked), `assemble-root.ts ops` (`root/01-assemble.json`),
+   `draughting/pages/root-flags.ts` (`root/02-pwr-flags.json`: six flags, two of them on a label of
+   their own, CR-PEDAL-ROOT-FLAG-EDGE-SLOT), `draughting/pages/root_flag_refs.py` (6),
+   `draughting/repair/root_pin_justify.py`; the root's sha256 must be its end value above and the root
+   byte-identical to `../h7-pedal.kicad_sch`. Then `draughting/pages/kicad-pro.ts` writes the
+   `.kicad_pro` (two exclusions), checked by sha256 and against `../h7-pedal.kicad_pro`, and every block
+   sheet must be unchanged by the root's assembly.
 
 Toolchain: copperhead 0.12.0 and akcli 0.22.0 under `draughting/` (`make draught-doctor` matched
 every pinned tool), kicad-cli 10.0.5, python3, bun. Replayed on 2026-11-13 into a new directory and
@@ -74,13 +86,17 @@ of its pages; each replay reached every sha256, the earlier pages' included. Tas
 the analog group's four blocks modelled) replayed into a new directory, added the four new drafts to
 the check, and replayed into another; both reached every sha256, the fifteen pages byte-identical,
 and drafted the four the same. Task 11a replayed into a new directory after each of its pages; each
-replay reached every sha256, the earlier pages' included.
+replay reached every sha256, the earlier pages' included. Task 11b replayed into a new directory with
+the root steps: it reached every sha256, the nineteen pages, the root and the `.kicad_pro`.
 
 Then, to check and look at a page:
 
 ```
 sh draughting/pages/verify.sh drafted/h7-platform/h7-pedal <block> drafted/h7-platform/h7-pedal/<block>.kicad_sch
 sh draughting/pages/render.sh drafted/h7-platform/h7-pedal/<block>.kicad_sch <out-dir>
+sh draughting/pages/verify-root.sh drafted/h7-platform/h7-pedal
+sh draughting/pages/render.sh drafted/h7-platform/h7-pedal/h7-pedal.kicad_sch <out-dir> root
+sh drafted/h7-platform/h7-pedal/repair/tools/root-control.sh
 ```
 
 ## The files
@@ -97,4 +113,6 @@ sh draughting/pages/render.sh drafted/h7-platform/h7-pedal/<block>.kicad_sch <ou
 | `tools/erc-control.sh` | the pedal's controls for CR-PEDAL-CROSS-PAGE-POWER-DRIVERS (Task 7c): the pf page with 5V_A's stand-in a TestPoint and with none each fail on U1's VDD, and 5V_A homed on a page is refused board-wide; for CR-PEDAL-LM66100-ST-ERC (Task 9b, controls 7 to 10); for VINL and VINR's cross-page drivers on the codec page (Task 10, controls 11 to 13, replacing Task 9c's one-item allowance controls) |
 | `tools/title_block.py` | the date, revision and first comment the pedal's pages' title blocks carry |
 | `tools/controls_page.py` | the placement, fields, note and wiring the two control pages share (Task 9b): controls_a and controls_b are the same three-position circuit, so each block's `layout.py` and `02-wire.py` name only their parts and call it |
+| `root/01-assemble.json`, `root/02-pwr-flags.json` | the root's op-lists (Task 11b), generated by `tools/draught/assemble-root.ts` and `draughting/pages/root-flags.ts`; checked by the replay |
+| `tools/root-control.sh` | the pedal root's controls (Task 11b): the committed project passes `verify-root.sh`; each `.kicad_pro` exclusion removed or mis-keyed fails; adc_drv's VINL stub cut fails the driver check and ERC; the six root flags removed fail |
 | `replay.sh` | the replay above |

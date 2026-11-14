@@ -100,15 +100,27 @@ export function exportProjectRoot(dir: string, board: string): ImportedNetlist {
   }
 }
 
-/** The Reference of every placed, non-power symbol on one sheet, in file order. */
+/**
+ * The Reference of every placed, non-power symbol on one sheet, in file order, ONE PER PART: a
+ * multi-unit package (spec C6; the h7 pedal's OPA1688 duals and its two-unit U5) is placed as one
+ * instance per unit under one reference, and is one part. Its instances must carry distinct
+ * `(unit N)`s - a unit placed twice throws, naming the reference - and are counted once. A unit not
+ * placed at all is the export comparison's to find: its pins are missing from their nets.
+ */
 export function placedReferences(sheetFile: string): string[] {
   const root = parseSexpr(fs.readFileSync(sheetFile, "utf8"))
   const refs: string[] = []
+  const units = new Map<string, string[]>()
   for (const node of root.nodes) {
     if (node.name !== "symbol" || child(node, "lib_id") === undefined) continue
     const reference = node.nodes.find((n) => n.name === "property" && n.atoms[0] === "Reference")?.atoms[1]
     if (reference === undefined) throw new Error(`${sheetFile}: a placed symbol has no Reference property.`)
-    if (!reference.startsWith("#")) refs.push(reference)
+    if (reference.startsWith("#")) continue
+    const unit = child(node, "unit")?.atoms[0] ?? "1"
+    const seen = units.get(reference) ?? []
+    if (seen.includes(unit)) throw new Error(`${sheetFile}: ${reference} unit ${unit} is placed more than once.`)
+    if (seen.length === 0) refs.push(reference)
+    units.set(reference, [...seen, unit])
   }
   return refs
 }

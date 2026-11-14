@@ -25,8 +25,10 @@ import path from "node:path"
 import { KICAD_CLI } from "../../lib/kicad/netlist.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 
-const PROJECTS: ReadonlyArray<{ readonly board: string; readonly dir: string }> = [
-  { board: "h7-module", dir: path.join(moduleRepoRoot(), "drafted", "h7-platform", "h7-module") },
+/** `control`: the block sheet whose title the control edits (one carrying a `(title ...)`). */
+const PROJECTS: ReadonlyArray<{ readonly board: string; readonly dir: string; readonly control: string }> = [
+  { board: "h7-module", dir: path.join(moduleRepoRoot(), "drafted", "h7-platform", "h7-module"), control: "power" },
+  { board: "h7-pedal", dir: path.join(moduleRepoRoot(), "drafted", "h7-platform", "h7-pedal"), control: "entry" },
 ]
 
 const EXPORT_TIME = /( date )\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}( <\/title>)/g
@@ -87,7 +89,7 @@ test("the kicad-cli this check renders with is the pinned one", () => {
   expect(installedKicadCliVersion()).toBe(pinnedKicadCliVersion())
 })
 
-for (const { board, dir } of PROJECTS) {
+for (const { board, dir, control } of PROJECTS) {
   const sheets = fs.readdirSync(dir).filter((f) => f.endsWith(".kicad_sch")).sort()
   const svgs = fs.readdirSync(dir).filter((f) => f.endsWith(".svg")).sort()
 
@@ -105,17 +107,17 @@ for (const { board, dir } of PROJECTS) {
   }
 
   test(`${board}: a render of other bytes is caught - the control for the equality above`, () => {
-    const svgFile = path.join(dir, "power.svg")
+    const svgFile = path.join(dir, `${control}.svg`)
     const committed = masked(fs.readFileSync(svgFile, "utf8"), svgFile)
     const work = fs.mkdtempSync(path.join(os.tmpdir(), "render-binding-control-"))
     try {
       for (const f of fs.readdirSync(dir)) {
         if (f.endsWith(".kicad_sch") || f.endsWith(".kicad_pro") || f === "sym-lib-table") fs.copyFileSync(path.join(dir, f), path.join(work, f))
       }
-      const copy = path.join(work, "power.kicad_sch")
+      const copy = path.join(work, `${control}.kicad_sch`)
       const text = fs.readFileSync(copy, "utf8")
       const edited = text.replace(/\(title "([^"]*)"/, '(title "$1 CONTROL"')
-      if (edited === text) throw new Error("power.kicad_sch has no (title ...) to edit; the control would not change the bytes")
+      if (edited === text) throw new Error(`${control}.kicad_sch has no (title ...) to edit; the control would not change the bytes`)
       fs.writeFileSync(copy, edited)
       expect(masked(renderSvg(copy, false), "control render")).not.toBe(committed)
     } finally {

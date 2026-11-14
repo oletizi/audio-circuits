@@ -4,12 +4,15 @@ The circuit: `circuits/h7-platform/pedal-board.ts` (`h7Pedal()`, `DESIGNATORS`, 
 `PAGE_GROUPS`, `drawingPages()`), one `include()`d block per page under `circuits/h7-platform/pedal/`
 (ruling CR-PEDAL-BLOCKS; the board includes a block once its task has built it). Model-authoritative
 (`TOOLING.md` step 0): every page is derived from the model. The board is
-`boards/h7-pedal/perfboard.json`, kind `pcb`; it declares no `sch` and no `netlist` yet, because
-there is no root sheet to name or export.
+`boards/h7-pedal/perfboard.json`, kind `pcb`; since Task 11b its `sch` is the root,
+`h7-pedal.kicad_sch`, and its `netlist` the root's export, `tests/fixtures/h7-pedal.net`.
 
 The project is drawn under design change C3 (`TOOLING.md`, "Multi-page drawing"), as the module's
 is (`../h7-module/RECORD.md`): one sheet per block, each block's ports drawn as hierarchical labels,
-and a root sheet joining them, assembled once every page is drawn. Each block page is checked
+and a root sheet joining them, assembled once every page was drawn (Task 11b; its section is the
+last below). `kicad-cli`'s export of that root is the evidence of how the pages connect
+(`registerDraftedProjectTests` in `tests/circuits/h7-pedal.test.ts`, and
+`sh draughting/pages/verify-root.sh drafted/h7-platform/h7-pedal`). Each block page is checked
 against its own block of the model by the shared tools, `sh draughting/pages/verify.sh
 drafted/h7-platform/h7-pedal <block> <sheet>`. The pedal's own data for those tools is in
 `repair/tools/`: its three declared tables (`pwr-flag-homes.ts`, `cross-page-drivers.ts`,
@@ -34,6 +37,7 @@ below says which it is.** A verdict is bound to the sha256 in the table below;
 
 | sheet | role | sha256 |
 | --- | --- | --- |
+| `h7-pedal.kicad_sch` | root | `d45839b414cced93c076514fc225cbcb82385e20bf55b7454ad9ebbdf5531d37` |
 | `interface.kicad_sch` | block interface | `963777f3bf9df9c3b5d966ce48c71bf76071f902c716f88a65b07c621b88822a` |
 | `entry.kicad_sch` | block entry | `5352fd5b917c96520681efa8421b8b63d9a0f92345156c776044f48708af0736` |
 | `pf.kicad_sch` | block pf | `7096a9befaf2e62b42218a2153a34fa317fc9cad0a1ad5e1ae9c0d198a4b2385` |
@@ -55,10 +59,14 @@ below says which it is.** A verdict is bound to the sha256 in the table below;
 | `out.kicad_sch` | block out | `3bd4e4a006bdb52f2bd8bf21b81eafdbc85dc964bfc5285d60c14d06efa4da0a` |
 
 Each committed `.svg` beside a sheet is `draughting/pages/render.sh`'s render of that sheet's
-committed bytes, with the pinned kicad-cli.
+committed bytes, with the pinned kicad-cli; since Task 11b `tests/circuits/drafted-render-binding.test.ts`
+checks each of the twenty against a fresh render. The root's `.kicad_pro`, `h7-pedal.kicad_pro` (sha256
+`f2c88fa30a87d948403e3cfd36d4d4e0a52e85a7fe804fb022280d10e28c194b`), is committed beside it and is not a
+sheet, so it has no row here; `repair/replay.sh` checks its sha256.
 
 | page | status | render |
 | --- | --- | --- |
+| root | UNREVIEWED (Task 11b); `verify-root.sh` exits 0: root ERC 0 errors, with two excluded violations (CR-PEDAL-LM66100-ST-ERC on `/expr_ref/`, CR-PEDAL-ROOT-MIDI-PIN4-ERC on `/`) | `h7-pedal.svg` |
 | interface | **REVIEWED, 2026-11-13** (Task 7a); `verify.sh` exits 0 | `interface.svg` |
 | entry | **REVIEWED, 2026-11-13** (Task 7a); `verify.sh` exits 0 | `entry.svg` |
 | pf | **REVIEWED, 2026-11-13** (Task 7b); `verify.sh` exits 0 | `pf.svg` |
@@ -142,7 +150,9 @@ What `make draw` printed, beside the pages:
   no schematic to export a netlist from yet, and none was derived from the model to stand in: a
   check that compares the model with itself cannot fail."* That is a check not made. The binding
   check is each page's own `kicad-cli` export against the model, which `draughting/pages/verify.sh`
-  runs per block.
+  runs per block. **Since Task 11b the board declares the root's export as its `netlist`**, so `make
+  draw` runs the per-block partition check against it and prints no such block; `repair/replay.sh`
+  requires its absence, and the drafts are the same bytes.
 - **Paper.** copperhead drafted entry on A4, pf on A5, modsw on A5, prail on A3, ldo_vmid on A4 and
   interface on A5; `make draw` re-papered each to US Letter. pf, modsw and interface fit the inner
   frame. **Three overshoot it east**: entry by 3.133 mm (content x 25.400 to 270.510 mm), prail by
@@ -3178,6 +3188,16 @@ reads 0 errors and the FX_OUT_R stub's label is reported dangling as the other s
 layout of this page, with C_A+ under C_A- and R_D1 under R_D2, reported all ten; nothing near FX_OUT_R
 changed between the two.
 
+**The control behind "hides no fault"** (the Task 11a review's run, re-run at Task 11b): a scratch copy
+of this page with FX_OUT_R's hierarchical label moved 5.08 mm east, off its wire end (`(at 175.26
+111.76 0)` to `(at 180.34 111.76 0)`). `sh draughting/pages/verify.sh drafted/h7-platform/h7-pedal out
+<copy>` exits 1, *"port labels: 1 of 10 ports on the wrong net"*, naming FX_OUT_R: *"expected pins
+C93.2, R124.1, TP13.1 on net "/FX_OUT_R"; found no net named "/FX_OUT_R" - its pins are on net
+"Net-(C93-Pad2)""*. The same command on the committed page exits 0, 0 of 10. The copy's sheet-alone
+ERC reports FX_OUT_R's label as both `label_dangling` and `pin_not_connected`. So when the label is
+detached, the port-label check and ERC both catch it; the omission shows only while it is attached.
+On the assembled root the export puts C93.2, R124.1 and TP13.1 on `/FX_OUT_R` with K2 pin 5 (jacks_byp).
+
 ### Why the page has no crossing, as the layout records it
 
 Observations, not a judgement of the page: on each unit's west side +IN is over -IN, and the VOUTx-
@@ -3207,3 +3227,152 @@ lie east of FX_OUT_x's labels.
   horizontal parts' above them, the hanging parts' east of their bodies; U19C's west of its body.
 - Renders: the first had C_A- straight over C_A+, their plates 40 mil apart; C_A+ moved 300 mil east
   and R_D1 100 mil east.
+
+## root: the pedal's root sheet (Task 11b)
+
+**Status: UNREVIEWED.** sha256 `d45839b414cced93c076514fc225cbcb82385e20bf55b7454ad9ebbdf5531d37`. Render:
+`h7-pedal.svg` beside it, and a 150 dpi PNG of the root page by
+`sh draughting/pages/render.sh h7-pedal.kicad_sch <out-dir> root`. `verify-root.sh` exits 0: the root
+export agrees with `h7Pedal()`, every part is drawn once, every cross-page driver entry is cleared by
+its real driver, one PWR_FLAG stands on each flagged net, the ERC has 0 errors apart from two declared
+and excluded allowances, and every sheet symbol lies on US Letter's paper.
+
+### How it was assembled
+
+`repair/root/`, replayed by `repair/replay.sh` (step 4) after the nineteen blocks, as the module's root
+is (`../h7-module/RECORD.md`, "root"):
+
+1. `bun tools/draught/assemble-root.ts blank h7-pedal`: the starting text, uuid seeded by the board,
+   US Letter (sha256 `70d5c6ba659b35e44d8215c9bcfae33b0caa693e342d76791209e80fd65c47d5`).
+2. `assemble-root.ts ops`, `01-assemble.json`: one sheet per block, placed by
+   `tools/draught/root-arrangement.ts` to fit US Letter (CR-MODULE-ROOT-FITS-LETTER), each port a sheet
+   pin wired to a 200 mil stub ending in a LOCAL label naming the parent net. Every block's pins fit
+   down its west edge (interface's 35 are the most), so no sheet carries east-edge pins.
+3. `draughting/pages/root-flags.ts`, `02-pwr-flags.json`: the six root-held PWR_FLAGs. Four stand on
+   a stub label at an edge's end, by the module's rule; two, 5V_A_CODEC and VIN_A, have no stub at
+   any edge's end and stand on a label of their own in the slot above an edge's top pin (the second
+   rule, CR-PEDAL-ROOT-FLAG-EDGE-SLOT, drafted at this task; before it the tool refused 5V_A_CODEC by
+   name).
+4. `draughting/pages/root_flag_refs.py`: their references `#FLG01` to `#FLG06`.
+5. `draughting/repair/root_pin_justify.py`: 163 west-edge sheet pin names justified left.
+6. `draughting/pages/kicad-pro.ts`: `h7-pedal.kicad_pro`, two exclusions (below).
+
+No page sheet changed: the replay checks every block sheet byte-identical after the root's assembly.
+The committed `sym-lib-table` (C4) was already here; with the `.kicad_pro` beside the root, kicad-cli
+reads it, and the root's ERC carries no `lib_symbol_issues` (a scratch copy outside the repository,
+where the table's relative path does not resolve, reported 32).
+
+### The rulings it rests on
+
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): the six flags,
+  homed on the root by `repair/tools/pwr-flag-homes.ts`.
+- [CR-MODULE-ROOT-FITS-LETTER](../../../docs/h7-platform/decisions.md#cr-module-root-fits-letter):
+  the arrangement on US Letter, the pin justification, and the first flag rule.
+- [CR-PEDAL-ROOT-FLAG-EDGE-SLOT](../../../docs/h7-platform/decisions.md#cr-pedal-root-flag-edge-slot)
+  (drafted at Task 11b, awaiting the controller): the second flag rule.
+- [CR-MODULE-CROSS-PAGE-DRIVERS](../../../docs/h7-platform/decisions.md#cr-module-cross-page-drivers),
+  [CR-PEDAL-CROSS-PAGE-POWER-DRIVERS](../../../docs/h7-platform/decisions.md#cr-pedal-cross-page-power-drivers)
+  and [CR-PEDAL-CODEC-VIN-AWAITING-ERC-AMENDED](../../../docs/h7-platform/decisions.md#cr-pedal-codec-vin-awaiting-erc-amended):
+  no stand-in; every entry cleared by its real driver.
+- [CR-PEDAL-LM66100-ST-ERC](../../../docs/h7-platform/decisions.md#cr-pedal-lm66100-st-erc) and
+  [CR-PEDAL-LM66100-ST-ERC-ROOT-KEY](../../../docs/h7-platform/decisions.md#cr-pedal-lm66100-st-erc-root-key)
+  (drafted at Task 11b, awaiting the controller): the ST exclusion, keyed with the root flag's uuid.
+- [CR-PEDAL-ROOT-MIDI-PIN4-ERC](../../../docs/h7-platform/decisions.md#cr-pedal-root-midi-pin4-erc)
+  (drafted at Task 11b, awaiting the controller): the MIDI_PIN4 exclusion.
+- [CR-PEDAL-MIDI](../../../docs/h7-platform/decisions.md#cr-pedal-midi) and
+  [CR-PEDAL-NETS-AMENDED](../../../docs/h7-platform/decisions.md#cr-pedal-nets-amended): MIDI_PIN4,
+  MIDI_PIN5 and the five SPARE nets are board ports that reach one sheet.
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): no power
+  symbol joins a net by name; every rail meets on the root through local labels.
+- [CR-MODULE-ROOT-PROJECT-FILE](../../../docs/h7-platform/decisions.md#cr-module-root-project-file):
+  the `.kicad_pro` beside the root.
+
+### PWR_FLAGs, cross-page drivers and the allowances
+
+**PWR_FLAGs.** `hierarchy-flags.ts` on the probe of the committed project: 6 flags, all on the root,
+one on each of the six declared nets (3V3_D, 5V_A_CODEC, GND, VIN_A, VIN_MOD, VREF_A); no page carries
+one. Placements: 3V3_D at controls_a's west top pin (flag above), GND at entry's west top pin (above),
+VIN_MOD at prail's west bottom pin (below), VREF_A at expr_ref's west bottom pin (below), 5V_A_CODEC
+on its own label above ldo_vmid's top pin, VIN_A on its own label above in_fe's top pin. The probe
+finds 6 `#` references across the 20 sheets, none repeated, and the export prints no annotation
+warning. `hierarchy-flags.ts` needed one fix first: `modelPinNets` passed a multi-unit part's raw unit
+pin name to `pinNumberFor`, which refuses it (it threw on ldo_vmid's U5); it now keys a unit pin
+`<unit>/<pin>` (`pinKey`), with `tests/draught/hierarchy-flags-multi-unit.test.ts`, which failed 3 of
+4 before the fix. The module's root verifies as before.
+
+**Cross-page drivers.** No stand-in on the root (`counts.py`: 6 symbols, all flags). `root-drivers.ts`:
+9 of 9 entries on their net with their real driver and every model pin of the net: 5V_A by U4.1 (17
+pins), PF_TRIP by U2.6 (7), PF_ON by U2.4 (4), 3V3_CODEC by U6.5 (17), CODEC_RST_N by U8.2 (4), XO_OUT
+by U7.3 (3), DIN_CODEC by U11.4 (2), **VINL by R107.2 and VINR by R112.2**, each with all 3 of its
+model pins (R_O's pin 2, C_VIN and U9's VINL or VINR). The root's ERC reports no `pin_not_driven` on
+any sheet, U9 pins 25 and 26 included. As CR-PEDAL-CODEC-VIN-AWAITING-ERC-AMENDED says, those two
+entries certify connectivity, not drive: the ERC result would be the same with C_VIN alone on the net.
+`repair/tools/root-control.sh` control 6: adc_drv's VINL stub cut fails `root-drivers.ts`, *"VINL: the
+driving pin R107.2's exported net /VINL_CUT lacks U9.25"*, and the ERC then reports U9 pin 25
+`pin_not_driven`.
+
+**The allowances.** `h7-pedal.kicad_pro` carries two exclusions, one per declared allowance, each
+value read from the committed root and block sheets:
+
+- **CR-PEDAL-LM66100-ST-ERC**, `pin_to_pin` on `/expr_ref/` between U12 pin 5 (ST, open collector) and
+  GND's flag, which the root's ERC names `#FLG03`. The main item is U12 pin 5 at its point on the
+  expr_ref page; the aux item is the flag's pin 1 uuid on the root, with the root's own sheet path
+  (CR-PEDAL-LM66100-ST-ERC-ROOT-KEY). `kicad-pro.ts` refused this entry until Task 11b; it now reads
+  the uuid at the point `root-flags.ts` puts GND's flag.
+- **CR-PEDAL-ROOT-MIDI-PIN4-ERC**, `label_dangling` on `/`, "Label 'MIDI_PIN4'", midi_i2c's MIDI_PIN4
+  stub: the net leads to the MIDI connector, which is not drawn (CR-PEDAL-MIDI). It is a root label
+  allowance, a form the shared tools gained at this task: one item, a root stub label, held to the
+  model as a board port bound to one block.
+
+`root_erc.py` matches each excluded violation to exactly one allowance and fails on any other error.
+Controls (`root-control.sh`, each came out as stated): without the ST exclusion the run fails on U12
+pin 5 and #FLG03 and on the count; with the flag's uuid in the key replaced by the nil uuid, the error
+stays; without the MIDI_PIN4 exclusion it fails on that label; with the label key's x one unit off,
+the error stays; the root's six flags removed fails, naming each net.
+
+**MIDI_PIN5 and the five SPARE nets** are reported as `isolated_pin_label`, a warning, each twice (its
+root stub label and its block page's hierarchical label): 12 warnings, no error, so no allowance. Why
+MIDI_PIN4 (four RA pins on its net) draws the error and MIDI_PIN5 (R92's one pin) the warning is not
+diagnosed.
+
+### Measurements
+
+From `draughting/pages/verify-root.sh` (kicad-cli 10.0.5), run on the committed project. None of these
+is a judgement of the page.
+
+| measure | root |
+| --- | --- |
+| root export against the WHOLE model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 (`footprints` 0; `footprintsUndeclared` 312: the model declares no footprint) |
+| exported components, nets, net members | 312 (the model's 312, each once), 204, 820 |
+| kicad-cli annotation warning on export | none |
+| PWR_FLAGs across the hierarchy | 6, all on the root: 3V3_D, 5V_A_CODEC, GND, VIN_A, VIN_MOD, VREF_A; one per declared net, each at home |
+| `#` references across the 20 sheets | 6, none repeated |
+| cross-page driver entries on their net with the real driver | 9 of 9 |
+| ERC, every sheet, errors | **0** |
+| ERC, excluded | 2: `pin_to_pin` on `/expr_ref/`, U12 pin 5 and #FLG03 (CR-PEDAL-LM66100-ST-ERC); `label_dangling` on `/`, Label 'MIDI_PIN4' (CR-PEDAL-ROOT-MIDI-PIN4-ERC) |
+| ERC, warnings by type | `isolated_pin_label` 12 (on `/`: MIDI_PIN5 and SPARE1 to SPARE5, each its root label and its hierarchical label); `lib_symbol_mismatch` 22 (on `/`: D1, D2 PMEG4030ER; D16, D18 1N4148W; J4, J9 to J12 NMJ6HCD2; Q2, Q3, Q5, Q7, Q8, Q10, Q11 AO3400A; Q9 AO3401A; Q4, Q6 2N7002; U2 SN74LVC2G14DBV; U3 TPS62933F; U14 USBLC6-2SC6; each an embedded symbol differing from the installed library, as the PMEG4030ER and 1N4148W tables in the entry and jacks_byp sections record for two of them) |
+| ERC, `pin_not_driven` | 0 |
+| sheets | 19 sheet symbols, 163 sheet pins (one per port of each block), all on west edges |
+| wires, labels | 163 wires (828.04 mm, 0 corners); 165 local labels on 66 nets (163 stub labels and the two flag labels); 0 junctions |
+| symbols (parts, power symbols, PWR_FLAGs) | 6 (0, 0, 6) |
+| true crossings, T-meetings, orphan junctions, tees without a dot | 0, 0, 0, 0 |
+| paper fit (US Letter), `paper_fit.py` | fits: yes (content x 26.670 to 208.280 mm, y 20.320 to 177.800 mm) |
+| sheet symbols on the paper, `root_sheets_fit.py` | 19 of 19, each inside the inner frame and outside the title block |
+| drawn text, from the SVG's stroked text (`svg_stroked_text.py`, reported by `verify-root.sh`, never judged) | no two body text boxes overlap; six sheet names (expr_ref, pf, codec_sup, prail, entry, jacks_byp) cross their box's top line |
+| sheet page numbers (`root_pages.py`, reported, never judged) | / 1; entry 2; pf 11; modsw 22; prail 33; ldo_vmid 44; codec_sup 57; codec 70; sai_iso 101; in_fe 124; adc_drv 141; out 154; jacks_byp 175; expr_ref 192; controls_a 203; controls_b 216; fsw_led 229; usb 244; midi_i2c 257; interface 276 |
+
+### What the page shows, as observations
+
+- Nineteen sheet symbols, each labelled with its block name above and its file below, all inside the
+  frame. interface, the tallest, stands at the north-west, with codec, sai_iso and out along the top
+  to its east; entry, in_fe and midi_i2c are below them, then jacks_byp, fsw_led and ldo_vmid; adc_drv,
+  controls_a, controls_b and codec_sup in the next row; pf, modsw, prail and usb below; expr_ref at
+  the south-west. No sheet symbol reaches the title block at the south-east.
+- Each sheet's pins run down its west edge in port-name order, each with a 200 mil wire west to a
+  local label naming the parent net. Every pin name is inside its box.
+- PWR_FLAGs: above GND's stub on entry and 3V3_D's on controls_a (each the edge's top pin); below
+  VIN_MOD's on prail and VREF_A's on expr_ref (each the bottom pin); 5V_A_CODEC's above ldo_vmid's
+  first pin and VIN_A's above in_fe's, each on a label of its net at the box's top-edge level, its
+  "PWR_FLAG" text over the cell's sheet-name margin, west of the sheet name.
+- The title block reads `Sheet: /`, `File: h7-pedal.kicad_sch`, `Size: USLetter`, `Id: 1/20`, with no
+  title.
