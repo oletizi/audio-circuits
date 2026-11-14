@@ -1,0 +1,254 @@
+{
+  "version": 1,
+  "parts": [
+    {
+      "ref": "J9",
+      "libId": "Connector_Audio:NMJ6HCD2",
+      "value": "NMJ6HCD2",
+      "group": "Jacks and bypass relays"
+    },
+    {
+      "ref": "J10",
+      "libId": "Connector_Audio:NMJ6HCD2",
+      "value": "NMJ6HCD2",
+      "group": "Jacks and bypass relays"
+    },
+    {
+      "ref": "J11",
+      "libId": "Connector_Audio:NMJ6HCD2",
+      "value": "NMJ6HCD2",
+      "group": "Jacks and bypass relays"
+    },
+    {
+      "ref": "J12",
+      "libId": "Connector_Audio:NMJ6HCD2",
+      "value": "NMJ6HCD2",
+      "group": "Jacks and bypass relays"
+    },
+    {
+      "ref": "D12",
+      "libId": "h7-platform:PESD12VL1BA",
+      "value": "PESD12VL1BA,115",
+      "group": "Jacks and bypass relays"
+    },
+    {
+      "ref": "D13",
+      "libId": "h7-platform:PESD12VL1BA",
+      "value": "PESD12VL1BA,115",
+      "group": "Jacks and bypass relays"
+    },
+    {
+      "ref": "D14",
+      "libId": "h7-platform:PESD12VL1BA",
+      "value": "PESD12VL1BA,115",
+      "group": "Jacks and bypass relays"
+    },
+    {
+      "ref": "D15",
+      "libId": "h7-platform:PESD12VL1BA",
+      "value": "PESD12VL1BA,115",
+      "group": "Jacks and bypass relays"
+    },
+    {
+      "ref": "K1",
+      "libId": "Relay:G6K-2",
+      "value": "G6K-2F-Y DC3",
+      "group": "Jacks and bypass relays"
+    },
+    {
+      "ref": "K2",
+      "libId": "Relay:G6K-2",
+      "value": "G6K-2F-Y DC3",
+      "group": "Jacks and bypass relays"
+    },
+    {
+      "ref": "Q10",
+      "libId": "Transistor_FET:AO3400A",
+      "value": "AO3400A",
+      "group": "Jacks and bypass relays"
+    },
+    {
+      "ref": "R125",
+      "libId": "Device:R",
+      "value": "3.9K",
+      "group": "Jacks and bypass relays"
+    },
+    {
+      "ref": "R126",
+      "libId": "Device:R",
+      "value": "15K",
+      "group": "Jacks and bypass relays"
+    },
+    {
+      "ref": "Q11",
+      "libId": "Transistor_FET:AO3400A",
+      "value": "AO3400A",
+      "group": "Jacks and bypass relays"
+    },
+    {
+      "ref": "D16",
+      "libId": "Diode:1N4148W",
+      "value": "1N4148W-7-F",
+      "group": "Jacks and bypass relays"
+    },
+    {
+      "ref": "D17",
+      "libId": "Device:D_Zener",
+      "value": "BZT52C12-7-F",
+      "group": "Jacks and bypass relays"
+    },
+    {
+      "ref": "D18",
+      "libId": "Diode:1N4148W",
+      "value": "1N4148W-7-F",
+      "group": "Jacks and bypass relays"
+    },
+    {
+      "ref": "D19",
+      "libId": "Device:D_Zener",
+      "value": "BZT52C12-7-F",
+      "group": "Jacks and bypass relays"
+    }
+  ],
+  "nets": [
+    {
+      "name": "3V3_P",
+      "kind": "signal",
+      "pins": [
+        "D17.2",
+        "D19.2",
+        "K1.1",
+        "K2.1"
+      ]
+    },
+    {
+      "name": "BYP_L",
+      "kind": "signal",
+      "pins": [
+        "K1.2",
+        "K2.2"
+      ]
+    },
+    {
+      "name": "BYP_R",
+      "kind": "signal",
+      "pins": [
+        "K1.7",
+        "K2.7"
+      ]
+    },
+    {
+      "name": "GND",
+      "kind": "signal",
+      "pins": [
+        "D12.2",
+        "D13.2",
+        "D14.2",
+        "D15.2",
+        "J10.S",
+        "J11.S",
+        "J12.S",
+        "J9.S",
+        "Q10.2",
+        "Q11.2",
+        "R126.2"
+      ]
+    },
+    {
+      "name": "IN_TIP_L",
+      "kind": "signal",
+      "pins": [
+        "D12.1",
+        "J10.TN",
+        "J9.T",
+        "K1.3"
+      ]
+    },
+    {
+      "name": "IN_TIP_R",
+      "kind": "signal",
+      "pins": [
+        "D13.1",
+        "J10.T",
+        "K1.6"
+      ]
+    },
+    {
+      "name": "OUT_JACK_L",
+      "kind": "signal",
+      "pins": [
+        "D14.1",
+        "J11.T",
+        "K2.3"
+      ]
+    },
+    {
+      "name": "OUT_JACK_R",
+      "kind": "signal",
+      "pins": [
+        "D15.1",
+        "J12.T",
+        "K2.6"
+      ]
+    },
+    {
+      "name": "RELAY_DRV",
+      "kind": "signal",
+      "pins": [
+        "D16.2",
+        "D18.2",
+        "K1.8",
+        "K2.8",
+        "Q10.3"
+      ]
+    },
+    {
+      "name": "RELAY_GATE",
+      "kind": "signal",
+      "pins": [
+        "Q10.1",
+        "Q11.3",
+        "R125.2",
+        "R126.1"
+      ]
+    },
+    {
+      "name": "SUP_IN",
+      "kind": "signal",
+      "pins": [
+        "D16.1",
+        "D17.1"
+      ]
+    },
+    {
+      "name": "SUP_OUT",
+      "kind": "signal",
+      "pins": [
+        "D18.1",
+        "D19.1"
+      ]
+    }
+  ],
+  "noConnect": [
+    "J10.R",
+    "J10.RN",
+    "J10.SN",
+    "J11.R",
+    "J11.RN",
+    "J11.SN",
+    "J11.TN",
+    "J12.R",
+    "J12.RN",
+    "J12.SN",
+    "J12.TN",
+    "J9.R",
+    "J9.RN",
+    "J9.SN",
+    "J9.TN"
+  ],
+  "hints": {
+    "groupOrder": [
+      "Jacks and bypass relays"
+    ]
+  }
+}

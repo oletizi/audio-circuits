@@ -1,0 +1,119 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "jacks_byp.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "acbc985b-712e-5974-8daa-6900bdbc3018"
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_P",
+   "at": [
+    5650,
+    3850
+   ],
+   "scope": "hierarchical",
+   "rotation": 270
+  },
+  {
+   "op": "delete_object",
+   "uuid": "df0cfa3f-7728-5304-9472-35869674d511"
+  },
+  {
+   "op": "add_net_label",
+   "name": "FX_IN_L",
+   "at": [
+    4800,
+    3200
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "130693b4-a027-5956-87a9-cdbcaa2adea3"
+  },
+  {
+   "op": "add_net_label",
+   "name": "FX_IN_R",
+   "at": [
+    4800,
+    2800
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "03e923bf-7652-5c68-b0b2-0211c7381ec9"
+  },
+  {
+   "op": "add_net_label",
+   "name": "FX_OUT_L",
+   "at": [
+    6500,
+    3200
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "19201cc4-2bac-5ccd-9368-8aef399c7844"
+  },
+  {
+   "op": "add_net_label",
+   "name": "FX_OUT_R",
+   "at": [
+    6500,
+    2800
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "cf7ec686-d53a-55b3-9c6b-05bfdd4e56bf"
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    1300,
+    5200
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "04dc9672-a962-5297-ae25-5ca80e53e43d"
+  },
+  {
+   "op": "add_net_label",
+   "name": "PF_TRIP",
+   "at": [
+    4000,
+    4800
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "477c7ad3-3477-5735-93e1-a2756c76c5aa"
+  },
+  {
+   "op": "add_net_label",
+   "name": "RELAY_EN",
+   "at": [
+    4000,
+    4600
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  }
+ ]
+}

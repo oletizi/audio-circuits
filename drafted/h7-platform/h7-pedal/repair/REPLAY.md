@@ -4,8 +4,8 @@
 `make -C boards/h7-pedal draw` (`TOOLING.md` step 5.5, and design change C3 for what a multi-page
 board adds). It grows one block at a time as each page is repaired (h7 pedal pages plan, Task 7:
 7a interface and entry, 7b pf and modsw, 7c prail and ldo_vmid; Task 9a, usb, midi_i2c and
-fsw_led; Task 9b, controls_a, controls_b and expr_ref; Task 9c, codec_sup, sai_iso and codec, each
-added as it is repaired). The root sheet and its
+fsw_led; Task 9b, controls_a, controls_b and expr_ref; Task 9c, codec_sup, sai_iso and codec; Task
+11a, the analog group's pages, jacks_byp first; each added as it is repaired). The root sheet and its
 `.kicad_pro` come once every page is drawn.
 
 | | sha256 |
@@ -26,6 +26,7 @@ added as it is repaired). The root sheet and its
 | end: `codec_sup.kicad_sch` (Task 9c) | `9f98870190e4b1207c005494b73ec8fb75f2f48857df9723e612a96902ce3147` |
 | end: `sai_iso.kicad_sch` (Task 9c) | `ffc831855bd99856e6c84610169623a34f99ca50e15a834fccb0b23251cff9c8` |
 | end: `codec.kicad_sch` (Task 9c) | `1c17ed164ce98f749cb2db3a88f815e59d10ed82d92b5ca5a924952f4c414588` |
+| end: `jacks_byp.kicad_sch` (Task 11a) | `2ad7be98ed45efb192ccd5dc4a56f892bc009c6b3c98beb4d3d3a0de7565c489` |
 
 ## Replay
 
@@ -69,7 +70,8 @@ reached every sha256, the earlier pages' included. Task 9c replayed into a new d
 of its pages; each replay reached every sha256, the earlier pages' included. Task 10 (no page;
 the analog group's four blocks modelled) replayed into a new directory, added the four new drafts to
 the check, and replayed into another; both reached every sha256, the fifteen pages byte-identical,
-and drafted the four the same.
+and drafted the four the same. Task 11a replayed into a new directory after each of its pages; each
+replay reached every sha256, the earlier pages' included.
 
 Then, to check and look at a page:
 

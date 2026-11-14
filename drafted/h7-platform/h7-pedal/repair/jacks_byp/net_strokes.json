@@ -1,0 +1,14 @@
+{
+ "3V3_P": "(stroke (width 0.254) (type default))",
+ "BYP_L": "(stroke (width 0.254) (type default) (color 30 90 200 1))",
+ "BYP_R": "(stroke (width 0.254) (type default) (color 30 90 200 1))",
+ "GND": "(stroke (width 0.254) (type default))",
+ "IN_TIP_L": "(stroke (width 0.254) (type default) (color 130 50 170 1))",
+ "IN_TIP_R": "(stroke (width 0.254) (type default) (color 130 50 170 1))",
+ "OUT_JACK_L": "(stroke (width 0.254) (type default) (color 0 130 120 1))",
+ "OUT_JACK_R": "(stroke (width 0.254) (type default) (color 0 130 120 1))",
+ "RELAY_DRV": "(stroke (width 0.254) (type default) (color 210 120 0 1))",
+ "RELAY_GATE": "(stroke (width 0.254) (type default) (color 210 120 0 1))",
+ "SUP_IN": "(stroke (width 0.254) (type default) (color 180 30 140 1))",
+ "SUP_OUT": "(stroke (width 0.254) (type default) (color 180 30 140 1))"
+}

@@ -49,6 +49,7 @@ below says which it is.** A verdict is bound to the sha256 in the table below;
 | `codec_sup.kicad_sch` | block codec_sup | `9f98870190e4b1207c005494b73ec8fb75f2f48857df9723e612a96902ce3147` |
 | `sai_iso.kicad_sch` | block sai_iso | `ffc831855bd99856e6c84610169623a34f99ca50e15a834fccb0b23251cff9c8` |
 | `codec.kicad_sch` | block codec | `1c17ed164ce98f749cb2db3a88f815e59d10ed82d92b5ca5a924952f4c414588` |
+| `jacks_byp.kicad_sch` | block jacks_byp | `2ad7be98ed45efb192ccd5dc4a56f892bc009c6b3c98beb4d3d3a0de7565c489` |
 
 Each committed `.svg` beside a sheet is `draughting/pages/render.sh`'s render of that sheet's
 committed bytes, with the pinned kicad-cli.
@@ -70,6 +71,7 @@ committed bytes, with the pinned kicad-cli.
 | codec_sup | UNREVIEWED (Task 9c); `verify.sh` exits 0 | `codec_sup.svg` |
 | sai_iso | UNREVIEWED (Task 9c); `verify.sh` exits 0 | `sai_iso.svg` |
 | codec | UNREVIEWED (Task 9c); `verify.sh` exits 0 | `codec.svg` |
+| jacks_byp | UNREVIEWED (Task 11a); `verify.sh` exits 0 | `jacks_byp.svg` |
 
 ## The drafts every repair starts from
 
@@ -104,7 +106,7 @@ on, so a model change shows there first. The six drafts above were byte-identica
 | `build/draw/h7-pedal/usb/usb.kicad_sch` | usb | 13 | `9413b7ab36e0947f4b25542a752f1ab5c03a28def027e82afd0074a2490bff2b` |
 | `build/draw/h7-pedal/midi_i2c/midi_i2c.kicad_sch` | midi_i2c | 14 | `bb11ba3014f260df8f60200c9e968a62e22c9248cc4cc91c6e6cece0f74a2eb2` |
 
-The analog group (Task 10 built its four blocks; no page is drawn from them yet, which is Task 11).
+The analog group (Task 10 built its four blocks; Task 11a draws their pages, each section below).
 Drafted 2026-11-13 by two `repair/replay.sh` runs into new directories, the second after these
 values were added to it: both drafted the four byte for byte the same, and both reached every
 committed page's sha256. `repair/replay.sh` checks every one of them from Task 10 on. That run's
@@ -2618,3 +2620,174 @@ drafted/h7-platform/h7-pedal/codec.kicad_sch` at Task 10, against the Task 9c pa
 | ERC under a one-block root, `/codec/` | 2 errors, both excused by CR-PEDAL-CODEC-VIN-AWAITING-ERC, 0 warnings | **0 errors, 0 warnings; no error excused by an allowance** |
 | ERC under a one-block root, `/` | 0 errors, 19 warnings (`isolated_pin_label` 18, `lib_symbol_issues` 1) | 0 errors, 15 warnings (`isolated_pin_label` 14: the stub and sheet labels of the seven one-pin ports with no stand-in; `lib_symbol_issues` 1) |
 | `verify.sh` exit | 0 | 0 |
+
+## jacks_byp: the audio jacks and the bypass relays (Task 11a)
+
+**Status: UNREVIEWED.** sha256 `2ad7be98ed45efb192ccd5dc4a56f892bc009c6b3c98beb4d3d3a0de7565c489`.
+Render: `jacks_byp.svg` beside it.
+
+The block: `circuits/h7-platform/pedal/jacks-byp.ts`, 18 parts. The input jacks J9 (`j_in_l`) and J10
+(`j_in_r`) and the output jacks J11 (`j_out_l`) and J12 (`j_out_r`), NMJ6HCD2,
+`Connector_Audio:NMJ6HCD2`, used as TS: T on IN_TIP_L, IN_TIP_R, OUT_JACK_L and OUT_JACK_R, S on
+GND, J10's TN on IN_TIP_L, every other contact not connected; D12 to D15 (`d_esd_in_l`,
+`d_esd_in_r`, `d_esd_out_l`, `d_esd_out_r`, PESD12VL1BA, `h7-platform:PESD12VL1BA`), pin 1 on the
+four jack nets, pin 2 on GND; K1 (`k_byp_in`) and K2 (`k_byp_out`), G6K-2F-Y DC3, `Relay:G6K-2`,
+coil 1 on 3V3_P, coil 8 on RELAY_DRV, COM 3 and 6 on IN_TIP_L and IN_TIP_R (K1) and OUT_JACK_L and
+OUT_JACK_R (K2), NC 2 and 7 on BYP_L and BYP_R, NO 4 and 5 on FX_IN_L and FX_IN_R (K1) and FX_OUT_L
+and FX_OUT_R (K2); Q10 (`q_byp`, AO3400A, `Transistor_FET:AO3400A`) drain RELAY_DRV, source GND,
+gate RELAY_GATE; R125 (`r_relay_en`, 3.9 kOhm) RELAY_EN to RELAY_GATE; R126 (`r_bpd`, 15.0 kOhm)
+RELAY_GATE to GND; Q11 (`q_pfg`, AO3400A) drain RELAY_GATE, gate PF_TRIP, source GND; D16 and D18
+(`d_bf_in`, `d_bf_out`, 1N4148W-7-F, `Diode:1N4148W`) anode RELAY_DRV, cathode SUP_IN and SUP_OUT;
+D17 and D19 (`d_bz_in`, `d_bz_out`, BZT52C12-7-F, `Device:D_Zener`) anode 3V3_P, cathode SUP_IN and
+SUP_OUT. Ports 3V3_P, FX_IN_L, FX_IN_R, FX_OUT_L, FX_OUT_R, GND, PF_TRIP and RELAY_EN; six reach one
+pin each (K1's and K2's pins 4 and 5, R125's pin 1 and Q11's gate). IN_TIP_L, IN_TIP_R, OUT_JACK_L,
+OUT_JACK_R, BYP_L, BYP_R, RELAY_DRV, RELAY_GATE, SUP_IN and SUP_OUT are private to the page and drawn
+as wire, with no label. Fifteen no-connects: every jack's R, RN and SN, J9's, J11's and J12's TN.
+
+### The rulings this page rests on
+
+- [CR-PEDAL-BLOCKS](../../../docs/h7-platform/decisions.md#cr-pedal-blocks): `jacks_byp` is one of
+  the pedal's blocks: the four audio jacks, their ESD diodes and the bypass relays with their driver.
+- [CR-PEDAL-ANALOG-READINGS](../../../docs/h7-platform/decisions.md#cr-pedal-analog-readings): the
+  sleeves on GND; J9's TN open and only J10's normal modelled as a contact; each PESD12VL1BA's pin 1
+  on its jack net, and the output diodes on OUT_JACK_x (read against analog.md line 184); the private
+  names RELAY_GATE, SUP_IN and SUP_OUT; the two suppressors on the same two nets, which coil each
+  sits beside being placement.
+- [CR-PEDAL-KINDS](../../../docs/h7-platform/decisions.md#cr-pedal-kinds): the relays and MOSFETs and
+  the PESD12VL1BA are `ic`, drawn as the model has them; the jacks `switch`; the diodes `diode`,
+  cathode 1, anode 2. [CR-PEDAL-PIN-MATCH](../../../docs/h7-platform/decisions.md#cr-pedal-pin-match).
+- [CR-PEDAL-SYMBOL-AO3400A](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-ao3400a) and its
+  [amendment](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-ao3400a-amended): Q10's and Q11's
+  numbering, 1 G, 2 S, 3 D.
+- [CR-PEDAL-SYMBOL-PESD12VL1BA](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-pesd12vl1ba):
+  D12 to D15's project symbol.
+- [CR-PEDAL-SYMBOL-DIODES](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-diodes): D17 and
+  D19, BZT52C12-7-F, on `Device:D_Zener`.
+- [CR-PEDAL-NETS](../../../docs/h7-platform/decisions.md#cr-pedal-nets) and
+  [CR-PEDAL-NETS-AMENDED](../../../docs/h7-platform/decisions.md#cr-pedal-nets-amended): FX_IN_x,
+  FX_OUT_x, RELAY_EN, PF_TRIP and 3V3_P as shared nets; IN_TIP_L private to this block.
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): 3V3_P and GND
+  are wires ending in hierarchical labels; no power symbol on the page.
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
+  this page; the one-block root puts the root's stub flag on GND.
+- [CR-MODULE-CROSS-PAGE-DRIVERS](../../../docs/h7-platform/decisions.md#cr-module-cross-page-drivers):
+  PF_TRIP, driven by U2's 1Y on the pf page (the entry since Task 7b), a TestPoint stand-in under the
+  one-block root.
+- [CR-MODULE-PORT-LABEL-CHECK](../../../docs/h7-platform/decisions.md#cr-module-port-label-check):
+  0 of 8 ports on the wrong net.
+- Sources, not rulings: schematic-checklist.md AIO-01 and AIO-18 to AIO-21 (lines 151, 168 to 171),
+  bypass-relay.md lines 90 to 102, 112 to 115 and 242 to 246, parts.md lines 107, 122 to 125 and 133,
+  which the block cites part by part.
+- Drawing choices, not transcriptions: the page reads west to east along the audio path, the right
+  channel above the left as the relays' pin order puts it once they are turned; K1 turned 90 and
+  mirrored left to right and K2 turned 90, so their NC, NO and coil-1 pins face each other across a
+  gap and BYP_R, BYP_L and the 3V3_P row run straight across it; J9 mirrored top to bottom, J12
+  mirrored left to right and J11 turned 180, so each lower jack's sleeve is at its bottom and each
+  jack's pins face the relays; the suppressors hang from the 3V3_P row to the RELAY_DRV row under the
+  relays, which runs from K1's coil 8 at the west to K2's at the east; the driver under that row, Q10
+  upright; GND along the bottom, with a vertical down each outer edge from a short row over each upper
+  jack (that run is what reaches J10's and J12's sleeves, at the top of their bodies, without crossing
+  their tips). FX_IN_x, FX_OUT_x and PF_TRIP, which the draft drew no wire for, take the default
+  stroke, RELAY_EN the RELAY family's (210 120 0) (`jacks_byp/layout.py`, `UNDRAWN_STROKES`, says why).
+  Q10's fields moved after the first render (below).
+
+### The tables after this page
+
+Unchanged. `verify.sh` read 6 flag homes, 9 cross-page drivers and 1 ERC allowance. The page's
+PF_TRIP is met by the existing entry (pf U2 1Y); 3V3_P reaches only passive pins here (the relay
+coils' pin 1 and the Zeners' anodes, `passive` in `Relay:G6K-2` and `Device:D_Zener`), so it needs no
+driver or flag for this page's own sheet to clear; and no allowance is used.
+
+### Measurements, before (the draft) and after (this page)
+
+Both columns with the tables as this page leaves them. The draft columns were measured on the draft
+copied beside the committed `sym-lib-table`.
+
+| measure | draft | page |
+| --- | --- | --- |
+| netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
+| footprints; footprints undeclared | 0; 18 (the model declares none) | 0; 18 |
+| exported components, nets, net members | 18, 33, 66 | 18, 33, 66 |
+| exported nets carrying a model net name | 12 of 33 | 8 of 33 (the eight ports; the other 25 are the ten private nets, unlabelled, and the fifteen no-connect pins) |
+| ports whose label is on the wrong net | 7 of 8 | 0 of 8 |
+| ERC, the sheet alone | 7 errors (`pin_not_connected` 6, K1 pins 4 and 5, K2 pins 4 and 5, R125 pin 1, Q11 pin 1; `pin_not_driven` 1, Q11's gate), 12 warnings (`lib_symbol_issues` 4, `lib_symbol_mismatch` 8) | 9 errors (`pin_not_connected` 8: each hierarchical label has no parent sheet; `pin_not_driven` 1, Q11's gate), 18 warnings (`isolated_pin_label` 6, the six one-pin ports' labels; `lib_symbol_issues` 4; `lib_symbol_mismatch` 8) |
+| ERC under a one-block root, `/jacks_byp/` | 7 errors (`pin_not_connected` 6, `pin_not_driven` 1), 1 warning (`same_local_global_label` 1) | **0 errors, 0 warnings** |
+| ERC under a one-block root, `/` | 14 errors (`hier_label_mismatch` 8, `label_dangling` 6), 14 warnings (`isolated_pin_label` 2, `lib_symbol_issues` 4, `lib_symbol_mismatch` 8) | 1 error (`label_dangling` 1, the 3V3_P stub's label, alone with one block; `erc_sheets.py` admits it), 22 warnings (`isolated_pin_label` 10, the stub and sheet labels of the five one-pin ports with no stand-in, FX_IN_L, FX_IN_R, FX_OUT_L, FX_OUT_R and RELAY_EN; `lib_symbol_issues` 4; `lib_symbol_mismatch` 8) |
+| parenthesis depth at end, lowest | 0, 0 | 0, 0 |
+| true wire crossings, T-meetings | 6, 0 | 0, 0 |
+| orphan junctions, of total | 0 of 5 | 0 of 23 |
+| wire-to-wire tees without a dot; collinear overlapping pairs | 0; 0 | 0; 0 |
+| labels | 34 on 12 nets (27 global, 7 local) | 8 on 8 nets, all hierarchical |
+| paper fit (US Letter) | overshoots east by 3.133 mm | fits |
+| wire groups with more than one stroke | 0 of 34 | 0 of 18 |
+| symbols (parts, power symbols, PWR_FLAGs) | 18 (18, 0, 0) | 18 (18, 0, 0) |
+| placed pins | 66 | 66 |
+| wires, total length | 64, 372.11 mm | 70, 1266.19 mm |
+| wire corners | 9 | 17 |
+| junctions | 5 | 23 |
+| no-connects | 15 | 15 |
+
+The selftest ran first on both: 10 controls, every one moved or fired.
+
+**`pin_not_driven` 1 on the sheet alone**: Q11's gate (pin 1, `input`) on PF_TRIP, whose driver is U2's
+1Y on the pf page; under the one-block root its TestPoint stand-in clears it.
+
+**`lib_symbol_issues` 4**, on D12 to D15: *"The current configuration does not include the symbol
+library 'h7-platform'"*, the pf page's U1 warning: a block page has no `.kicad_pro`, and kicad-cli
+10.0.5 does not take the committed `sym-lib-table` without one. The symbol is embedded in the sheet.
+
+**`lib_symbol_mismatch` 8**: J9 to J12 (*"Symbol 'NMJ6HCD2' doesn't match copy in library
+'Connector_Audio'"*), Q10 and Q11 (*"Symbol 'AO3400A' doesn't match copy in library
+'Transistor_FET'"*), and D16 and D18 (*"Symbol '1N4148W' doesn't match copy in library 'Diode'"*).
+Each is an `extends` symbol whose embedded copy is its parent flattened. NMJ6HCD2 is measured on the
+expr_ref page (J4) and AO3400A on the modsw page (Q2, Q3), the same embedded copies. 1N4148W, new on
+this page, measured the same way (`jacks_byp.kicad_sch` line 645 against the installed library):
+
+| | D16, D18 embedded (sheet line 645) | `1N4148W` installed (`Diode.kicad_sym` line 1235) |
+| --- | --- | --- |
+| form | a whole symbol, no `extends` | `(extends "1N4001")` (parent at line 495): fields only |
+| pins | 1 K passive, 2 A passive: identical to the parent's | the parent's |
+| Value | `1N4001` (the parent's) | `1N4148W` |
+| Footprint | `Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal` (the parent's) | `Diode_SMD:D_SOD-123` |
+| Datasheet | `http://www.vishay.com/docs/88503/1n4001.pdf` (the parent's) | `https://www.vishay.com/docs/85748/1n4148w.pdf` |
+| Description | "50V 1A General Purpose Rectifier Diode, DO-41" (the parent's) | "75V 0.15A Fast Switching Diode, SOD-123" |
+
+The instances' own Values on the page are `1N4148W-7-F`. **Not an electrical fault**: the model
+comparison is 0, 0, 0, 0. **Trap for a later output**: an export reading the library fields gets a
+1N4001 in DO-41 for D16 and D18. `Relay:G6K-2` and `Device:D_Zener` have no `extends`, and their
+embedded copies match the installed ones (fields and pins, `Relay.kicad_sym` line 31222,
+`Device.kicad_sym` line 41579): no warning on K1, K2, D17 or D19.
+
+**`isolated_pin_label` 6**, on the sheet alone: the six one-pin ports' labels; each net's other end is
+on another page (FX_IN_x on in_fe, FX_OUT_x on out, PF_TRIP on pf, RELAY_EN on interface).
+
+### Why the page has no crossing, as the layout records it
+
+Observations, not a judgement of the page: with K1 and K2 turned so that their NC, NO and coil-1 pins
+face each other in the same order, BYP_R, BYP_L and 3V3_P each run straight from K1 to K2 and the
+four NO pins end at labels in the gap; each jack's T sits on its relay's COM row or turns to it
+without passing another net's pin; the sleeve runs of J10 and J12, at the top of their bodies, leave
+over their bodies to the outer GND verticals rather than across their tips.
+
+### What the page shows, as observations
+
+- The input jacks at the west, J10 over J9, pins facing east; the output jacks at the east, J12 over
+  J11, pins facing west. J10's T runs straight east past D13 to K1's COM 6; K2's COM 6 straight east
+  past D15 to J12's T. J10's TN and J9's T join on a vertical that runs east past D12 to K1's COM 3;
+  K2's COM 3 runs east past D14 and down to J11's T. The unused contacts carry no-connects.
+- K1 and K2 in the middle, bodies upright, their NC, NO and coil-1 pins facing each other. Across the
+  gap, north to south: FX_IN_R's label (pointing east) and FX_OUT_R's (pointing west), BYP_R, FX_IN_L's
+  and FX_OUT_L's labels, BYP_L, and the 3V3_P row from coil 1 to coil 1.
+- D17 and D16 hang from the 3V3_P row beside K1, D19 and D18 beside K2, onto the RELAY_DRV row under
+  the relays; 3V3_P's label hangs from the row between them, pointing down. The RELAY_DRV row runs from
+  K1's coil 8 (down the west side of K1) to K2's coil 8 (down the east side of K2).
+- Under the RELAY_DRV row: Q10 upright, its drain on the row; its gate row runs west past R126 (down
+  to GND), Q11's drain and R125, whose far end runs west to RELAY_EN's label; Q11's gate runs west to
+  PF_TRIP's label. Both labels point west.
+- GND: a row along the bottom from GND's label at the west (pointing west), taking J9's sleeve, D12,
+  Q11, R126, Q10, D14 and J11's sleeve; a vertical up each outer edge of the page to a short row over
+  each upper jack, which takes that jack's sleeve and D13 or D15.
+- The ESD diodes' fields east of their bodies; the suppressors' toward the middle of the gap; the
+  relays' above their bodies; the jacks' under theirs; R125's Reference above it and Value below.
+- Renders: the first had Q10's fields 3.81 mm east of its origin, over its drain's pin number; they
+  moved to 6.35 mm.

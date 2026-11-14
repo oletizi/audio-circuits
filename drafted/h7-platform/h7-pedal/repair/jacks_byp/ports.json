@@ -1,0 +1,71 @@
+[
+ {
+  "name": "3V3_P",
+  "pins": [
+   "D17.2",
+   "D19.2",
+   "K1.1",
+   "K2.1"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "FX_IN_L",
+  "pins": [
+   "K1.4"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "FX_IN_R",
+  "pins": [
+   "K1.5"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "FX_OUT_L",
+  "pins": [
+   "K2.4"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "FX_OUT_R",
+  "pins": [
+   "K2.5"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "GND",
+  "pins": [
+   "D12.2",
+   "D13.2",
+   "D14.2",
+   "D15.2",
+   "J10.S",
+   "J11.S",
+   "J12.S",
+   "J9.S",
+   "Q10.2",
+   "Q11.2",
+   "R126.2"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "PF_TRIP",
+  "pins": [
+   "Q11.1"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "RELAY_EN",
+  "pins": [
+   "R125.1"
+  ],
+  "drafted": false
+ }
+]
