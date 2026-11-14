@@ -375,7 +375,7 @@ registerDraftedProjectTests({
   footprintlessParts: PEDAL.components.map((c) => c.id).sort(),
 })
 
-test("a multi-unit part is one part on its sheet, and a unit placed twice throws - the control", () => {
+test("a multi-unit part is one part on its sheet; a unit placed twice, or a symbol with no unit, throws - the controls", () => {
   const sheet = path.join(REPO, "drafted/h7-platform/h7-pedal/ldo_vmid.kicad_sch")
   expect(placedReferences(sheet).filter((r) => r === "U5")).toEqual(["U5"])
   const text = fs.readFileSync(sheet, "utf8")
@@ -386,6 +386,9 @@ test("a multi-unit part is one part on its sheet, and a unit placed twice throws
     const twice = path.join(dir, "ldo_vmid.kicad_sch")
     fs.writeFileSync(twice, text.replace(unit2, unit2.replace("(unit 2)", "(unit 1)")))
     expect(() => placedReferences(twice)).toThrow("U5 unit 1 is placed more than once")
+    const none = path.join(dir, "no-unit.kicad_sch")
+    fs.writeFileSync(none, text.replace(unit2, unit2.replace(String.fromCharCode(10) + String.fromCharCode(9, 9) + "(unit 2)", "")))
+    expect(() => placedReferences(none)).toThrow("U5 is placed with no (unit ...)")
   } finally {
     fs.rmSync(dir, { recursive: true, force: true })
   }

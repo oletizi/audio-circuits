@@ -116,7 +116,10 @@ export function placedReferences(sheetFile: string): string[] {
     const reference = node.nodes.find((n) => n.name === "property" && n.atoms[0] === "Reference")?.atoms[1]
     if (reference === undefined) throw new Error(`${sheetFile}: a placed symbol has no Reference property.`)
     if (reference.startsWith("#")) continue
-    const unit = child(node, "unit")?.atoms[0] ?? "1"
+    const unit = child(node, "unit")?.atoms[0]
+    if (unit === undefined) {
+      throw new Error(`${sheetFile}: ${reference} is placed with no (unit ...); KiCad writes one on every placed symbol, so it is not defaulted.`)
+    }
     const seen = units.get(reference) ?? []
     if (seen.includes(unit)) throw new Error(`${sheetFile}: ${reference} unit ${unit} is placed more than once.`)
     if (seen.length === 0) refs.push(reference)

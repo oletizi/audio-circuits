@@ -16,7 +16,8 @@ import fs from "node:fs"
 import path from "node:path"
 import { REPO_ROOT, loadBoard } from "../../draughting/pages/board.ts"
 import { flagHomes } from "../../draughting/pages/flag-homes.ts"
-import { rootFlagOps, rootFlagPlacements } from "../../draughting/pages/root-flags.ts"
+import { rootFlagOps, rootFlagPlacements, slotObstruction } from "../../draughting/pages/root-flags.ts"
+import { arrangeRoot } from "../../tools/draught/root-arrangement.ts"
 
 const pedal = await loadBoard(path.join(REPO_ROOT, "drafted", "h7-platform", "h7-pedal"))
 const pedalHomes = await flagHomes(pedal)
@@ -34,6 +35,20 @@ test("the module's root flag op-list is unchanged by the second rule", async () 
   const module = await loadBoard(path.join(REPO_ROOT, "drafted", "h7-platform", "h7-module"))
   const ops = JSON.stringify(rootFlagOps(module.network, module.name, await flagHomes(module)), null, 1) + "\n"
   expect(ops).toBe(fs.readFileSync(path.join(module.repairDir, "root", "02-pwr-flags.json"), "utf8"))
+})
+
+test("slotObstruction: the pedal's two slots are free; a box edge, a stub wire or a sheet pin through a slot is named", () => {
+  const sheets = arrangeRoot(pedal.network, pedal.name)
+  expect(slotObstruction([7700, 3400], sheets)).toBeUndefined()
+  expect(slotObstruction([5800, 2200], sheets)).toBeUndefined()
+  const ldo = sheets.find((s) => s.block === "ldo_vmid")
+  if (ldo === undefined) throw new Error("the pedal root has no ldo_vmid sheet")
+  // ldo_vmid's box is at (7900, 3400): its top edge, its first stub wire's midpoint, and its first sheet pin.
+  expect(slotObstruction([8000, 3400], sheets)).toBe("sheet ldo_vmid's box edge")
+  expect(slotObstruction([7800, 3500], sheets)).toBe(`the stub wire of ldo_vmid's sheet pin ${ldo.left[0]?.port}`)
+  expect(slotObstruction([7900, 3500], sheets)).toBe("sheet ldo_vmid's box edge")
+  // in_fe's slot shifted 200 mil east lands on its box's top-left corner.
+  expect(slotObstruction([6000, 2200], sheets)).toBe("sheet in_fe's box edge")
 })
 
 test("control: when every edge carrying a mid-edge net is taken, the rule refuses by name", () => {

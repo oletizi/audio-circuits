@@ -30,7 +30,7 @@
 import type { Network } from "../../lib/model/index.ts"
 import { opList, type AkcliOp, type AkcliOpList } from "../../tools/draught/akcli-ops.ts"
 import { rootSheetOps } from "../../tools/draught/assemble-root.ts"
-import { arrangeRoot, ROOT_PIN_PITCH_MIL, ROOT_STUB_MIL } from "../../tools/draught/root-arrangement.ts"
+import { arrangeRoot, ROOT_PIN_PITCH_MIL, ROOT_STUB_MIL, type RootSheet } from "../../tools/draught/root-arrangement.ts"
 import { boardFromArgs } from "./board.ts"
 import { flagHomes, type FlagHomes } from "./flag-homes.ts"
 
@@ -54,6 +54,31 @@ interface Stub {
   readonly edge: string
   readonly side: "left" | "right"
   readonly boxTop: number
+}
+
+/**
+ * What on the root passes through `at` (mil), or undefined: a sheet box's edge (which carries its
+ * sheet pins) or a stub wire, endpoints included. A rule-2 slot must have none, or the flag's own
+ * label and pin would join that item's net (Task 11b review M6).
+ */
+export function slotObstruction(at: readonly [number, number], sheets: readonly RootSheet[]): string | undefined {
+  const [px, py] = at
+  const on = (x0: number, y0: number, x1: number, y1: number): boolean =>
+    px >= Math.min(x0, x1) && px <= Math.max(x0, x1) && py >= Math.min(y0, y1) && py <= Math.max(y0, y1)
+  for (const s of sheets) {
+    const x1 = s.x + s.width
+    const y1 = s.y + s.height
+    if (on(s.x, s.y, x1, s.y) || on(s.x, y1, x1, y1) || on(s.x, s.y, s.x, y1) || on(x1, s.y, x1, y1)) return `sheet ${s.block}'s box edge`
+    for (const [k, pin] of s.left.entries()) {
+      const y = s.y + (k + 1) * ROOT_PIN_PITCH_MIL
+      if (on(s.x - ROOT_STUB_MIL, y, s.x, y)) return `the stub wire of ${s.block}'s sheet pin ${pin.port}`
+    }
+    for (const [k, pin] of s.right.entries()) {
+      const y = s.y + (k + 1) * ROOT_PIN_PITCH_MIL
+      if (on(x1, y, x1 + ROOT_STUB_MIL, y)) return `the stub wire of ${s.block}'s sheet pin ${pin.port}`
+    }
+  }
+  return undefined
 }
 
 function stubsOf(network: Network, board: string): Stub[] {
@@ -138,6 +163,13 @@ export function rootFlagPlacements(network: Network, board: string, homes: FlagH
     const at: readonly [number, number] = [slot.x, slot.boxTop]
     if (labels.some((op) => Array.isArray(op.at) && op.at[0] === at[0] && op.at[1] === at[1])) {
       throw new Error(`root-flags.ts: the slot above ${slot.edge}'s top pin, (${at[0]}, ${at[1]}) mil, already holds a stub label; the arrangement and this rule disagree`)
+    }
+    const through = slotObstruction(at, arrangeRoot(network, board))
+    if (through !== undefined) {
+      throw new Error(
+        `root-flags.ts: ${through} passes through the slot above ${slot.edge}'s top pin, (${at[0]}, ${at[1]}) mil, so ${net}'s flag and ` +
+          "label there would join it. A rule for this case is not written; add one here rather than place the flag on it.",
+      )
     }
     takenSlots.add(slot.edge)
     placements.push({ net, at, rotation: 0, labelRotation: slot.side === "left" ? 180 : 0 })
