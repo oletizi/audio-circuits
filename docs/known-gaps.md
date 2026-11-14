@@ -4642,8 +4642,18 @@ measurement to a tool and not to prose. What is true at this amendment:
   DRC make target, and refuses when missing or loosened.
 - `tools/pcb/resolve-intent-zones.ts` compares the board's Edge.Cuts against
   `envelope.size_mm` and refuses a mismatch, ignoring the origin by design.
-- Independently measured minimum courtyard gap on the delivered board:
-  **2.0000 mm, zero pairs below it.**
+- The minimum gap on the delivered board meets the floor, and **the figure that
+  stood here is withdrawn rather than corrected.** It read *"Independently
+  measured minimum courtyard gap on the delivered board: 2.0000 mm, zero pairs
+  below it"* and **named no method**, so the next reviewer could not reproduce
+  it: KiCad's own `courtyard_clearance` measure reports about **2.0100 mm**.
+  Neither number is wrong. 2.0000 mm is the minimum separation of axis-aligned
+  courtyard BOUNDING BOXES, which enclose the courtyard and so give a lower
+  bound; KiCad compares the courtyard outlines themselves. **An unattributable
+  measurement in a register entry is this file's own named failure mode**, and
+  the controller wrote one into an amendment whose subject was stale claims.
+  The authority is `tests/pcb/courtyard-rule.test.ts` and
+  `make drc-unrouted-pt2399-core`, which fail when the floor stops being met.
 
 **WHAT IS STILL UNCHECKED, stated so this amendment does not overclaim in the
 other direction:** `tools/pcb/fab-standard.ts` reads no `.kicad_dru` at all, so
@@ -4655,7 +4665,14 @@ board.
 **ON OPEN FINDINGS, THIS ENTRY POINTS AT THE REVIEWS AND NAMES NOTHING,
 DELIBERATELY.** The live record is
 `.superpowers/sdd/2026-11-12-agent-pcb-place-and-route-phase-1/` during
-execution and `docs/superpowers/plans/<plan-name>-execution/` once committed.
+execution and, once committed,
+`docs/superpowers/plans/2026-11-12-agent-pcb-place-and-route-phase-1-execution/`.
+**That path was written as the literal placeholder `<plan-name>-execution/`** -
+the same defect class as the `<pre-placement commit>` placeholder this plan had
+just made an implementer fix in `make/pcb.mk`, committed by the controller in
+the act of correcting placeholder defects. Named in full here because a
+placeholder in a pointer is indistinguishable from a path until someone tries
+to follow it.
 **An earlier version of this paragraph named a specific open defect - that
 `place-mounting-holes.ts` would silently delete a real footprint carrying a
 single non-plated pad - and it was fixed NINETEEN MINUTES LATER, in the same
