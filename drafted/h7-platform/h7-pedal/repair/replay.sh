@@ -8,7 +8,7 @@
 # (the drafts of the blocks not yet repaired are checked too, so a model change shows here first),
 # and repairs the Task 7a pages, interface and entry, the Task 7b pages, pf and modsw, the Task 7c pages, prail and
 # ldo_vmid, the Task 9a pages, the Task 9b pages and the Task 9c pages, by repair_block. Since Task 9a it checks all fifteen drafts (Task 8 built the
-# digital and controls group's nine blocks). Each later part adds its blocks' sha256s and repair_block calls; the root and its
+# digital and controls group's nine blocks), and since Task 10 all nineteen (Task 10 built the analog group's four). Each later part adds its blocks' sha256s and repair_block calls; the root and its
 # .kicad_pro come when every page is drawn.
 #
 # Copied from drafted/h7-platform/h7-module/repair/replay.sh, its repair_block unchanged; the
@@ -36,7 +36,7 @@ fail() {
 }
 
 # The drafts make draw writes, one per block, in Network.blocks order.
-BLOCKS="entry pf modsw prail ldo_vmid codec_sup codec sai_iso expr_ref controls_a controls_b fsw_led usb midi_i2c interface"
+BLOCKS="entry pf modsw prail ldo_vmid codec_sup codec sai_iso in_fe adc_drv out jacks_byp expr_ref controls_a controls_b fsw_led usb midi_i2c interface"
 draft_sha() {
   case "$1" in
     entry) echo 561fc836dbaf7178ab2742b2f7d24edcd8d63647040c78678bd2518b46ddec56 ;;
@@ -47,6 +47,10 @@ draft_sha() {
     codec_sup) echo 9390a014569c83cd32908125a65d021e58f18488b79d0f4b4ed6d1f9c4fa723c ;;
     codec) echo 06a886b93ffa8ff1a3bb52a04de5d018f765dbd83031ffc6fb8695f547af1a60 ;;
     sai_iso) echo 8686ecd5ebd920c4e74f9f5d90efe3c8bf074b519669507341d439a73690bb6e ;;
+    in_fe) echo 7bc866bc29b99f9a693dc0fbc1e30a6caf500a95c1c894374d08a612a9e45357 ;;
+    adc_drv) echo a745a03f71a727e9337fdeeb5f3e2636b76949947b85e6f6b7fdc0e87e6950b0 ;;
+    out) echo 2bda188d7584df76a20a7054327bb86939846bcec66535d481d38cac160070dd ;;
+    jacks_byp) echo 5652b8ed7bc8febf97f28090871fa51a518304136dee8fcc87bb45f2e8aea8bb ;;
     expr_ref) echo c850a8f2602995833845c1261997bc721ee4b5a7994e3cd76f1892fa8494694d ;;
     controls_a) echo 74224c99b06a91fb19df787204fd1b7ac2965f8711ba172f9d5d77148920da68 ;;
     controls_b) echo 645388b8dfb1b473cc68711b52898714208841062be5523cc8fdef59bb8b751e ;;

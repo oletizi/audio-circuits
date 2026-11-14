@@ -10,7 +10,7 @@ added as it is repaired). The root sheet and its
 
 | | sha256 |
 | --- | --- |
-| start: each block's draft, `build/draw/h7-pedal/<block>/<block>.kicad_sch` as `make draw` writes it (re-papered to US Letter) | the fifteen values in `../RECORD.md`, "The drafts every repair starts from", and in `replay.sh` |
+| start: each block's draft, `build/draw/h7-pedal/<block>/<block>.kicad_sch` as `make draw` writes it (re-papered to US Letter) | the nineteen values (fifteen until Task 10 added the analog group's four) in `../RECORD.md`, "The drafts every repair starts from", and in `replay.sh` |
 | end: `interface.kicad_sch` (Task 7a) | `963777f3bf9df9c3b5d966ce48c71bf76071f902c716f88a65b07c621b88822a` |
 | end: `entry.kicad_sch` (Task 7a) | `5352fd5b917c96520681efa8421b8b63d9a0f92345156c776044f48708af0736` |
 | end: `pf.kicad_sch` (Task 7b) | `7096a9befaf2e62b42218a2153a34fa317fc9cad0a1ad5e1ae9c0d198a4b2385` |
@@ -66,7 +66,10 @@ pages' included. Task 9a added the nine drafts of the digital and controls group
 replayed into a new directory after each of its pages; each replay reached every sha256, the earlier
 six pages' included. Task 9b replayed into a new directory after each of its pages; each replay
 reached every sha256, the earlier pages' included. Task 9c replayed into a new directory after each
-of its pages; each replay reached every sha256, the earlier pages' included.
+of its pages; each replay reached every sha256, the earlier pages' included. Task 10 (no page;
+the analog group's four blocks modelled) replayed into a new directory, added the four new drafts to
+the check, and replayed into another; both reached every sha256, the fifteen pages byte-identical,
+and drafted the four the same.
 
 Then, to check and look at a page:
 

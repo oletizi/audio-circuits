@@ -104,6 +104,20 @@ on, so a model change shows there first. The six drafts above were byte-identica
 | `build/draw/h7-pedal/usb/usb.kicad_sch` | usb | 13 | `9413b7ab36e0947f4b25542a752f1ab5c03a28def027e82afd0074a2490bff2b` |
 | `build/draw/h7-pedal/midi_i2c/midi_i2c.kicad_sch` | midi_i2c | 14 | `bb11ba3014f260df8f60200c9e968a62e22c9248cc4cc91c6e6cece0f74a2eb2` |
 
+The analog group (Task 10 built its four blocks; no page is drawn from them yet, which is Task 11).
+Drafted 2026-11-13 by two `repair/replay.sh` runs into new directories, the second after these
+values were added to it: both drafted the four byte for byte the same, and both reached every
+committed page's sha256. `repair/replay.sh` checks every one of them from Task 10 on. That run's
+`make draw` printed no ADVISORY section and one `NO INDEPENDENT NETLIST:` block. Paper fit and every
+other measure of these drafts are Task 11's, measured when each page is repaired.
+
+| draft | block | parts | sha256 |
+| --- | --- | --- | --- |
+| `build/draw/h7-pedal/in_fe/in_fe.kicad_sch` | in_fe | 23 | `7bc866bc29b99f9a693dc0fbc1e30a6caf500a95c1c894374d08a612a9e45357` |
+| `build/draw/h7-pedal/adc_drv/adc_drv.kicad_sch` | adc_drv | 21 | `a745a03f71a727e9337fdeeb5f3e2636b76949947b85e6f6b7fdc0e87e6950b0` |
+| `build/draw/h7-pedal/out/out.kicad_sch` | out | 31 | `2bda188d7584df76a20a7054327bb86939846bcec66535d481d38cac160070dd` |
+| `build/draw/h7-pedal/jacks_byp/jacks_byp.kicad_sch` | jacks_byp | 18 | `5652b8ed7bc8febf97f28090871fa51a518304136dee8fcc87bb45f2e8aea8bb` |
+
 For these nine, `make draw` again printed no ADVISORY section and one `NO INDEPENDENT NETLIST:`
 block for the board. copperhead drafted codec_sup, controls_a, controls_b, fsw_led and midi_i2c on
 A5 and codec, sai_iso, expr_ref and usb on A4; re-papered to US Letter, every one fits the inner
