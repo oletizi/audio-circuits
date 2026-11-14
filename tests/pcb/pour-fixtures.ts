@@ -157,6 +157,8 @@ export interface FixtureOptions {
   readonly clearance?: number | null
   /** `true` runs a ground track on F.Cu from U1's first ground pad to C1's ground pad; a spec places one anywhere. */
   readonly track?: boolean | TrackSpec | readonly TrackSpec[]
+  /** U1 also has a pad 3 mm to the left of its first, on a net that is neither ground nor supply. */
+  readonly u1ExtraPad?: boolean
   /** C1 is a surface-mount part on F.Cu, so only a feature on that layer can touch its pads. */
   readonly c1Smd?: boolean
   readonly extraZones?: readonly string[]
@@ -183,11 +185,11 @@ function footprint(ref: string, at: Pt, courtyard: readonly [number, number, num
   ].join("\n")
 }
 
-function pad(number: string, y: number, net: string, shape: string, type: string, turn?: UTurn): string {
+function pad(number: string, y: number, net: string, shape: string, type: string, turn?: UTurn, x = 0): string {
   const angle = turn === undefined ? "" : ` ${turn.degrees}`
   const [layers, drill] = type === "smd" ? ['"F.Cu" "F.Mask"', ""] : ['"*.Cu" "*.Mask"', " (drill 0.8)"]
   const ratio = shape === "roundrect" ? " (roundrect_rratio 0.25)" : ""
-  return `  (pad "${number}" ${type} ${shape} (at 0 ${y}${angle}) (size ${turn?.padSize ?? "1.6 1.6"})${drill} (layers ${layers})${ratio} (net "${net}"))`
+  return `  (pad "${number}" ${type} ${shape} (at ${x} ${y}${angle}) (size ${turn?.padSize ?? "1.6 1.6"})${drill} (layers ${layers})${ratio} (net "${net}"))`
 }
 
 function isTrackList(track: TrackSpec | readonly TrackSpec[]): track is readonly TrackSpec[] {
@@ -257,7 +259,7 @@ export function fixtureBoard(opts: FixtureOptions): string {
     "\t(version 20260206)",
     '\t(generator "pcbnew")',
     '\t(layers (0 "F.Cu" signal) (2 "B.Cu" signal) (31 "F.CrtYd" user "F.Courtyard"))',
-    footprint(u1Ref, u, [-2, -2, 2, 8], [pad("3", 0, "GND", shape, type, opts.u1Turn), pad("4", 6, "GND", shape, type, opts.u1Turn)], "11111111-0000-4000-8000-000000000001", opts.u1Turn?.degrees),
+    footprint(u1Ref, u, [-2, -2, 2, 8], [pad("3", 0, "GND", shape, type, opts.u1Turn), pad("4", 6, "GND", shape, type, opts.u1Turn), ...(opts.u1ExtraPad === true ? [pad("1", 0, "IN", shape, type, opts.u1Turn, -3)] : [])], "11111111-0000-4000-8000-000000000001", opts.u1Turn?.degrees),
     capacitor(c1Ref, c, shape, opts.c1Smd === true ? "smd" : type, "22222222-0000-4000-8000-000000000001"),
     ...c2,
     ...track,

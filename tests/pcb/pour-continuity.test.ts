@@ -95,3 +95,30 @@ test("a zone that declares no clearance gives no loop, and says why; the other f
   expect(reasonOf(metrics.continuityAroundIc)).toContain("clearance")
   expect(valueOf(metrics.spokesByGroundPad).size).toBe(3)
 })
+
+test("the loop is placed round ALL of the IC's pads, whatever their nets: a pad on a signal net widens it", () => {
+  // A band of no copper at x 28.0..28.4 cuts the loop's left edge (x 28.2) when only the two ground pads are counted.
+  // With a third pad 3 mm to the left the loop's left edge is at 25.2, clear of the band, and the band cuts only the top and bottom.
+  const banded: readonly (readonly Pt[])[] = [
+    [[0, 0], [28.0, 0], [28.0, 40], [0, 40]],
+    [[28.4, 0], [60, 0], [60, 40], [28.4, 40]],
+  ]
+  const loop = loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": banded }, u1ExtraPad: true }))
+  expect(loop.breaksMm.length).toBe(2)
+  for (const b of loop.breaksMm) near(b, 0.4, 0.06)
+})
+
+test("a pad's size and the turn of its footprint change the loop: the same band reads differently for a 3.0 mm oval turned and not", () => {
+  const near_ = (text: string) => loopOf(text)
+  // The band across x 29.0..29.2 cuts the left edge of a loop grown from narrow (1.6 mm) pads and not that of a loop grown from wide ones.
+  const band: readonly (readonly Pt[])[] = [
+    [[0, 0], [29.0, 0], [29.0, 40], [0, 40]],
+    [[29.2, 0], [60, 0], [60, 40], [29.2, 40]],
+  ]
+  const upright = near_(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": band }, padShape: "oval", u1Turn: { degrees: 90, padSize: "3.0 1.6" } }))
+  const flat = near_(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": band }, padShape: "oval", u1Turn: { degrees: 0, padSize: "3.0 1.6" } }))
+  // Turned 90 degrees the pads are 1.6 wide in x and the footprint also turns; at 0 they are 3.0 wide in x.
+  // Their loops are different sizes, so the same band reads differently. (That they differ is all this asserts:
+  // the angle and sign of the rotation are pinned against hand-worked figures in ./pour-geometry.test.ts.)
+  expect(upright.breaksMm).not.toEqual(flat.breaksMm)
+})
