@@ -26,14 +26,13 @@
  */
 import type { Network } from "../../../lib/model/index.ts"
 import { CAPACITOR, RESISTOR } from "../parts.ts"
-import { COUPLING_CAPACITOR, OPA1688 } from "../pedal-parts.ts"
+import { C10U_50V, COUPLING_CAPACITOR, OPA1688 } from "../pedal-parts.ts"
 import { TEST_PADS, testPad } from "../pedal-rulings.ts"
-import { block, capacitor, dualOpamp, part, resistor, withMpn } from "./build.ts"
+import { block, capacitor, dualOpamp, part, resistor } from "./build.ts"
 
 const VIN_A = "VIN_A"
 const GND = "GND"
 const READINGS = "CR-PEDAL-ANALOG-READINGS"
-const C10U_50V = withMpn(CAPACITOR, "CL31B106KBHNNNE")
 
 function nets(x: "L" | "R") {
   return {
@@ -41,7 +40,6 @@ function nets(x: "L" | "R") {
     oa: `OUT_OA_${x}`, s: `OUT_S_${x}`, fx: `FX_OUT_${x}`, vmid: `VMID_${x}`,
   }
 }
-
 
 function channel(x: "L" | "R") {
   const n = nets(x)

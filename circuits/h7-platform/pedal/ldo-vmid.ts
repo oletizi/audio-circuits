@@ -35,7 +35,7 @@
 import { NC } from "../../../lib/model/index.ts"
 import type { Network, PartSpec } from "../../../lib/model/index.ts"
 import { CAPACITOR, RESISTOR, TEST_POINT } from "../parts.ts"
-import { OPA1688, TPS7A4901 } from "../pedal-parts.ts"
+import { C10U_50V, OPA1688, TPS7A4901 } from "../pedal-parts.ts"
 import { block, capacitor, dualOpamp, part, resistor } from "./build.ts"
 
 const withMpn = (base: PartSpec, mpn: string): PartSpec => ({ ...base, mpn })
@@ -58,7 +58,6 @@ const SBVS121E = "CR-PEDAL-POWER-DATASHEET-ENDS: TI SBVS121E (rev. May 2015)"
 const DIV = "schematic-checklist.md:130 (PWR-09, 2 x 100 kOhm 0.1 % 25 ppm/C from VIN_A to GND); power.md:488"
 const FOLLOW = "schematic-checklist.md:131 (PWR-10, each input fed from the divider through 10.0 kOhm 1 %)"
 const DECOUPLE = "schematic-checklist.md:132 (PWR-11, V+ with 100 nF + 10 uF 50 V to GND)"
-const C10U_50V = withMpn(CAPACITOR, "CL31B106KBHNNNE")
 const C10N = withMpn(CAPACITOR, "CL21B103KBANNNC")
 
 export function ldoVmidBlock(): Network {

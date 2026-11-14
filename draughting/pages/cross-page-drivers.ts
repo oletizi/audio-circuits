@@ -38,8 +38,10 @@
 import { readFileSync } from "node:fs"
 import { basename, join } from "node:path"
 import type { Component, Network } from "../../lib/model/index.ts"
+import { pinNumberFor } from "../../lib/kicad/from-network.ts"
 import { defaultSymbolDir } from "../../lib/kicad/install.ts"
-import { flattenedSymbol, librarySymbols, splitLibId, symbolPins } from "../../lib/kicad/symbol-library.ts"
+import { pinKey } from "../../lib/kicad/unit-pins.ts"
+import { flattenedSymbol, librarySymbols, splitLibId, symbolPins, symbolUnitPins } from "../../lib/kicad/symbol-library.ts"
 import type { SymbolPin } from "../../lib/kicad/symbol-library.ts"
 import type { PageBoard } from "./board.ts"
 import type { FlagHomes } from "./flag-homes.ts"
@@ -53,9 +55,9 @@ export interface CrossPageDriver {
   /** The driving component's reference designator (`DESIGNATORS`). */
   readonly designator: string
   /**
-   * The driving pin's number on the KiCad symbol. Usually also the model's pin key; for a part the
-   * model keys by name (a resistor's `a`/`b`), it is resolved through the board's PIN_NUMBERS
-   * (`symbolPinConnection`).
+   * The driving pin's number on the KiCad symbol, resolved to the model's pin by the drawing's own
+   * numbering (`symbolPinConnection`, through `pinNumberFor`): a pin the model keys by number is
+   * itself, a resistor's `b` is `Device:R` pin 2, a dual op-amp's pins come from its `symbolPins`.
    */
   readonly pin: string
   /**
@@ -128,23 +130,47 @@ export function pinConnection(component: Component, pin: string): string | null 
   return undefined
 }
 
+/** What a symbol pin number resolves to in the model: the pin's net (null for a no-connect), or why not. */
+export type SymbolPinResolution = { readonly net: string | null } | { readonly problem: string }
+
 /**
- * The net the component's KiCad symbol pin `number` is on in the model: a net name, null for a
- * no-connect, undefined for no such pin. Read by the model's own key where the model keys the pin by
- * its number (an `ic`, a connector, a switch); otherwise through the board's PIN_NUMBERS for the
- * component's kind, the table every page is lowered with, which must give exactly one of the
- * component's pins that number (a resistor's `b` is `Device:R` pin 2 in the h7-pedal's table). Added
- * by the h7 pedal pages plan's Task 10, whose VINL and VINR entries name a resistor's pin: the only
- * parts on those nets in the driving block are R_O and C_VIN, both keyed `a`/`b`.
+ * The net the component's KiCad symbol pin `number` is on in the model, found by numbering every pin
+ * of the component exactly as the drawing does (`pinNumberFor`: a multi-unit package through its
+ * own `symbolPins`, every other part through the board's PIN_NUMBERS, a pin keyed by a number as
+ * itself) and keeping the pins that get `number`. No pin is "no such pin"; two or more is reported as
+ * ambiguous, by name, never resolved by picking one. A pin the drawing cannot number is a problem
+ * too, named by `pinNumberFor`'s own refusal.
+ *
+ * Added by the h7 pedal pages plan's Task 10 (VINL's and VINR's entries name R_O's pin 2, a resistor
+ * the model keys `a`/`b`); its fix round 1 (review I1, controller ruling) replaced a first version that
+ * read PIN_NUMBERS by kind alone and so numbered a dual op-amp with the single op-amp's table.
  */
-export function symbolPinConnection(board: PageBoard, component: Component, number: string): string | null | undefined {
-  const direct = pinConnection(component, number)
-  if (direct !== undefined) return direct
-  const keys = Object.entries(board.pinNumbers[component.kind] ?? {})
-    .filter(([key, n]) => n === number && pinConnection(component, key) !== undefined)
-    .map(([key]) => key)
-  const key = keys[0]
-  return keys.length === 1 && key !== undefined ? pinConnection(component, key) : undefined
+export function symbolPinConnection(board: PageBoard, component: Component, number: string): SymbolPinResolution {
+  const found: { key: string; net: string | null }[] = []
+  const groups: readonly { readonly unit: Component["units"][number] | undefined; readonly pins: Component["pins"] }[] = [
+    { unit: undefined, pins: component.pins },
+    ...component.units.map((unit) => ({ unit, pins: unit.pins })),
+  ]
+  for (const { unit, pins } of groups) {
+    for (const [pin, connection] of Object.entries(pins)) {
+      const key = pinKey(component, unit, pin)
+      let n: string
+      try {
+        n = pinNumberFor(component, key, board.pinNumbers)
+      } catch (e) {
+        return { problem: `${component.id}'s pin ${key} cannot be numbered as the drawing numbers it: ${e instanceof Error ? e.message : String(e)}` }
+      }
+      if (n === number) found.push({ key, net: connection.kind === "net" ? connection.net : null })
+    }
+  }
+  const only = found[0]
+  if (found.length === 0 || only === undefined) {
+    return { problem: `has no pin numbered "${number}" in the model, as the drawing numbers its pins (pinNumberFor)` }
+  }
+  if (found.length > 1) {
+    return { problem: `pin number "${number}" is ambiguous in the model: the drawing gives it to ${found.map((f) => f.key).join(", ")}` }
+  }
+  return { net: only.net }
 }
 
 /**
@@ -158,7 +184,11 @@ export function libraryPin(board: PageBoard, libId: string, number: string): Sym
   const project = board.projectSymbolLibrary
   const file = library === basename(project, ".kicad_sym") ? project : join(defaultSymbolDir(KICAD_CLI), `${library}.kicad_sym`)
   const block = flattenedSymbol(librarySymbols(readFileSync(file, "utf8")), name)
-  return symbolPins(block).find((p) => p.number === number)
+  // A multi-unit symbol (a dual op-amp) is read unit by unit, since `symbolPins` refuses it; its pin
+  // numbers are unique across units, so the number names one pin (Task 10 fix round 1).
+  const units = symbolUnitPins(block)
+  const pins = units.some((u) => u.unit > 1) ? units.flatMap((u) => u.pins) : symbolPins(block)
+  return pins.find((p) => p.number === number)
 }
 
 function problemsWith(entry: CrossPageDriver, board: PageBoard): string[] {
@@ -176,9 +206,10 @@ function problemsWith(entry: CrossPageDriver, board: PageBoard): string[] {
   const component = module.components.find((c) => c.id === id)
   if (component === undefined) return [`${id} is in block "${entry.block}" but not in ${board.modelName}'s components`]
   const problems: string[] = []
-  const on = symbolPinConnection(board, component, entry.pin)
-  if (on === undefined) {
-    problems.push(`${entry.designator} has no pin "${entry.pin}" in the model (by its own key, or by PIN_NUMBERS["${component.kind}"])`)
+  const pinOn = symbolPinConnection(board, component, entry.pin)
+  const on = "net" in pinOn ? pinOn.net : undefined
+  if ("problem" in pinOn) {
+    problems.push(`${entry.designator} ${pinOn.problem}`)
   } else if (on !== entry.net) {
     problems.push(`${entry.designator} pin ${entry.pin} is on ${on === null ? "no net (not connected)" : `net ${on}`} in the model, not on ${entry.net}`)
   }

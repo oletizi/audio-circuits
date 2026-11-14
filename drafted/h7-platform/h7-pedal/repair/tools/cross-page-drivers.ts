@@ -44,6 +44,11 @@
  *   through PIN_NUMBERS (`symbolPinConnection`, `draughting/pages/cross-page-drivers.ts`). The stand-in
  *   is a TestPoint, a passive pin, which KiCad counts as driving an input (CR-MODULE-CROSS-PAGE-DRIVERS'
  *   measurement).
+ *   THESE TWO ENTRIES CERTIFY CONNECTIVITY, NOT DRIVE: R_O's pin is on VINL or VINR in the model. KiCad
+ *   counts any passive pin as driving an input, so at the assembled root C_VIN alone would clear
+ *   VINL's pin_not_driven, and the root's ERC proves nothing about R_O or U_ADC; only
+ *   `draughting/pages/root-drivers.ts`, which requires R107 pin 2 and R112 pin 2 on the exported net with
+ *   every model pin of the net, checks them there (CR-PEDAL-CODEC-VIN-AWAITING-ERC-AMENDED).
  *
  * DATA ONLY; the shared tools read it through the board's drafted directory, and refuse a board
  * without it, naming the file.

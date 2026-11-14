@@ -118,6 +118,8 @@ other measure of these drafts are Task 11's, measured when each page is repaired
 | `build/draw/h7-pedal/out/out.kicad_sch` | out | 31 | `2bda188d7584df76a20a7054327bb86939846bcec66535d481d38cac160070dd` |
 | `build/draw/h7-pedal/jacks_byp/jacks_byp.kicad_sch` | jacks_byp | 18 | `5652b8ed7bc8febf97f28090871fa51a518304136dee8fcc87bb45f2e8aea8bb` |
 
+The part counts against the inventory's §1.3 headings (B9 "about 21", B10 21, B11 "about 28", B12 18; `docs/superpowers/plans/2026-11-12-h7-pedal-pages-inventory.md` lines 32 to 35): in_fe's 23 are the 21 parts B9 lists plus CR-PEDAL-TEST-PADS' two GND pads (tp_in_l_gnd, tp_in_r_gnd). out's 31 are the 29 parts B11's own items list (per channel C_A+, C_A-, R_D1, R_D2, R_FO, R_GO, C_FO, C_GO, R_S, C_OUT, C_DC, R_B and the output pad, 26; U_OUT; its 100 nF and 10 uF), plus the two GND pads (tp_out_l_gnd, tp_out_r_gnd); the heading's "about 28" is one below its own list, and that is the third part. adc_drv and jacks_byp match.
+
 For these nine, `make draw` again printed no ADVISORY section and one `NO INDEPENDENT NETLIST:`
 block for the board. copperhead drafted codec_sup, controls_a, controls_b, fsw_led and midi_i2c on
 A5 and codec, sai_iso, expr_ref and usb on A4; re-papered to US Letter, every one fits the inner

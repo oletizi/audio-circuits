@@ -9,7 +9,8 @@
  *   plug in the right input IN_TIP_R follows IN_TIP_L (:151; bypass-relay.md:125). The left input's TN,
  *   the sleeves' net and which contacts are modelled are CR-PEDAL-ANALOG-READINGS'.
  * - Four PESD12VL1BA,115, one from each jack net to GND at the jack, on the jack side of the relays
- *   (AIO-21, :171; analog.md:184, OWN-03; parts.md:107); pin 1 on the jack net (CR-PEDAL-ANALOG-READINGS).
+ *   (AIO-21, :171; bypass-relay.md:90, :94; parts.md:107, OWN-03); pin 1 on the jack net. analog.md:184 puts the output
+ *   diodes "at R_B", on FX_OUT_x; CR-PEDAL-ANALOG-READINGS records that disagreement and follows AIO-21.
  * - K_BYP_IN and K_BYP_OUT, Omron G6K-2F-Y DC3 (parts.md:122), with bypass-relay.md:97's terminals:
  *   1 coil +, 8 coil -, 3 and 6 COM, 2 and 7 NC, 4 and 5 NO; pole A = L, pole B = R, each pin's net as
  *   lines 99 and 100 list it, both coils' pin 1 on 3V3_P and pin 8 on RELAY_DRV (line 101; AIO-19,
@@ -42,7 +43,7 @@ const READINGS = "CR-PEDAL-ANALOG-READINGS"
 
 const JACK_IN = `schematic-checklist.md:151 (AIO-01, two input jacks used as TS, R, RN and SN open); parts.md:133; sleeve, left TN and contacts: ${READINGS}`
 const JACK_OUT = `schematic-checklist.md:168 (AIO-18, two output jacks used as TS, TN, R, RN and SN open); parts.md:133; sleeve and contacts: ${READINGS}`
-const ESD = `schematic-checklist.md:171 (AIO-21, input diodes on IN_TIP_x, output diodes on OUT_JACK_x); analog.md:184 (OWN-03); parts.md:107; pin 1 on the line: ${READINGS}`
+const ESD = `schematic-checklist.md:171 (AIO-21, input diodes on IN_TIP_x, output diodes on OUT_JACK_x, the jack side of the relays); parts.md:107 (OWN-03); analog.md:184 disagrees for the outputs ("on the jack node at R_B", which is FX_OUT_x), read in ${READINGS}; pin 1 on the line: ${READINGS}`
 const RELAY = "bypass-relay.md:97 (1 = coil +, 8 = coil -; 3 and 6 = COM; 2 and 7 = NC; 4 and 5 = NO); bypass-relay.md:101 (pin 1 of both on 3V3_P; pin 8 of both on RELAY_DRV); parts.md:122"
 const SUPPRESSOR = `bypass-relay.md:102 (1N4148W anode on RELAY_DRV, its cathode to the BZT52C12 cathode, the Zener's anode on 3V3_P); both on the same nets: ${READINGS}`
 

@@ -160,6 +160,8 @@ export const FERRITE_IN: PartSpec = {
 }
 /** C_BULK, C_BULK2-4: 100 uF 35 V aluminium. */
 export const BULK_CAPACITOR: PartSpec = { mpn: "EEE-FK1V101P", symbol: "Device:C_Polarized" }
+/** The op-amp decoupling and VIN_A ceramics: 10 uF 50 V X7R 1206 (parts.md:57). */
+export const C10U_50V: PartSpec = { ...CAPACITOR, mpn: "CL31B106KBHNNNE" }
 /** C_AC and C_DC: 22 uF 25 V aluminium. */
 export const COUPLING_CAPACITOR: PartSpec = { mpn: "EEE-FT1E220AR", symbol: "Device:C_Polarized" }
 /** U_PRAIL's inductor, the module buck's. */
@@ -212,6 +214,7 @@ export const PEDAL_PARTS: Readonly<Record<string, PedalPart>> = {
   PESD12VL1BA: { part: PESD12VL1BA, kind: "ic", table: "PESD12VL1BA", provenance: "docs/h7-platform/parts.md:107" },
   FERRITE_IN: { part: FERRITE_IN, kind: "inductor", provenance: "docs/h7-platform/parts.md:58; Murata JENF243A_0091C-01 p. 1 (Ver JENF243A_0091C-01)" },
   BULK_CAPACITOR: { part: BULK_CAPACITOR, kind: "capacitor", provenance: "docs/h7-platform/parts.md:56" },
+  C10U_50V: { part: C10U_50V, kind: "capacitor", provenance: "docs/h7-platform/parts.md:57" },
   COUPLING_CAPACITOR: { part: COUPLING_CAPACITOR, kind: "capacitor", provenance: "docs/h7-platform/parts.md:108" },
   PRAIL_INDUCTOR: { part: PRAIL_INDUCTOR, kind: "inductor", provenance: "docs/h7-platform/parts.md:88" },
   RV16AF_41: { part: RV16AF_41, kind: "potentiometer", provenance: "docs/h7-platform/parts.md:131; docs/h7-platform/analog.md:364" },

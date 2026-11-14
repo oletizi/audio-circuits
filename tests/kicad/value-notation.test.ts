@@ -64,7 +64,10 @@ test("resistor boundaries: 1k formats, the K/M boundary is 1M, 10M and 22M forma
   // 10M is the h7 pedal's expression-tip resistor to GND (schematic-checklist.md:196).
   expect(valueFor(resistor(1e7))).toBe("10M")
   // 22M is the h7 pedal's input pull-down R_PD (schematic-checklist.md:153, AIO-03), the top of the range.
+  expect(valueFor(resistor(1.25e7))).toBe("12.5M")
+  expect(valueFor(resistor(1.5e7))).toBe("15M")
   expect(valueFor(resistor(2.2e7))).toBe("22M")
+  expect(() => valueFor(resistor(2.21e7))).toThrow(/up to and including 22M/)
   expect(() => valueFor(resistor(2.3e7))).toThrow(/up to and including 22M/)
 })
 
