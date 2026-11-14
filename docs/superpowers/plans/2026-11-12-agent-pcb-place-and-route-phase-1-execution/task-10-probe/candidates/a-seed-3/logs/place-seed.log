@@ -1,0 +1,32 @@
+$ /Users/orion/work/audio-circuits-work/pt2399-core/.tools/krt/.venv/bin/python py_placer/place_seed.py /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-3/gen/pt2399-core.kicad_pcb /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-3/gen/seeded.kicad_pcb --intent /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-3/gen/resolved-intent.json --force --seed 3
+(cwd /Users/orion/work/audio-circuits-work/pt2399-core/.tools/krt)
+
+CMD: Python py_placer/place_seed.py /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-3/gen/pt2399-core.kicad_pcb /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-3/gen/seeded.kicad_pcb --intent /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-3/gen/resolved-intent.json --force --seed 3
+ENV KNOBS: none
+legality at clearance 0.25 (board netclass), edge 0.5 (board constraint)
+Loading /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-3/gen/pt2399-core.kicad_pcb...
+  NOTE: C2: decap for U1 pad(s) near (85.0, 60.0) [+5V], landed 5.00mm
+  NOTE: C3: decap for U1 pad(s) near (85.0, 62.54) [Net-(U1-REF)], landed 6.00mm
+  NOTE: C4: decap for U1 pad(s) near (85.0, 75.24) [Net-(U1-CC1)], landed 6.00mm
+  NOTE: C5: decap for U1 pad(s) near (85.0, 77.78) [Net-(U1-CC0)], landed 4.00mm
+  NOTE: C14: decap for U1 pad(s) near (92.62, 77.78) [Net-(U1-OP1-OUT)], landed 3.00mm
+  NOTE: C13: decap for U1 pad(s) near (92.62, 72.7) [Net-(U1-OP2-IN)], landed 3.00mm
+  NOTE: C11: decap for U1 pad(s) near (92.62, 67.62) [Net-(U1-LPF2-IN)], landed 3.00mm
+  NOTE: C6: decap for U1 pad(s) near (92.62, 62.54) [Net-(U1-LPF1-OUT)], landed 3.00mm
+Seeded 28 part(s); 0 unseated; 5 to lock
+Modified 28 footprint positions
+Successfully wrote /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-3/gen/seeded.kicad_pcb
+Stamped (locked yes) on 1 part(s)
+Locked via --lock: J1
+Initial: length=452.3mm crossings=50 halo=64.6 edge=44.9 hpwl=493.6mm total=1745.2
+Pass 1: 22 moves, gain 795.0 -> length=464.6mm crossings=25 halo=20.4 edge=40.5 total=950.3
+Pass 2: 9 moves, gain 71.7 -> length=461.0mm crossings=23 halo=9.7 edge=40.5 total=878.5
+Pass 3: 1 moves, gain 0.5 -> length=461.4mm crossings=23 halo=9.1 edge=40.5 total=878.0
+Pass 4: 0 moves, gain 0.0 -> length=461.4mm crossings=23 halo=9.1 edge=40.5 total=878.0
+Quench complete: length 452.3 -> 461.4mm, crossings 50 -> 23, hpwl 493.6 -> 497.4mm, total 1745.2 -> 878.0
+Modified 22 footprint positions
+Successfully wrote /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-3/gen/seeded.kicad_pcb.polish
+JSON_SUMMARY: {"crossings": 23, "evictions": 0, "evictions_reverted": 0, "grade_errors": 0, "grade_warnings": 0, "hpwl": 497.45, "locked": 1, "no_pose_blockers": {}, "output": "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-3/gen/seeded.kicad_pcb", "placed": 28, "unseated": 0, "unseated_refs": []}
+EXIT=0
+
+EXIT=0

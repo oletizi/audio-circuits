@@ -1,0 +1,257 @@
+{
+  "schema": 1,
+  "kind": "floorplan-intent",
+  "board": "circuits/pt2399-core/pt2399-core.kicad_pcb",
+  "units": "mm",
+  "envelope": {
+    "size_mm": [
+      150,
+      100
+    ],
+    "whose_number_this_is": "THE OWNER'S, 2026-11-13, verbatim: \"Use 2mm min spacing and increase the board size to 150mm x 100mm\". It is a DECISION and not a derivation: nothing here measured 150 x 100, and the parts do not need it - the 24 circuit parts on the DELIVERED board span 50.84 x 57.80 mm, which is 19.6% of its area. He chose the board; the placement lives on it. CORRECTED 2026-11-13: this clause first said \"about 43 x 67 mm\", which was a real measurement of the WRONG ARTIFACT - a throwaway probe seed on a bare rectangle, taken before the mounting holes and the final geometry existed, and not the placement that was adopted. Caught by the Task 8 reviewer. The lesson is not the 8 mm: a figure measured on a scratch file and then quoted about the deliverable reads identically to one measured on the deliverable, and the owner was told the wrong one.",
+    "why_this_is_a_size_and_not_a_rect": "A rect carries an origin, and an origin is a board coordinate that goes stale the moment the outline is moved on the sheet. A SIZE survives that. The engine's own `envelope` key takes `envelope.rect` and this file deliberately does not supply one, so the engine's `envelope` rule still reports as SKIPPED - see `context.no_envelope_declared`, which is amended rather than deleted because its reasoning is half right and the half that failed is instructive.",
+    "what_actually_binds": "The board's own Edge.Cuts geometry. `floorplan.py` is explicit that the outline is read from the board and that the engine never writes it - \"THE BOARD OUTLINE IS NOT OURS TO CHANGE\" - and `tools/pcb/resolve-intent-zones.ts` reads the outline off the board to turn this file's fractions into rects. So Task 8 writes 150 x 100 to Edge.Cuts, and this key is what that geometry is checked AGAINST.",
+    "enforced_by": "`tools/pcb/resolve-intent-zones.ts`'s `requireDeclaredSize`, which compares the board's Edge.Cuts bounding box against this `size_mm` and REFUSES a mismatch, ignoring the origin by design - a size survives the outline being moved on the sheet and a rect does not. Landed in 8d160ac. `tests/pcb/settled-geometry.test.ts` drives it in both directions: the committed board passes, and a board of the wrong size is refused with a message saying not to edit the declared size. Every resolved file additionally carries a sha256 of the board it was resolved against under `context.resolved_against`, and `verifyResolvedIntent` refuses a mismatch or a missing stamp, so a stale resolved copy cannot grade a board it was not made for. CORRECTED 2026-11-13: this clause read \"NOTHING YET ... No tool compares this size to the board's Edge.Cuts today ... this number is authored and unchecked\" for two commits AFTER the guard it describes had landed. The controller rewrote the equivalent passage in docs/known-gaps.md G314 in the same sitting and left this one standing - so the register was corrected and the file that actually governs was not, which is the wrong way round. Found by the Task 8 re-review, which also noted that `settled-geometry.test.ts` already quoted this clause in the PAST tense: the test knew and the criteria file did not."
+  },
+  "blocks": [
+    {
+      "name": "supply_decoupling",
+      "refs": [
+        "C1",
+        "C2"
+      ],
+      "note": "supply_bypass_local (.1uF) and supply_bulk (100uF), both across +5V and GND. The model's own 'Supply decoupling' section."
+    },
+    {
+      "name": "pt2399_reference_and_oscillator_bypass",
+      "refs": [
+        "C3",
+        "C4",
+        "C5"
+      ],
+      "note": "reference_bypass on Net-(U1-REF) (U1 pin 2), oscillator_cc1_bypass on Net-(U1-CC1) (pin 7), oscillator_cc0_bypass on Net-(U1-CC0) (pin 8). All three return to GND. The model's 'PT2399 reference and internal-oscillator bypassing' section."
+    },
+    {
+      "name": "input_path",
+      "refs": [
+        "C7",
+        "R3",
+        "R4"
+      ],
+      "note": "input_coupling_cap from INPUT, input_bias_resistor from INPUT to GND, input_mix_resistor from the coupling cap into the LPF1 summing node. The model's 'Input path' section."
+    },
+    {
+      "name": "lpf1_node",
+      "refs": [
+        "R1",
+        "R2",
+        "C6",
+        "C8"
+      ],
+      "note": "The LPF1 summing/filter node Net-(C8-Pad2) and the parts that form it: lpf1_input_resistor to U1 pin 16 (LPF1-IN), lpf1_feedback_resistor to U1 pin 15 (LPF1-OUT), lpf1_feedback_cap across those two pins, lpf1_node_filter_cap to GND."
+    },
+    {
+      "name": "lpf2_regen_node",
+      "refs": [
+        "R6",
+        "R7",
+        "R8",
+        "C11",
+        "C12"
+      ],
+      "note": "The LPF2/regeneration node Net-(C12-Pad1): regen_feedback_resistor from U1 pin 14 (LPF2-OUT), regen_input_resistor to U1 pin 13 (LPF2-IN), op2_mix_resistor from U1 pin 12 (OP2-OUT), lpf2_feedback_cap across pins 13 and 14, regen_node_filter_cap to GND. This is the node the delay's feedback runs through."
+    },
+    {
+      "name": "opamp_feedback",
+      "refs": [
+        "C13",
+        "C14"
+      ],
+      "note": "op2_feedback_cap across U1 pins 11 and 12 (OP2-IN/OP2-OUT) and op1_feedback_cap across U1 pins 9 and 10 (OP1-OUT/OP1-IN). Each sits directly across two adjacent PT2399 pins and has no reason to be anywhere but against them."
+    },
+    {
+      "name": "output_path",
+      "refs": [
+        "R5",
+        "C9",
+        "C10"
+      ],
+      "note": "output_mix_resistor from U1 pin 14 (LPF2-OUT) into Net-(C10-Pad1), output_node_filter_cap from that node to GND, output_coupling_cap from that node to OUTPUT. The model's 'Output path' section."
+    },
+    {
+      "name": "delay_ic",
+      "refs": [
+        "U1"
+      ],
+      "note": "The PT2399, DIP-16. Every block above except input_path and output_path connects to one of its pins, so it is the part the rest of the floorplan is arranged around. Declared as a block of one so the block census covers every footprint on the board.",
+      "zone": [
+        25,
+        20,
+        145,
+        100
+      ]
+    },
+    {
+      "name": "edge_header",
+      "refs": [
+        "J1"
+      ],
+      "note": "The 1x05 power and signal header. Carries +5V, GND, VCO, OUTPUT and INPUT - every net that leaves this board. Also declared under edge_connectors and must_lock; the block exists so the census is complete."
+    }
+  ],
+  "keepouts": [
+    {
+      "name": "mounting_hole_nw",
+      "circle": [
+        14,
+        14,
+        3.5
+      ],
+      "sides": [
+        "F",
+        "B"
+      ],
+      "allow": [
+        "MH1"
+      ],
+      "note": "The 7 mm washer envelope at the nw corner, derived from the board outline and placement-rules.json anchors.mounting_holes (4 mm inset from both edges). `allow` names MH1 because rule_keepout iterates every part on the board and a circle centred on a hole would otherwise flag that hole."
+    },
+    {
+      "name": "mounting_hole_ne",
+      "circle": [
+        156,
+        14,
+        3.5
+      ],
+      "sides": [
+        "F",
+        "B"
+      ],
+      "allow": [
+        "MH2"
+      ],
+      "note": "The 7 mm washer envelope at the ne corner, derived from the board outline and placement-rules.json anchors.mounting_holes (4 mm inset from both edges). `allow` names MH2 because rule_keepout iterates every part on the board and a circle centred on a hole would otherwise flag that hole."
+    },
+    {
+      "name": "mounting_hole_se",
+      "circle": [
+        156,
+        106,
+        3.5
+      ],
+      "sides": [
+        "F",
+        "B"
+      ],
+      "allow": [
+        "MH3"
+      ],
+      "note": "The 7 mm washer envelope at the se corner, derived from the board outline and placement-rules.json anchors.mounting_holes (4 mm inset from both edges). `allow` names MH3 because rule_keepout iterates every part on the board and a circle centred on a hole would otherwise flag that hole."
+    },
+    {
+      "name": "mounting_hole_sw",
+      "circle": [
+        14,
+        106,
+        3.5
+      ],
+      "sides": [
+        "F",
+        "B"
+      ],
+      "allow": [
+        "MH4"
+      ],
+      "note": "The 7 mm washer envelope at the sw corner, derived from the board outline and placement-rules.json anchors.mounting_holes (4 mm inset from both edges). `allow` names MH4 because rule_keepout iterates every part on the board and a circle centred on a hole would otherwise flag that hole."
+    }
+  ],
+  "edge_connectors": [
+    {
+      "ref": "J1",
+      "overhang_mm": {
+        "min": 0,
+        "max": 0
+      },
+      "max_setback_mm": 2.5,
+      "note": "NO `edge` KEY HERE ON PURPOSE, and it is not an omission: `context.outline_derivation.header_edge` carries the rule that derives it, and the resolver writes the compass edge into the resolved copy. Read that entry before concluding this rule is unaimable - an earlier draft of this file did leave the edge out altogether, and that was the defect. A vertical pin header mates upward, not sideways, so it must NOT overhang the outline at all - hence max 0.0, which is a different claim from the card-edge and USB-shell cases this rule was written for. What it does need is to sit close enough to an edge that a cable reaches it without crossing the board. 2.5 mm is derived, not chosen for feel: the narrowest courtyard dimension of any footprint this circuit places is 3.000 mm (the disc cap and the axial resistor, across their short axis), so at a setback below that no part on this board can be placed between the header and the edge. 2.5 mm also clears the fabrication standard's 0.5 mm copper-to-edge floor with room for the header's own pads. tests/pcb/placement-intent-geometry.test.ts re-derives the 3.000 mm from the installed KiCad library on every run and fails if this number stops being below it.",
+      "edge": "south"
+    }
+  ],
+  "decaps": {
+    "max_distance_mm": 10,
+    "search_radius_mm": 100
+  },
+  "must_lock": [
+    "J1",
+    "MH1",
+    "MH2",
+    "MH3",
+    "MH4"
+  ],
+  "legality_budget": {
+    "overlap_area": 0,
+    "oob_count": 0,
+    "oob_amount": 0
+  },
+  "severity": {
+    "envelope": "error",
+    "zone_containment": "error",
+    "zone_side": "error",
+    "zone_exclusive": "error",
+    "keepout": "error",
+    "edge_connector": "error",
+    "decap_distance": "error",
+    "must_lock": "error",
+    "legality": "error"
+  },
+  "context": {
+    "status": "APPROVED BY THE OWNER, 2026-11-13. Task 7 of docs/superpowers/plans/2026-11-12-agent-pcb-place-and-route-phase-1.md drafted this file, an independent reviewer checked it against the circuit model rather than against the board, two fix rounds followed, and the owner was then put the one deliberate judgement it contained - the extent of U1's zone - with everything else marked as forced by the tool, measured off the parts, or taken from his own earlier instructions. HIS RULING, VERBATIM: \"loosen to 80%. The chip should be near the middle of the drawing, but perfect alignment is not critical\". The zone fraction in `context.outline_derivation.zones` is that ruling; `why_the_middle_eighty` records it with the drafter's rejected argument kept beside it. CHANGING THIS FILE NOW INVALIDATES EVERY RUN MADE UNDER IT, and the extent in particular is his and not an agent's to revise.",
+    "where_the_blocks_came_from": "circuits/pt2399-core/pt2399-core.ts - the circuit model's own section comments and its DESIGNATORS map, read for this draft. NOT from the board's current part positions, which were written by the headless update tool on a mechanical 15 mm grid and carry no floorplan intent at all. This repository's standing invariant is that an agent may never author the acceptance criteria for the artifact it is producing, and deriving blocks from the layout being graded is the named form of that failure.",
+    "no_envelope_declared": "AMENDED 2026-11-13, AND THE OLD WORDING IS KEPT BECAUSE ITS REASONING IS WHAT THE AMENDMENT TESTS. It read: \"There is deliberately no `envelope` key. The engine READS the outline from the board and never writes Edge.Cuts; an authored envelope is a claim about a board outline that Task 8 has not settled yet. The `envelope` rule therefore reports as skipped, which is the honest state rather than a silent pass.\" EVERY CLAUSE OF THAT IS STILL TRUE EXCEPT THE LOAD-BEARING ONE: the outline was Task 8's to settle only while nobody had settled it, and the owner then settled it himself at 150 x 100 mm. So an authored envelope stopped being a claim an agent was not entitled to make and became a decision this file is obliged to record. What has NOT changed: there is still no `envelope.rect`, the engine still reads the outline from the board, and the engine's `envelope` rule still reports SKIPPED. See the top-level `envelope` key for the size and for what enforces it, which is nothing yet.",
+    "no_zones_declared": "No block carries a `zone` rect IN THIS FILE, and no edge connector carries a compass `edge`. A rect and a compass edge are both board coordinates, and the board's coordinates are Task 8's to fix: one approved now is stale the moment the outline moves, and the regrade would then check the wrong rectangle while reporting a pass. What this file declares instead is `context.outline_derivation` - the same geometry as FRACTIONS of whatever outline the board turns out to have - and `tools/pcb/resolve-intent-zones.ts` turns those fractions into the rects and the edge the engine reads, against a board that already has an Edge.Cuts outline. The fractions are what the owner approved; the rects are derived, exactly as the mounting-hole keepouts are. Nothing downstream chooses either.",
+    "outline_derivation": {
+      "what": "The geometry this intent declares, expressed as fractions of the board outline's bounding box so that it survives Task 8 settling the outline. `tools/pcb/resolve-intent-zones.ts <board> <this file> <out>` writes the resolved copy the seeder and the grader consume. It refuses a board with no Edge.Cuts rather than inventing a rectangle, and it refuses this file if it ever acquires a literal rect or edge.",
+      "units": "fractions of the outline bounding box, [x0, y0, x1, y1], 0 at the outline's minimum and 1 at its maximum in each axis",
+      "zones": {
+        "delay_ic": [
+          0.1,
+          0.1,
+          0.9,
+          0.9
+        ]
+      },
+      "why_only_delay_ic": "THE ZONE'S EXISTENCE IS THE MINIMUM THAT MAKES AN ALREADY-ENFORCED RULE REACHABLE; ITS EXTENT WAS A CHOICE, AND THE OWNER MADE IT. That U1 needs a region at all is forced by the tool and measured - zero clean seeds in sixteen runs without one. How big that region is, was not forced: measured on a 65 x 50 mm rectangle over eight seeds, `[0.4 .. 0.6]` gives 0 clean seeds, `[0.25 .. 0.75]` gives 4, and `[0.1 .. 0.9]` gives 8. The draft proposed the central half on a floorplan argument of the drafter's own; the owner ruled for the looser `[0.1 .. 0.9]` on 2026-11-13, and `why_the_middle_eighty` records the ruling in his words. The extent in this file is therefore HIS, and the existence is the tool's - which is the division this clause exists to keep visible.",
+      "why_the_zone_is_forced": "`place_seed.py` places a block early only if that block carries a zone, and its decap stage seats a cap only against a supply pin of an ALREADY-PLACED IC. With no zone anywhere, U1 is never placed early, the decap stage seats nothing - `decap for ... pad(s)` appeared zero times in all sixteen of the independent reviewer's runs, and in the drafter's reproduction of them - and `decaps.max_distance_mm`, the one rule in this file that anything enforces, became unreachable. With one zone on the IC the stage seats eight of the nine bound caps at their own U1 pins. This half is a measurement, not a judgement.",
+      "why_no_other_block_gets_one": "No other block needs a region to make a rule reachable, and five columns of zones on a board whose size nobody has fixed would be a floorplan drawn before the outline. This clause is the extent/existence distinction applied to WHICH blocks; `why_only_delay_ic` applies it to HOW BIG, which an earlier draft of this file did not - it argued the extent in the same breath as the existence and called both a minimum. The reviewer's objection was that the owner would then be ratifying a necessity while actually making a choice. He was asked the two questions separately, and he changed the extent - so the objection was load-bearing rather than pedantic.",
+      "why_the_middle_eighty": "THE OWNER'S RULING, 2026-11-13, IN HIS WORDS: \"loosen to 80%. The chip should be near the middle of the drawing, but perfect alignment is not critical\". That is the whole criterion, and it is a criterion about the DEGREE of the constraint rather than its existence: the zone exists so the decap rule is reachable, and it is as wide as it can be while still keeping U1 off the edges. `[0.1 .. 0.9]` leaves a tenth of each axis clear at every edge. THE DRAFTER'S REJECTED ARGUMENT IS KEPT HERE RATHER THAN DELETED, because what was overruled is what a later reader needs: it proposed the central half, `[0.25 .. 0.75]`, on the grounds that U1 is mid-chain in `ordering.signal_path` (input_path, lpf1_node, delay_ic, lpf2_regen_node, output_path), that every other block hangs off one of its pins, and that the outer quarter of each edge should be reserved for the input and output paths, the header and the mounting hardware. That reasoning is not refuted - it is simply not the owner's, and the file it governs is his. Note which way the correction ran: the drafter was CONSERVATIVE and the owner LOOSENED it, so this is not an agent widening a constraint to improve its own seed statistics. That move was explicitly forbidden during the fix rounds and remains forbidden; a looser zone reaching this file through the owner's ruling is the sanctioned channel and the only one.",
+      "the_dependency_this_carries": "U1's courtyard is 20.820 by 9.730 mm, so the middle 80% holds it once the outline's long axis is about 26 mm (20.820 / 0.8 = 26.025) and its short axis about 12.2 mm (9.730 / 0.8 = 12.1625). That is the FITTING floor, and the loosening lowered it from the central half's 41.64 mm - but fitting is no longer the binding constraint, which is the thing to know before quoting the 26 mm. MEASURED AT THIS EXTENT, seeds 0-7 on each rectangle: 65x50 gives 8 clean of 8, a tall 50x80 gives 8 of 8, 100x80 gives 3 of 8, 50x40 gives 1 of 8, and a deliberately-too-small 40x30 gives 0 of 8 with loud `legality` errors. Against the central half the same sweep gave 4, 8, 3, 2 and 0. SO THE LOOSENING HELPED THE LARGER RECTANGLES AND COST THE SMALLEST VIABLE ONE: 50x40 drops from 2 clean seeds to 1 and acquires `zone_containment` failures on three seeds, which no other rectangle produces at any extent. A wider zone on a small board lets the packer seat U1 near the zone's own boundary instead of near the middle, which is the owner's criterion ('near the middle of the drawing') losing its grip once 80% of a small board is most of the board. The consequence for Task 8 is concrete and not a caution: 50x40 no longer meets the evidence bar and is not a candidate outline. 65x50 and 50x80 both seed clean at every seed. THE 1.30 mm CONTAINMENT OVERFLOW IS NOT DIAGNOSED and is recorded here rather than explained: U1 sits at (39, 28) unrotated on each failing seed and at (39, 27) on the clean one, the resolved zone is x 15..55, y 14..46, and a 9.730 mm courtyard half-height does not account for an overflow of 1.30 mm past y=46 from y=28 - so the arithmetic the message implies does not close, and three hypotheses were tried and discarded. It does not bite on either candidate outline, both of which are clean at every seed, and it is left as an open item for Task 8 rather than guessed at. This tool does NOT check the fitting floor - the engine's own zone gate does, and it fails loudly with the part unseated rather than quietly placing it outside. Changing this fraction is an amendment that invalidates every run made under it, and it is the owner's to make.",
+      "header_edge": {
+        "ref": "J1",
+        "rule": "the long edge: `south` when the outline is at least as wide as it is tall, `east` otherwise",
+        "why_it_must_be_derived_and_not_omitted": "LEAVING IT OUT IS WORSE THAN LEAVING IT UNENFORCED, which is what the earlier draft of this file got wrong. The seeder prints `edge connector J1: no edge declared; stage 1 will not guess one -- the centroid stage places it`, so with no edge J1 is never edge-seated; but the grader enforces `max_setback_mm` whether or not an edge is declared. That is an error-severity seat requirement that no placement stage aims at, and it then passes or fails on where the connectivity centroid happens to land: measured, 28.07 mm against a 2.50 mm limit on a 100x80 outline, and a pass by accident on a 65x50 one. Deriving the edge fixed it deterministically.",
+        "why_south_rather_than_north": "A tie. Both members of a long pair satisfy the rule, and a tie broken differently on two runs is worse than a tie broken arbitrarily once, so the rule names one. It is put to the owner as part of this draft; flipping it afterwards is an amendment."
+      }
+    },
+    "mounting_holes": "No keepout is written here, and that is the point. The four M3 mounting holes are approved as a DERIVATION RULE, which lives in circuits/pt2399-core/placement-rules.json under anchors.mounting_holes together with the hole diameter, the washer envelope and the corner inset and where each of those three numbers comes from. Task 8 Step 2 computes the four coordinates from the final outline and that rule, and writes them into this file's `keepouts` array. Until then `keepouts` is empty and the `keepout` rule reports as skipped.",
+    "must_lock_is_incomplete_on_purpose": "`must_lock` names J1 only. The four mounting holes are not in it because they are not on the board yet and a must_lock pattern that matches no footprint is itself a violation - the intent would fail for bookkeeping rather than for the board. Task 8 adds their references to this list in the same change that places them, as part of the same derivation. J1 itself needs nothing added: the seeder STAMPS the lock on a declared edge connector when it seats it, measured as `locked: 1` in the clean seed's own summary, so `must_lock` passes on a seeded board without anyone locking it by hand. An earlier draft of this note predicted the opposite - that the rule would report J1 unlocked until Task 8 - and the measurement refuted it. That only holds while the compass edge is derived; with no edge the seeder seats nothing, locks nothing, and this rule fails too.",
+    "decap_rule": "`decap_distance` measures from each cap's centroid to U1's pad bounding box, using the same nearest-IC-sharing-a-power-net tether the placement optimiser itself uses. On this board it binds C1, C2, C3, C4, C5, C6, C11, C13 and C14 - the nine caps with a non-ground net in common with the PT2399. It does NOT bind C7, C8, C9, C10 or C12, whose non-ground net touches no IC; those are covered by the block structure and by placement-rules.json instead. 10.0 mm is the limit and the derivation is in placement-rules.json under proximity.decoupling_to_u1. `search_radius_mm` is 100.0 and is NOT a second limit: the tether silently DROPS any cap beyond the search radius, so a radius at or below the limit would make the rule go quiet exactly when a cap had been placed too far away. 100 mm is larger than any diagonal this board will have.",
+    "what_this_file_does_not_check": "AS APPROVED, four rules run - edge_connector, decap_distance, must_lock, legality - and five report as skipped: envelope (no rect; the outline is read from the board), zone_containment and zone_side and zone_exclusive (no block carries a rect or a side here), and keepout (empty until Task 8 fills it). RESOLVED against a board, zone_containment runs too, because `delay_ic` then has a rect, so five run and four skip. Both counts are stated because they differ, and a reader comparing a run's `rules_run` against the wrong one would think a rule had gone missing. Every grader invocation must pass --require-rules 1 so that a file which has stopped declaring anything refuses instead of passing: an intent running zero rules grades every placement as acceptable, which is a false green of exactly the kind this plan exists to catch.",
+    "this_board_cannot_be_graded_yet_and_that_is_not_this_file": "Run against the board as it stands, both the grader and the seeder exit 3 - `the board has no Edge.Cuts outline` - and refuse rather than grading. That is the placement family's board-state code, not an intent error: with no usable outline every containment check would silently degrade to the bounding box and a clean report would mean 'stopped checking'. Task 8 Step 1's generous rectangle is what makes grading possible at all, so the first thing that happens under this intent is an outline, not a placement. What HAS been checked without a board: this file loads, contradicts itself nowhere, and its nine blocks resolve to 24 distinct references with no duplicates. What has been checked WITH a scaffolding rectangle on a throwaway copy, and is not an outline proposal: the resolver fills one zone and one compass edge from it, and `place_seed.py` then exits 0 - a seed that satisfies these criteria exists, which the earlier zone-less draft could not produce in sixteen attempts.",
+    "legality_budget_reasoning": "overlap_area 0.0 and oob_count 0 are not new criteria: `courtyards_overlap` is already an error-severity DRC check under docs/standards/pcbway-fab-rules.md, and a part off the outline is not manufacturable. The budget states the same two requirements where the placement grader can see them, so a seed that violates either is rejected before it reaches DRC. oob_amount 0.0 is the same requirement measured in millimetres rather than parts. J1 is declared with overhang max 0.0, so the edge connector creates no exception to any of the three.",
+    "resolved_against": {
+      "board": "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/gen/pt2399-core.kicad_pcb",
+      "outline": [
+        10,
+        10,
+        160,
+        110
+      ],
+      "size_mm": [
+        150,
+        100
+      ],
+      "board_sha256": "e4d3913edf790db551b23797839e76775ef9bbfd347caa5f973afe0e808b68be",
+      "note": "The board this file was resolved against. Every zone rect, compass edge and keepout circle below is derived from that outline, and the engine does not re-derive it - so a resolved intent used against a different board would grade the wrong rectangle and report a pass. tools/pcb/resolved-intent.ts's verifyResolvedIntent refuses that, and `make grade-pt2399-core` runs the resolve first so it cannot be skipped. Regenerate with `make resolve-pt2399-core`; this file is derived and belongs under build/."
+    }
+  }
+}

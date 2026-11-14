@@ -1,0 +1,655 @@
+{
+  "candidate": "a-seed-2",
+  "started": "2026-11-14T03:44:55",
+  "checks": {
+    "grade_exit": 0,
+    "route_exit": 0,
+    "fab_floor_relaxed_in_log": false,
+    "route_summary": {
+      "failed": 0,
+      "failed_single": [],
+      "main_loop_time_s": 0.1,
+      "min_clearance_used": 0.25,
+      "multipoint_deficit": 0,
+      "open_single": [],
+      "pad_pairs_open": {
+        "count": 0,
+        "nets": []
+      },
+      "routed": 19,
+      "scope": "merged",
+      "terminal_restores_broken": [],
+      "vias": 10
+    },
+    "engine_project_equals_standard_after_pour": false,
+    "engine_project_equals_standard_after_route": false,
+    "courtyard_rule_matches": true,
+    "parity_exit": 0,
+    "drc_routed_exit": 1,
+    "drc_counts": {
+      "schematicParity": 0,
+      "errorViolations": 35,
+      "warningViolations": 47,
+      "exclusionViolations": 0,
+      "requiredCheckViolations": 35,
+      "unconnectedItems": 0
+    },
+    "drc_unrouted_exit": 1,
+    "engine_connected_exit": 0,
+    "engine_drc_exit": 0,
+    "isolated_copper_in_refill_report": false,
+    "narrowest_track_mm": 0.3,
+    "vias": 10,
+    "below_floor": [],
+    "moved_parts": []
+  },
+  "board_failures": [
+    "KiCad DRC under the routed policy: drc-cli exited 1"
+  ],
+  "policy_findings": [
+    "policy post-condition: the .kicad_pro pour left beside its output no longer equals the fabrication standard (see that step's log for which values)",
+    "policy post-condition: the .kicad_pro route left beside its output no longer equals the fabrication standard (see that step's log for which values)"
+  ],
+  "placement_source": "place_seed arm a seed 2 from b926f69",
+  "place_seed_exit": 0,
+  "pour": {
+    "regions_by_layer": {
+      "B.Cu": 1
+    },
+    "narrowest_neck_mm": 1.090175425099138,
+    "narrowest_bridge_mm": {
+      "unavailable": "every pour layer is one connected piece of fill, so there are no separate regions to bridge."
+    },
+    "continuity_around_ic": {
+      "measured": {
+        "B.Cu": {
+          "band_mm": {
+            "from_mm": 0,
+            "to_mm": 3,
+            "step_mm": 0.25
+          },
+          "least_uncovered": {
+            "offset_mm": 0.5,
+            "covered_fraction": 1,
+            "uncovered_mm": 0,
+            "breaks_mm": [],
+            "fill_pieces_touched": 1,
+            "connected_groups_touched": 1
+          },
+          "profile": [
+            {
+              "offset_mm": 0,
+              "covered_fraction": 0.5550699300699301,
+              "uncovered_mm": 25.43759135662957,
+              "breaks_mm": [
+                3.548269128331432,
+                1.399317402722255,
+                1.399317402722255,
+                1.399317402722255,
+                1.399317402722255,
+                1.399317402722255,
+                1.399317402722255,
+                1.34934178119646,
+                1.34934178119646,
+                1.34934178119646,
+                1.34934178119646,
+                1.34934178119646,
+                1.34934178119646,
+                1.34934178119646,
+                1.34934178119646,
+                1.34934178119646,
+                1.34934178119646
+              ],
+              "fill_pieces_touched": 1,
+              "connected_groups_touched": 1
+            },
+            {
+              "offset_mm": 0.25,
+              "covered_fraction": 0.9003378378378378,
+              "uncovered_mm": 5.897220524501768,
+              "breaks_mm": [
+                1.2494111280724085,
+                1.2494111280724085,
+                0.2498822256144817,
+                0.2498822256144817,
+                0.2498822256144817,
+                0.2498822256144817,
+                0.19990578049158536,
+                0.19990578049158536,
+                0.19990578049158536,
+                0.19990578049158536,
+                0.19990578049158536,
+                0.19990578049158536,
+                0.19990578049158536,
+                0.19990578049158536,
+                0.19990578049158536,
+                0.19990578049158536,
+                0.19990578049158536,
+                0.19990578049158536
+              ],
+              "fill_pieces_touched": 1,
+              "connected_groups_touched": 1
+            },
+            {
+              "offset_mm": 0.5,
+              "covered_fraction": 1,
+              "uncovered_mm": 0,
+              "breaks_mm": [],
+              "fill_pieces_touched": 1,
+              "connected_groups_touched": 1
+            },
+            {
+              "offset_mm": 0.75,
+              "covered_fraction": 0.9912974683544303,
+              "uncovered_mm": 0.5497572953169318,
+              "breaks_mm": [
+                0.5497572953169318
+              ],
+              "fill_pieces_touched": 1,
+              "connected_groups_touched": 1
+            },
+            {
+              "offset_mm": 1,
+              "covered_fraction": 0.9677914110429447,
+              "uncovered_mm": 2.0991017354841945,
+              "breaks_mm": [
+                1.1994867059909682,
+                0.8996150294932261
+              ],
+              "fill_pieces_touched": 1,
+              "connected_groups_touched": 1
+            },
+            {
+              "offset_mm": 1.25,
+              "covered_fraction": 0.9367559523809523,
+              "uncovered_mm": 4.248236188369263,
+              "breaks_mm": [
+                1.79925297389757,
+                1.2494812318733126,
+                1.19950198259838
+              ],
+              "fill_pieces_touched": 1,
+              "connected_groups_touched": 1
+            },
+            {
+              "offset_mm": 1.5,
+              "covered_fraction": 0.9219653179190751,
+              "uncovered_mm": 5.397823692742053,
+              "breaks_mm": [
+                2.34905290332293,
+                1.74929471524048,
+                1.2994760741786424
+              ],
+              "fill_pieces_touched": 1,
+              "connected_groups_touched": 1
+            },
+            {
+              "offset_mm": 1.75,
+              "covered_fraction": 0.9283707865168539,
+              "uncovered_mm": 5.098002334692377,
+              "breaks_mm": [
+                1.9492361867941443,
+                1.4494320363341073,
+                1.4494320363341073,
+                0.24990207523001848
+              ],
+              "fill_pieces_touched": 1,
+              "connected_groups_touched": 1
+            },
+            {
+              "offset_mm": 2,
+              "covered_fraction": 0.9036885245901639,
+              "uncovered_mm": 7.047313971719131,
+              "breaks_mm": [
+                2.149180856623565,
+                2.049218956315492,
+                1.4994285046210913,
+                1.3494856541589824
+              ],
+              "fill_pieces_touched": 1,
+              "connected_groups_touched": 1
+            },
+            {
+              "offset_mm": 2.25,
+              "covered_fraction": 0.8038563829787234,
+              "uncovered_mm": 14.74452975566838,
+              "breaks_mm": [
+                2.0492397287539097,
+                2.0492397287539097,
+                1.7493509879606544,
+                1.1495735063741443,
+                0.9996291359775169,
+                0.9996291359775169,
+                0.9996291359775169,
+                0.9996291359775169,
+                0.9996291359775169,
+                0.9996291359775169,
+                0.9496476791786409,
+                0.7997033087820135
+              ],
+              "fill_pieces_touched": 1,
+              "connected_groups_touched": 1
+            },
+            {
+              "offset_mm": 2.5,
+              "covered_fraction": 0.7474093264248705,
+              "uncovered_mm": 19.492955505148064,
+              "breaks_mm": [
+                2.44911492244168,
+                2.0492594249001814,
+                1.999277487707494,
+                1.9492955505148066,
+                1.5994219901659952,
+                1.5994219901659952,
+                1.5994219901659952,
+                1.5994219901659952,
+                1.5994219901659952,
+                1.5494400529733077,
+                1.4994581157806204
+              ],
+              "fill_pieces_touched": 1,
+              "connected_groups_touched": 1
+            },
+            {
+              "offset_mm": 2.75,
+              "covered_fraction": 0.7272727272727273,
+              "uncovered_mm": 21.59239391604798,
+              "breaks_mm": [
+                2.349172486236702,
+                2.149242912939961,
+                2.099260519615776,
+                1.9493133396432205,
+                1.8993309463190353,
+                1.8993309463190353,
+                1.8993309463190353,
+                1.8993309463190353,
+                1.8993309463190353,
+                1.8993309463190353,
+                1.6494189796981096
+              ],
+              "fill_pieces_touched": 1,
+              "connected_groups_touched": 1
+            },
+            {
+              "offset_mm": 3,
+              "covered_fraction": 0.729064039408867,
+              "uncovered_mm": 21.992443873906453,
+              "breaks_mm": [
+                2.199244387390645,
+                2.099278733418343,
+                2.099278733418343,
+                2.099278733418343,
+                2.099278733418343,
+                2.099278733418343,
+                2.099278733418343,
+                2.0492959064321923,
+                2.0492959064321923,
+                2.0492959064321923,
+                1.0496393667091715
+              ],
+              "fill_pieces_touched": 1,
+              "connected_groups_touched": 1
+            }
+          ]
+        }
+      }
+    },
+    "spokes_by_ground_pad": {
+      "measured": {
+        "U1-3": {
+          "B.Cu": {
+            "spokes": 0,
+            "covered_fraction": 1,
+            "declared_connection": "yes"
+          }
+        },
+        "U1-4": {
+          "B.Cu": {
+            "spokes": 0,
+            "covered_fraction": 1,
+            "declared_connection": "yes"
+          }
+        },
+        "C2-2": {
+          "B.Cu": {
+            "spokes": 0,
+            "covered_fraction": 1,
+            "declared_connection": "yes"
+          }
+        },
+        "R4-2": {
+          "B.Cu": {
+            "spokes": 0,
+            "covered_fraction": 1,
+            "declared_connection": "yes"
+          }
+        },
+        "C5-2": {
+          "B.Cu": {
+            "spokes": 0,
+            "covered_fraction": 1,
+            "declared_connection": "yes"
+          }
+        },
+        "C12-2": {
+          "B.Cu": {
+            "spokes": 0,
+            "covered_fraction": 1,
+            "declared_connection": "yes"
+          }
+        },
+        "C4-2": {
+          "B.Cu": {
+            "spokes": 0,
+            "covered_fraction": 1,
+            "declared_connection": "yes"
+          }
+        },
+        "C3-2": {
+          "B.Cu": {
+            "spokes": 0,
+            "covered_fraction": 1,
+            "declared_connection": "yes"
+          }
+        },
+        "J1-2": {
+          "B.Cu": {
+            "spokes": 0,
+            "covered_fraction": 1,
+            "declared_connection": "yes"
+          }
+        },
+        "C1-2": {
+          "B.Cu": {
+            "spokes": 0,
+            "covered_fraction": 1,
+            "declared_connection": "yes"
+          }
+        },
+        "C9-2": {
+          "B.Cu": {
+            "spokes": 0,
+            "covered_fraction": 1,
+            "declared_connection": "yes"
+          }
+        },
+        "C8-1": {
+          "B.Cu": {
+            "spokes": 0,
+            "covered_fraction": 1,
+            "declared_connection": "yes"
+          }
+        }
+      }
+    },
+    "bypass_return": {
+      "measured": {
+        "overall": "pour",
+        "by_cap": {
+          "C2": "pour",
+          "C1": "pour"
+        }
+      }
+    }
+  },
+  "final_board_sha256": "9f8e43512e662b5285f302aac4b84bcfdbc51b2fe42bbe0bc5cced7dae6ca1a2",
+  "final_board": "cand-a-seed-2/final/pt2399-core.kicad_pcb",
+  "steps": [
+    {
+      "name": "outline",
+      "argv": [
+        "bun",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/tools/pcb/board-outline.ts",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/gen/pt2399-core.kicad_pcb",
+        "--write-declared",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/floorplan-intent.json",
+        "10",
+        "10",
+        "7a110000-0000-4000-8000-00000000ed9e"
+      ],
+      "cwd": "/Users/orion/work/audio-circuits-work/pt2399-core",
+      "log": "cand-a-seed-2/logs/outline.log",
+      "exit": 0
+    },
+    {
+      "name": "mounting-holes",
+      "argv": [
+        "bun",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/tools/pcb/place-mounting-holes.ts",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/gen/pt2399-core.kicad_pcb",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/placement-rules.json",
+        "--write"
+      ],
+      "cwd": "/Users/orion/work/audio-circuits-work/pt2399-core",
+      "log": "cand-a-seed-2/logs/mounting-holes.log",
+      "exit": 0
+    },
+    {
+      "name": "resolve-intent",
+      "argv": [
+        "bun",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/tools/pcb/resolved-intent.ts",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/gen/pt2399-core.kicad_pcb",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/floorplan-intent.json",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/gen/resolved-intent.json",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/placement-rules.json"
+      ],
+      "cwd": "/Users/orion/work/audio-circuits-work/pt2399-core",
+      "log": "cand-a-seed-2/logs/resolve-intent.log",
+      "exit": 0
+    },
+    {
+      "name": "place-seed",
+      "argv": [
+        "/Users/orion/work/audio-circuits-work/pt2399-core/.tools/krt/.venv/bin/python",
+        "py_placer/place_seed.py",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/gen/pt2399-core.kicad_pcb",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/gen/seeded.kicad_pcb",
+        "--intent",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/gen/resolved-intent.json",
+        "--force",
+        "--seed",
+        "2"
+      ],
+      "cwd": "/Users/orion/work/audio-circuits-work/pt2399-core/.tools/krt",
+      "log": "cand-a-seed-2/logs/place-seed.log",
+      "exit": 0
+    },
+    {
+      "name": "grade",
+      "argv": [
+        "bun",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/tools/pcb/grade-cli.ts",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/gen/seeded.kicad_pcb",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/floorplan-intent.json",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/placement-rules.json",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/grade"
+      ],
+      "cwd": "/Users/orion/work/audio-circuits-work/pt2399-core",
+      "log": "cand-a-seed-2/logs/grade.log",
+      "exit": 0
+    },
+    {
+      "name": "pour",
+      "argv": [
+        "/Users/orion/work/audio-circuits-work/pt2399-core/.tools/krt/.venv/bin/python",
+        "py_router/route_planes.py",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/stage/pt2399-core.kicad_pcb",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/steps/poured.kicad_pcb",
+        "--nets",
+        "GND",
+        "--plane-layers",
+        "B.Cu"
+      ],
+      "cwd": "/Users/orion/work/audio-circuits-work/pt2399-core/.tools/krt",
+      "log": "cand-a-seed-2/logs/pour.log",
+      "exit": 0
+    },
+    {
+      "name": "route",
+      "argv": [
+        "/Users/orion/work/audio-circuits-work/pt2399-core/.tools/krt/.venv/bin/python",
+        "py_router/route.py",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/steps/poured.kicad_pcb",
+        "--output",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/steps/routed.kicad_pcb",
+        "--fab-overrides",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/route-fab-floor.txt",
+        "--nets",
+        "*"
+      ],
+      "cwd": "/Users/orion/work/audio-circuits-work/pt2399-core/.tools/krt",
+      "log": "cand-a-seed-2/logs/route.log",
+      "exit": 0
+    },
+    {
+      "name": "post-fab-standard-pour",
+      "argv": [
+        "bun",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/tools/pcb/fab-standard.ts",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/steps/poured.kicad_pro"
+      ],
+      "cwd": "/Users/orion/work/audio-circuits-work/pt2399-core",
+      "log": "cand-a-seed-2/logs/post-fab-standard-pour.log",
+      "exit": 1
+    },
+    {
+      "name": "post-fab-standard-route",
+      "argv": [
+        "bun",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/tools/pcb/fab-standard.ts",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/steps/routed.kicad_pro"
+      ],
+      "cwd": "/Users/orion/work/audio-circuits-work/pt2399-core",
+      "log": "cand-a-seed-2/logs/post-fab-standard-route.log",
+      "exit": 1
+    },
+    {
+      "name": "refill",
+      "argv": [
+        "/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli",
+        "pcb",
+        "drc",
+        "--refill-zones",
+        "--save-board",
+        "--output",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/final/refill-drc.rpt",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/final/pt2399-core.kicad_pcb"
+      ],
+      "cwd": "/Users/orion/work/audio-circuits-work/pt2399-core",
+      "log": "cand-a-seed-2/logs/refill.log",
+      "exit": 0
+    },
+    {
+      "name": "courtyard-rule",
+      "argv": [
+        "bun",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/tools/pcb/courtyard-rule.ts",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/final/pt2399-core.kicad_pcb",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/placement-rules.json"
+      ],
+      "cwd": "/Users/orion/work/audio-circuits-work/pt2399-core",
+      "log": "cand-a-seed-2/logs/courtyard-rule.log",
+      "exit": 0
+    },
+    {
+      "name": "parity",
+      "argv": [
+        "bun",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/tools/pcb/drc-cli.ts",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/final/pt2399-core.kicad_pcb",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/final/pt2399-core.kicad_sch",
+        "parity"
+      ],
+      "cwd": "/Users/orion/work/audio-circuits-work/pt2399-core",
+      "log": "cand-a-seed-2/logs/parity.log",
+      "exit": 0
+    },
+    {
+      "name": "drc-routed",
+      "argv": [
+        "bun",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/tools/pcb/drc-cli.ts",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/final/pt2399-core.kicad_pcb",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/final/pt2399-core.kicad_sch",
+        "drc",
+        "--routed"
+      ],
+      "cwd": "/Users/orion/work/audio-circuits-work/pt2399-core",
+      "log": "cand-a-seed-2/logs/drc-routed.log",
+      "exit": 1
+    },
+    {
+      "name": "drc-unrouted",
+      "argv": [
+        "bun",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/tools/pcb/drc-cli.ts",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/final/pt2399-core.kicad_pcb",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/final/pt2399-core.kicad_sch",
+        "drc",
+        "--unrouted"
+      ],
+      "cwd": "/Users/orion/work/audio-circuits-work/pt2399-core",
+      "log": "cand-a-seed-2/logs/drc-unrouted.log",
+      "exit": 1
+    },
+    {
+      "name": "engine-check-connected",
+      "argv": [
+        "/Users/orion/work/audio-circuits-work/pt2399-core/.tools/krt/.venv/bin/python",
+        "py_router/check_connected.py",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/final/pt2399-core.kicad_pcb"
+      ],
+      "cwd": "/Users/orion/work/audio-circuits-work/pt2399-core/.tools/krt",
+      "log": "cand-a-seed-2/logs/engine-check-connected.log",
+      "exit": 0
+    },
+    {
+      "name": "engine-check-drc",
+      "argv": [
+        "/Users/orion/work/audio-circuits-work/pt2399-core/.tools/krt/.venv/bin/python",
+        "py_router/check_drc.py",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/final/pt2399-core.kicad_pcb"
+      ],
+      "cwd": "/Users/orion/work/audio-circuits-work/pt2399-core/.tools/krt",
+      "log": "cand-a-seed-2/logs/engine-check-drc.log",
+      "exit": 0
+    },
+    {
+      "name": "routed-survey",
+      "argv": [
+        "bun",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/tools/pcb/routed-survey.ts",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/final/pt2399-core.kicad_pcb",
+        "--floor",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/route-fab-floor.txt",
+        "--against",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/gen/seeded.kicad_pcb",
+        "--json"
+      ],
+      "cwd": "/Users/orion/work/audio-circuits-work/pt2399-core",
+      "log": "cand-a-seed-2/logs/routed-survey.log",
+      "exit": 0
+    },
+    {
+      "name": "pour-measure",
+      "argv": [
+        "bun",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/tools/pcb/pour-cli.ts",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/final/pt2399-core.kicad_pcb",
+        "--json"
+      ],
+      "cwd": "/Users/orion/work/audio-circuits-work/pt2399-core",
+      "log": "cand-a-seed-2/logs/pour-measure.log",
+      "exit": 0
+    }
+  ],
+  "failures": [
+    "KiCad DRC under the routed policy: drc-cli exited 1",
+    "policy post-condition: the .kicad_pro pour left beside its output no longer equals the fabrication standard (see that step's log for which values)",
+    "policy post-condition: the .kicad_pro route left beside its output no longer equals the fabrication standard (see that step's log for which values)"
+  ],
+  "board_passed": false,
+  "passed": false,
+  "finished": "2026-11-14T03:45:09"
+}

@@ -1,0 +1,21 @@
+** Drc report for pt2399-core.kicad_pcb **
+** Created on 2026-11-14T03:44:36 **
+** Report includes: Errors, Warnings **
+
+** Found 1 DRC violations **
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(109.5000 mm, 81.6500 mm): Reference field of C12
+    @(108.3700 mm, 79.0300 mm): Segment of C12 on F.Silkscreen
+
+** Found 0 unconnected pads **
+
+** Found 0 Footprint errors **
+
+** Ignored checks **
+    - Track endpoint not centered on via
+    - Tuning profile track geometries
+    - Footprint doesn't match symbol's footprint filters
+    - Footprint component type doesn't match footprint pads
+
+** End of Report **

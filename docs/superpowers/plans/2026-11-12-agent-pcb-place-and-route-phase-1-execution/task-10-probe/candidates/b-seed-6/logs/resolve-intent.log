@@ -1,0 +1,9 @@
+$ bun /Users/orion/work/audio-circuits-work/pt2399-core/tools/pcb/resolved-intent.ts /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-6/gen/pt2399-core.kicad_pcb /Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/floorplan-intent.json /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-6/gen/resolved-intent.json /Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/placement-rules.json
+(cwd /Users/orion/work/audio-circuits-work/pt2399-core)
+
+resolved against 150.00 x 100.00 mm outline at (10.00, 10.00); long edge south
+outline size matches the declared envelope.size_mm of 150 x 100 mm
+bound to pt2399-core.kicad_pcb sha256 e4d3913edf790db5... outline [10, 10, 160, 110]
+wrote /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-6/gen/resolved-intent.json
+
+EXIT=0

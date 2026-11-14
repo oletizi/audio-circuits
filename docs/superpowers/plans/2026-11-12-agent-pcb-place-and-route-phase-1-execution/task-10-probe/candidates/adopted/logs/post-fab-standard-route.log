@@ -1,0 +1,9 @@
+$ bun /Users/orion/work/audio-circuits-work/pt2399-core/tools/pcb/fab-standard.ts /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-adopted/steps/routed.kicad_pro
+(cwd /Users/orion/work/audio-circuits-work/pt2399-core)
+
+REFUSED (project-config): [project-config] /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-adopted/steps/routed.kicad_pro no longer equals the fabrication standard (the autorouter rewrites this file and relaxes floors):
+  - board.design_settings.rule_severities.courtyards_overlap: the hardware-envelope gate needs "error", project has "warning" - and "warning" is the setting to be most careful about, because KiCad presents it as enabled while a warning-severity violation is counted rather than failed
+  - net class "Default" track_width: standard 0.3 mm, project was set to 0.2998 mm
+A DRC run against these values is clean against the wrong minimums.
+
+EXIT=1

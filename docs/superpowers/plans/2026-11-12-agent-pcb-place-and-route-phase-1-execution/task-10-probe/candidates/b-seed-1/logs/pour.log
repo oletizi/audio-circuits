@@ -1,0 +1,63 @@
+$ /Users/orion/work/audio-circuits-work/pt2399-core/.tools/krt/.venv/bin/python py_router/route_planes.py /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-1/stage/pt2399-core.kicad_pcb /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-1/steps/poured.kicad_pcb --nets GND --plane-layers B.Cu
+(cwd /Users/orion/work/audio-circuits-work/pt2399-core/.tools/krt)
+
+CMD: Python py_router/route_planes.py /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-1/stage/pt2399-core.kicad_pcb /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-1/steps/poured.kicad_pcb --nets GND --plane-layers B.Cu
+ENV KNOBS: none
+--track-width not given; using the board Default net-class 0.3mm.
+--via-size not given; using the board Default net-class 0.8mm.
+--via-drill not given; using the board Default net-class 0.4mm.
+--clearance not given; honoring net classes with base = the board Default net-class clearance 0.25mm.
+--hole-to-hole-clearance not given; using 0.5mm [board constraint].
+--board-edge-clearance not given; using 0.5mm [board constraint].
+Loading PCB from /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-1/stage/pt2399-core.kicad_pcb...
+Zone clearance: following routed clearance 0.25mm (--zone-clearance to override)
+Found net 'GND' with ID 3
+Board bounds: (10.00, 10.00) to (160.00, 110.00)
+  Layer costs: F.Cu=1.0x, B.Cu=3.0x
+  Auto-read netclass clearances for 2 net(s) (cross-class max(A,B) respected for plane taps).
+
+============================================================
+Processing net 'GND' on layer B.Cu
+============================================================
+
+Pad analysis for net 'GND':
+  Through-hole pads (no via needed): 12
+  SMD pads on B.Cu (no via needed): 0
+  SMD pads kept for thermal via arrays (via needed): 0
+  Fill-aware via preference: predicted B.Cu fill modeled (main component located)
+
+  Plane Resistance Analysis (1 oz copper, 10°C rise):
+    Path length: 178.9 mm (diagonal)
+    Avg width:   82.9 mm
+    Resistance:  1.036 mΩ
+    Max current: not rated -- 4496 mils² cross-section is past the IPC-2221 chart range (700 mils²); the fit would say 58.82 A by extrapolation
+
+Results for 'GND':
+  Zone created on B.Cu
+  New vias placed: 0
+  Traces added: 0
+
+Writing output to /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-1/steps/poured.kicad_pcb...
+Output written to /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-1/steps/poured.kicad_pcb
+Note: Open in KiCad and press 'B' to refill zones
+
+============================================================
+GEOMETRIC VERIFICATION (re-parsed output)
+============================================================
+  GND: 12/12 pads connected to plane on B.Cu
+  DRC settings: wrote 11 value(s) to /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-1/steps/poured.kicad_pro to match the routed floors (close+reopen in KiCad if it is open). WRITES, not changes: a key the project never declared counts here, and one logical value is written once per net class:
+      rules.min_hole_clearance: None -> 0.25 mm
+      rules.min_via_drill: None -> 0.4 mm
+      severity[courtyards_overlap]: error -> warning
+      severity[malformed_courtyard]: None -> ignore
+      severity[npth_inside_courtyard]: None -> ignore
+      severity[pth_inside_courtyard]: None -> ignore
+      severity[solder_mask_bridge]: None -> ignore
+      severity[annular_width]: None -> ignore
+      severity[lib_footprint_issues]: None -> ignore
+      severity[lib_footprint_mismatch]: None -> ignore
+      severity[starved_thermal]: None -> warning
+JSON_SUMMARY: {"complete": true, "env_knobs": {}, "min_clearance_used": 0.25, "pads": {"geometric_failed": 0}, "pads_scope": "all zones in this run, summed -- not per zone; see plane_zones for what was poured", "plane_nets": ["GND"], "plane_resistance": [{"avg_width_mm": 82.87, "copper_oz": 1.0, "max_current_a": 58.82, "max_current_ipc2152_a": 58.82, "net": "GND", "path_length_mm": 178.89, "resistance_ohms": 0.001036, "temp_rise_c": 10.0}], "plane_zones": [{"layer": "B.Cu", "net": "GND"}], "status": "ok"}
+EXIT=0
+
+EXIT=0

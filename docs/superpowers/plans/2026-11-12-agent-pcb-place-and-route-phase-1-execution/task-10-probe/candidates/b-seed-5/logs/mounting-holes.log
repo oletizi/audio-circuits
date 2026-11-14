@@ -1,0 +1,11 @@
+$ bun /Users/orion/work/audio-circuits-work/pt2399-core/tools/pcb/place-mounting-holes.ts /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-5/gen/pt2399-core.kicad_pcb /Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/placement-rules.json --write
+(cwd /Users/orion/work/audio-circuits-work/pt2399-core)
+
+outline 150.00 x 100.00 mm at (10.00, 10.00)
+  MH1 (nw) at (14, 14): 3.2 mm drill, 7 mm envelope, 4 mm from both edges, reference label at y 4.15 (inward)
+  MH2 (ne) at (156, 14): 3.2 mm drill, 7 mm envelope, 4 mm from both edges, reference label at y 4.15 (inward)
+  MH3 (se) at (156, 106): 3.2 mm drill, 7 mm envelope, 4 mm from both edges, reference label at y -4.15 (inward)
+  MH4 (sw) at (14, 106): 3.2 mm drill, 7 mm envelope, 4 mm from both edges, reference label at y -4.15 (inward)
+replaced 0 mounting-hole footprint(s) and 0 Rule Area(s) in /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-5/gen/pt2399-core.kicad_pcb
+
+EXIT=0

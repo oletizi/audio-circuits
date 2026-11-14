@@ -1,0 +1,7 @@
+$ bun /Users/orion/work/audio-circuits-work/pt2399-core/tools/pcb/drc-cli.ts /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-1/final/pt2399-core.kicad_pcb /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-1/final/pt2399-core.kicad_sch parity
+(cwd /Users/orion/work/audio-circuits-work/pt2399-core)
+
+report: /var/folders/sk/jzwspmzn1g17x97x7s7l_dch0000gn/T/pcb-drc-y2DVYr/drc.json (KiCad 10.0.5, 24 schematic components)
+{"schematicParity":0,"errorViolations":34,"warningViolations":29,"exclusionViolations":0,"requiredCheckViolations":34,"unconnectedItems":0}
+
+EXIT=0

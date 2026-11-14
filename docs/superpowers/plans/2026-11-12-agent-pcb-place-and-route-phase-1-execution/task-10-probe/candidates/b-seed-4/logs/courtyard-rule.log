@@ -1,0 +1,6 @@
+$ bun /Users/orion/work/audio-circuits-work/pt2399-core/tools/pcb/courtyard-rule.ts /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-4/final/pt2399-core.kicad_pcb /Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/placement-rules.json
+(cwd /Users/orion/work/audio-circuits-work/pt2399-core)
+
+/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-4/final/pt2399-core.kicad_dru matches 2 mm from /Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/placement-rules.json
+
+EXIT=0

@@ -1,0 +1,10 @@
+$ bun /Users/orion/work/audio-circuits-work/pt2399-core/tools/pcb/board-outline.ts /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-6/gen/pt2399-core.kicad_pcb --write-declared /Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/floorplan-intent.json 10 10 7a110000-0000-4000-8000-00000000ed9e
+(cwd /Users/orion/work/audio-circuits-work/pt2399-core)
+
+24 placed footprint(s)
+placed courtyard extent 87.71 x 67.70 mm at (18.50, 16.60)
+outline DERIVED from it would be 88.71 x 68.70 mm at (18.00, 16.10) (extent + 0.5 mm all round)
+declared size 150 x 100 mm from /Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/floorplan-intent.json
+replaced 0 Edge.Cuts shape(s) with 150.00 x 100.00 mm at (10.00, 10.00) in /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-6/gen/pt2399-core.kicad_pcb
+
+EXIT=0

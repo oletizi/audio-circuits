@@ -1,0 +1,318 @@
+$ /Users/orion/work/audio-circuits-work/pt2399-core/.tools/krt/.venv/bin/python py_router/route.py /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-3/steps/poured.kicad_pcb --output /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-3/steps/routed.kicad_pcb --fab-overrides /Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/route-fab-floor.txt --nets *
+(cwd /Users/orion/work/audio-circuits-work/pt2399-core/.tools/krt)
+
+CMD: Python py_router/route.py /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-3/steps/poured.kicad_pcb --output /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-3/steps/routed.kicad_pcb --fab-overrides /Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/route-fab-floor.txt --nets "*"
+ENV KNOBS: none
+--track-width not given; using the board Default net-class 0.3mm.
+--via-size not given; using the board Default net-class 0.8mm.
+--via-drill not given; using the board Default net-class 0.4mm.
+--clearance not given; honoring net classes with base = the board Default net-class clearance 0.25mm.
+--hole-to-hole-clearance not given; using 0.5mm [board constraint].
+--board-edge-clearance not given; using 0.5mm [board constraint].
+Loading /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-3/steps/poured.kicad_pcb to expand net patterns...
+Pattern '*' matched 20 nets
+Routing 20 nets: ['+5V', 'GND', 'INPUT', 'Net-(C10-Pad1)', 'Net-(C12-Pad1)']...
+Netclass clearances for 2 net(s), honored in full (--clearance omitted) (mm: [0.25]); cross-class max(A,B) respected.
+Loading /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-3/steps/poured.kicad_pcb...
+Auto-read netclass track widths for 2 non-Default net(s) (#435 single-ended companion).
+Using 2 routing layers: ['F.Cu', 'B.Cu']
+  Layer costs: F.Cu=1.0x, B.Cu=3.0x
+No BGA components detected - no exclusion zones needed
+
+Skipping 1 already-routed net(s): Already fully connected
+
+Using MPS ordering strategy...
+MPS: Using segment intersection method (no nets on BGA chips)
+MPS: 19 nets with 19 crossing conflicts detected
+MPS Round 1: 13 units: Net-(U1-OP1-OUT), Net-(U1-CC1), Net-(U1-OP2-IN), Net-(U1-REF), Net-(U1-CC0), Net-(U1-OP2-OUT), Net-(U1-LPF1-IN), Net-(U1-OP1-IN), Net-(U1-LPF2-OUT), Net-(U1-LPF1-OUT), Net-(C10-Pad1), OUTPUT, INPUT
+MPS Round 2: 4 units: Net-(U1-LPF2-IN), Net-(C7-Pad1), +5V, Net-(C12-Pad1)
+MPS Round 3: 1 units: Net-(C8-Pad2)
+MPS Round 4: 1 units: VCO
+
+Routing 19 single-ended net(s)...
+============================================================
+Building base obstacle map...
+Copper-to-hole clearance 0.25mm (from the board's own min_hole_clearance, above the 0.2mm fab floor)
+Base obstacle map built in 0.01s
+Found 20 unrouted nets in PCB for stub proximity
+Pre-computing net obstacle cache...
+Net obstacle cache built in 0.01s (20 nets)
+Plane fragility: exact-fill geometry (1 filled island(s) from KiCad refill)
+Plane fragility field: 173697 cells near the edges of 1 pour(s) (KICAD_PLANE_FRAGILITY_COST=2.0mm-equiv, DYNAMIC #466 (=0 via KICAD_PLANE_FRAGILITY_DYNAMIC reverts))
+History congestion (#590) armed: +0.1mm-equiv per contest, cap 0.5, escalate 0.0, rip weight 1.0 (radius +0.25mm), frontier weight 0.25
+
+[1/19] Routing Net-(U1-OP1-OUT) (id=8)
+  SUCCESS: 2 segments, 0 vias, 41 iterations, length=4.03mm (stubs=0.00mm) (0.00s)
+
+[2/19] Routing Net-(U1-CC1) (id=6)
+  SUCCESS: 2 segments, 0 vias, 41 iterations, length=4.04mm (stubs=0.00mm) (0.00s)
+
+[3/19] Routing Net-(U1-OP2-IN) (id=10)
+  SUCCESS: 3 segments, 0 vias, 41 iterations, length=4.43mm (stubs=0.00mm) (0.00s)
+
+[4/19] Routing Net-(U1-REF) (id=2)
+  SUCCESS: 3 segments, 0 vias, 51 iterations, length=5.45mm (stubs=0.00mm) (0.00s)
+
+[5/19] Routing Net-(U1-CC0) (id=7)
+  SUCCESS: 3 segments, 0 vias, 51 iterations, length=5.85mm (stubs=0.00mm) (0.00s)
+
+[6/19] Routing Net-(U1-OP2-OUT) (id=11)
+  Detected multi-point net with 3 pads (Phase 1: main route only)
+  Multi-point net Phase 1: routing longest MST edge (pads 0 and 1, length=5.02mm)
+  Phase 1 routed in 41 iterations, 3 segments
+  SUCCESS: 3 segments, 0 vias, 41 iterations, length=4.46mm (stubs=0.00mm) (0.00s)
+
+[7/19] Routing Net-(U1-LPF1-IN) (id=15)
+  Detected multi-point net with 3 pads (Phase 1: main route only)
+  Multi-point net Phase 1: routing longest MST edge (pads 1 and 2, length=15.06mm)
+  Phase 1 routed in 263 iterations, 15 segments
+  SUCCESS: 15 segments, 0 vias, 263 iterations, length=15.51mm (stubs=0.00mm) (0.00s)
+
+[8/19] Routing Net-(U1-OP1-IN) (id=9)
+  SUCCESS: 10 segments, 0 vias, 67 iterations, length=8.20mm (stubs=0.00mm) (0.00s)
+
+[9/19] Routing Net-(U1-LPF2-OUT) (id=13)
+  Detected multi-point net with 4 pads (Phase 1: main route only)
+  Multi-point net Phase 1: routing longest MST edge (pads 2 and 3, length=17.46mm)
+  Phase 1 routed in 137 iterations, 3 segments
+  SUCCESS: 3 segments, 0 vias, 137 iterations, length=15.26mm (stubs=0.00mm) (0.00s)
+
+[10/19] Routing Net-(U1-LPF1-OUT) (id=14)
+  Detected multi-point net with 3 pads (Phase 1: main route only)
+  Multi-point net Phase 1: routing longest MST edge (pads 1 and 2, length=28.26mm)
+  Phase 1 routed in 146 iterations, 8 segments
+  SUCCESS: 8 segments, 0 vias, 146 iterations, length=20.26mm (stubs=0.00mm) (0.00s)
+
+[11/19] Routing Net-(C10-Pad1) (id=21)
+  Detected multi-point net with 3 pads (Phase 1: main route only)
+  Multi-point net Phase 1: routing longest MST edge (pads 1 and 2, length=22.70mm)
+  Phase 1 routed in 151 iterations, 9 segments
+  SUCCESS: 9 segments, 0 vias, 151 iterations, length=18.45mm (stubs=0.00mm) (0.00s)
+
+[12/19] Routing OUTPUT (id=20)
+  SUCCESS: 3 segments, 0 vias, 150 iterations, length=17.11mm (stubs=0.00mm) (0.00s)
+
+[13/19] Routing INPUT (id=16)
+  Detected multi-point net with 3 pads (Phase 1: main route only)
+  Multi-point net Phase 1: routing longest MST edge (pads 1 and 2, length=24.83mm)
+  Phase 1 routed in 233 iterations, 27 segments
+  SUCCESS: 27 segments, 0 vias, 233 iterations, length=23.64mm (stubs=0.00mm) (0.00s)
+
+[14/19] Routing Net-(U1-LPF2-IN) (id=12)
+  Detected multi-point net with 3 pads (Phase 1: main route only)
+  Multi-point net Phase 1: routing longest MST edge (pads 1 and 2, length=18.86mm)
+  Phase 1 routed in 47463 iterations, 21 segments
+  SUCCESS: 21 segments, 2 vias, 47463 iterations, length=19.85mm (stubs=0.00mm) (0.01s)
+
+[15/19] Routing Net-(C7-Pad1) (id=18)
+  SUCCESS: 11 segments, 0 vias, 7102 iterations, length=17.13mm (stubs=0.00mm) (0.00s)
+
+[16/19] Routing +5V (id=1)
+  Detected multi-point net with 4 pads (Phase 1: main route only)
+  Multi-point net Phase 1: routing longest MST edge (pads 0 and 2, length=30.40mm)
+  Phase 1 routed in 35880 iterations, 24 segments
+  SUCCESS: 24 segments, 0 vias, 35880 iterations, length=38.46mm (stubs=0.00mm) (0.04s)
+
+[17/19] Routing Net-(C12-Pad1) (id=17)
+  Detected multi-point net with 4 pads (Phase 1: main route only)
+  Multi-point net Phase 1: routing longest MST edge (pads 0 and 2, length=27.76mm)
+  Phase 1 routed in 45419 iterations, 23 segments
+  SUCCESS: 23 segments, 0 vias, 45419 iterations, length=33.40mm (stubs=0.00mm) (0.01s)
+
+[18/19] Routing Net-(C8-Pad2) (id=19)
+  Detected multi-point net with 4 pads (Phase 1: main route only)
+  Multi-point net Phase 1: routing longest MST edge (pads 0 and 3, length=24.80mm)
+  Phase 1 routed in 22286 iterations, 17 segments
+  SUCCESS: 17 segments, 1 vias, 22286 iterations, length=26.19mm (stubs=0.00mm) (0.01s)
+
+[19/19] Routing VCO (id=5)
+  SUCCESS: 38 segments, 2 vias, 31598 iterations, length=38.79mm (stubs=0.00mm) (0.01s)
+
+Sync pcb_data: 225 -> 0 (kept stubs) -> 225 (after adding 225)
+
+============================================================
+Multi-point Phase 3: Routing 14 tap connections
+============================================================
+
+Net-(U1-OP2-OUT) (net 11):
+  Multi-point net Phase 3: routing 1 remaining MST edges (longest first)
+    [1/14] Routing MST edge: pad 1 -> pad 2 (length=4.80mm) target=(100.10, 72.50)
+      Routed in 36 iterations (0.00s)
+  Phase 3 routing complete: 1 edges, 5 total segments, 0 total vias
+  Added 2 tap segments, 0 tap vias
+  Net total time: 0.00s, 77 iterations
+
+Net-(U1-LPF1-IN) (net 15):
+  Multi-point net Phase 3: routing 1 remaining MST edges (longest first)
+    [2/14] Routing MST edge: pad 1 -> pad 0 (length=6.48mm) target=(92.62, 60.00)
+      Routed in 1810 iterations (0.00s)
+  Phase 3 routing complete: 1 edges, 23 total segments, 0 total vias
+  Added 8 tap segments, 0 tap vias
+  #444 seam re-ask: Net-(U1-LPF1-IN) tree is 1.36x its MST bound -- re-asking whole
+
+  Re-routing Net-(U1-LPF1-IN) (net 15)...
+  Multi-point net Phase 1: routing longest MST edge (pads 1 and 2, length=15.06mm)
+  Probe: forward=5000, backward=5000 iters, trying forward with full iterations...
+  Phase 1 routed in 17490 iterations, 11 segments
+    Re-routed main path: 11 segments, 0 vias
+  Multi-point net Phase 3: routing 1 remaining MST edges (longest first)
+    [1/0] Routing MST edge: pad 1 -> pad 0 (length=6.48mm) target=(92.62, 60.00)
+      Routed in 20052 iterations (0.00s)
+  Phase 3 routing complete: 1 edges, 19 total segments, 0 total vias
+    Re-routed 8 tap segments, 0 tap vias
+  Net total time: 0.02s, 2073 iterations
+
+Net-(U1-LPF2-OUT) (net 13):
+  Multi-point net Phase 3: routing 2 remaining MST edges (longest first)
+    [3/14] Routing MST edge: pad 2 -> pad 1 (length=6.00mm) target=(99.10, 66.60)
+      Routed in 41 iterations (0.00s)
+    [4/14] Routing MST edge: pad 1 -> pad 0 (length=8.00mm) target=(92.62, 65.08)
+      Routed in 561 iterations (0.00s)
+  Phase 3 routing complete: 2 edges, 17 total segments, 0 total vias
+  Added 14 tap segments, 0 tap vias
+  Net total time: 0.01s, 739 iterations
+
+Net-(U1-LPF1-OUT) (net 14):
+  Multi-point net Phase 3: routing 1 remaining MST edges (longest first)
+    [5/14] Routing MST edge: pad 1 -> pad 0 (length=6.52mm) target=(92.62, 62.54)
+      Routed in 67094 iterations (0.01s)
+  Phase 3 routing complete: 1 edges, 15 total segments, 2 total vias
+  Added 7 tap segments, 2 tap vias
+  Net total time: 0.02s, 67240 iterations
+
+Net-(C10-Pad1) (net 21):
+  Multi-point net Phase 3: routing 1 remaining MST edges (longest first)
+    [6/14] Routing MST edge: pad 1 -> pad 0 (length=19.90mm) target=(81.50, 71.10)
+      Routed in 71441 iterations (0.01s)
+  Phase 3 routing complete: 1 edges, 28 total segments, 2 total vias
+  Added 19 tap segments, 2 tap vias
+  Net total time: 0.02s, 71592 iterations
+
+INPUT (net 16):
+  Multi-point net Phase 3: routing 1 remaining MST edges (longest first)
+    [7/14] Routing MST edge: pad 1 -> pad 0 (length=10.63mm) target=(77.40, 104.70)
+      Routed in 282 iterations (0.00s)
+  Phase 3 routing complete: 1 edges, 30 total segments, 0 total vias
+  Added 3 tap segments, 0 tap vias
+  Net total time: 0.01s, 515 iterations
+
+Net-(U1-LPF2-IN) (net 12):
+  Multi-point net Phase 3: routing 1 remaining MST edges (longest first)
+    [8/14] Routing MST edge: pad 1 -> pad 0 (length=5.00mm) target=(92.62, 67.62)
+      Routed in 2562 iterations (0.00s)
+  Phase 3 routing complete: 1 edges, 37 total segments, 2 total vias
+  Added 16 tap segments, 0 tap vias
+  #444 seam re-ask: Net-(U1-LPF2-IN) tree is 1.69x its MST bound -- re-asking whole
+
+  Re-routing Net-(U1-LPF2-IN) (net 12)...
+  Multi-point net Phase 1: routing longest MST edge (pads 1 and 2, length=18.86mm)
+  Probe: forward=5000, backward=5000 iters, trying forward with full iterations...
+  Phase 1 routed in 34602 iterations, 21 segments
+    Re-routed main path: 21 segments, 2 vias
+  Multi-point net Phase 3: routing 1 remaining MST edges (longest first)
+    [1/0] Routing MST edge: pad 1 -> pad 0 (length=5.00mm) target=(92.62, 67.62)
+      Routed in 2562 iterations (0.00s)
+  Phase 3 routing complete: 1 edges, 37 total segments, 2 total vias
+    Re-routed 16 tap segments, 0 tap vias
+  Net total time: 0.08s, 50025 iterations
+
++5V (net 1):
+  Multi-point net Phase 3: routing 2 remaining MST edges (longest first)
+    [9/14] Routing MST edge: pad 0 -> pad 3 (length=21.77mm) target=(85.00, 97.57)
+      Routed in 68233 iterations (0.10s)
+    [10/14] Routing MST edge: pad 2 -> pad 1 (length=7.00mm) target=(84.00, 54.00)
+      Routed in 61 iterations (0.00s)
+  Phase 3 routing complete: 2 edges, 44 total segments, 2 total vias
+  Added 20 tap segments, 2 tap vias
+  #444 seam re-ask: +5V tree is 1.41x its MST bound -- re-asking whole
+
+  Re-routing +5V (net 1)...
+  Multi-point net Phase 1: routing longest MST edge (pads 0 and 2, length=30.40mm)
+  Probe: forward=5000, backward=5000 iters, trying forward with full iterations...
+  Phase 1 routed in 34928 iterations, 34 segments
+    Re-routed main path: 34 segments, 0 vias
+  Multi-point net Phase 3: routing 2 remaining MST edges (longest first)
+    [1/0] Routing MST edge: pad 0 -> pad 3 (length=21.77mm) target=(85.00, 97.57)
+      Routed in 69246 iterations (0.10s)
+    [2/0] Routing MST edge: pad 2 -> pad 1 (length=7.00mm) target=(84.00, 54.00)
+      Routed in 61 iterations (0.00s)
+  Phase 3 routing complete: 2 edges, 54 total segments, 2 total vias
+    Re-routed 20 tap segments, 2 tap vias
+  #444 seam re-ask: +5V tree replaced (69.4 -> 67.3 score)
+  Net total time: 0.29s, 104174 iterations
+
+Net-(C12-Pad1) (net 17):
+  Multi-point net Phase 3: routing 2 remaining MST edges (longest first)
+    [11/14] Routing MST edge: pad 2 -> pad 3 (length=6.90mm) target=(113.26, 68.60)
+      Routed in 40 iterations (0.00s)
+    [12/14] Routing MST edge: pad 3 -> pad 1 (length=13.16mm) target=(103.70, 65.00)
+      Routed in 72 iterations (0.00s)
+  Phase 3 routing complete: 2 edges, 29 total segments, 0 total vias
+  Added 6 tap segments, 0 tap vias
+  #444 seam re-ask: Net-(C12-Pad1) tree is 1.38x its MST bound -- re-asking whole
+
+  Re-routing Net-(C12-Pad1) (net 17)...
+  Multi-point net Phase 1: routing longest MST edge (pads 0 and 2, length=27.76mm)
+  Probe: forward=5000, backward=5000 iters, trying forward with full iterations...
+  Phase 1 routed in 39545 iterations, 23 segments
+    Re-routed main path: 23 segments, 0 vias
+  Multi-point net Phase 3: routing 2 remaining MST edges (longest first)
+    [1/0] Routing MST edge: pad 2 -> pad 3 (length=6.90mm) target=(113.26, 68.60)
+      Routed in 40 iterations (0.00s)
+    [2/0] Routing MST edge: pad 3 -> pad 1 (length=13.16mm) target=(103.70, 65.00)
+      Routed in 72 iterations (0.00s)
+  Phase 3 routing complete: 2 edges, 29 total segments, 0 total vias
+    Re-routed 6 tap segments, 0 tap vias
+  Net total time: 0.03s, 45531 iterations
+
+Net-(C8-Pad2) (net 19):
+  Multi-point net Phase 3: routing 2 remaining MST edges (longest first)
+    [13/14] Routing MST edge: pad 3 -> pad 2 (length=23.10mm) target=(97.80, 58.80)
+      Routed in 160632 iterations (0.03s)
+    [14/14] Routing MST edge: pad 0 -> pad 1 (length=22.60mm) target=(89.80, 91.10)
+      Routed in 42586 iterations (0.01s)
+  Phase 3 routing complete: 2 edges, 124 total segments, 4 total vias
+  Added 107 tap segments, 3 tap vias
+  #444 seam re-ask: Net-(C8-Pad2) tree is 1.34x its MST bound -- re-asking whole
+
+  Re-routing Net-(C8-Pad2) (net 19)...
+  Multi-point net Phase 1: routing longest MST edge (pads 0 and 3, length=24.80mm)
+  Probe: forward=5000, backward=5000 iters, trying forward with full iterations...
+  Phase 1 routed in 33234 iterations, 16 segments
+    Re-routed main path: 16 segments, 2 vias
+  Multi-point net Phase 3: routing 2 remaining MST edges (longest first)
+    [1/0] Routing MST edge: pad 3 -> pad 2 (length=23.10mm) target=(97.80, 58.80)
+      Routed in 162363 iterations (0.03s)
+    [2/0] Routing MST edge: pad 0 -> pad 1 (length=22.60mm) target=(89.80, 91.10)
+      Routed in 39305 iterations (0.01s)
+  Phase 3 routing complete: 2 edges, 121 total segments, 4 total vias
+    Re-routed 105 tap segments, 2 tap vias
+  Net total time: 0.21s, 225504 iterations
+Cycle prune: removed 31 redundant loop segment(s) across 16 net(s)
+Strict collapse: removed 1 redundant segment(s) (superseded parallel/buried copper)
+Octolinear smoothing: collapsed 25 staircase span(s) on 11 net(s), -11.65 mm of copper (#536)
+
+============================================================
+Routing complete
+============================================================
+  Single-ended:  19/19 routed
+  Multi-point:   34/34 pads connected (10 nets)
+  Total vias:    14
+  Total time:    0.10s
+  Iterations:    191,161
+  Fragility refresh (#466): 10 windows, 0.17s total
+JSON_SUMMARY: {"routed_single": ["Net-(U1-OP1-OUT)", "Net-(U1-CC1)", "Net-(U1-OP2-IN)", "Net-(U1-REF)", "Net-(U1-CC0)", "Net-(U1-OP2-OUT)", "Net-(U1-LPF1-IN)", "Net-(U1-OP1-IN)", "Net-(U1-LPF2-OUT)", "Net-(U1-LPF1-OUT)", "Net-(C10-Pad1)", "OUTPUT", "INPUT", "Net-(U1-LPF2-IN)", "Net-(C7-Pad1)", "+5V", "Net-(C12-Pad1)", "Net-(C8-Pad2)", "VCO"], "failed_single": [], "open_single": [], "failed_multipoint": [], "multipoint_nets": 10, "multipoint_pads_connected": 34, "multipoint_pads_total": 34, "multipoint_edges_routed": 24, "multipoint_edges_failed": 0, "ripup_success_pairs": [], "rerouted_pairs": [], "single_ended_target_swaps": [], "layer_swaps": 0, "successful": 19, "failed": 0, "total_time": 0.1, "total_iterations": 191161, "total_vias": 14, "cleanup_disconnected": [], "min_clearance_used": 0.25, "oracle_check": "disabled", "pad_pairs_connected": 33, "pad_pairs_total": 33, "scope": "run", "env_knobs": {}}
+
+Writing output to /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-3/steps/routed.kicad_pcb...
+Successfully wrote /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-3/steps/routed.kicad_pcb
+
+Plane finalize (#562): all zone nets complete (fill-aware) -- skipping engine/cleanup legs, oracle verifies
+  KiCad-oracle recheck: deterministic exact-fill link source (pcbnew refill)
+  KiCad-oracle recheck: KiCad reports all processed nets complete
+  [finalize timing] oracle leg: 1.3s
+JSON_ORACLE: {"available": true, "rounds": 0, "links_routed": 0, "links_failed": 0, "remaining": 0, "collapsed_duplicate_links": 0, "remaining_links": [], "cross_board": 0, "removed_segments": [], "removed_vias": []}
+JSON_SUMMARY_MIN: {"failed": 0, "failed_single": [], "main_loop_time_s": 0.1, "min_clearance_used": 0.25, "multipoint_deficit": 0, "open_single": [], "pad_pairs_open": {"count": 0, "nets": []}, "routed": 19, "scope": "merged", "terminal_restores_broken": [], "vias": 14}
+  DRC settings already consistent (/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-3/steps/routed.kicad_pro)
+EXIT=0
+
+EXIT=0

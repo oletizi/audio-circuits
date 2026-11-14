@@ -1,0 +1,7 @@
+$ bun /Users/orion/work/audio-circuits-work/pt2399-core/tools/pcb/drc-cli.ts /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-adopted/final/pt2399-core.kicad_pcb /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-adopted/final/pt2399-core.kicad_sch drc --routed
+(cwd /Users/orion/work/audio-circuits-work/pt2399-core)
+
+report: /var/folders/sk/jzwspmzn1g17x97x7s7l_dch0000gn/T/pcb-drc-TDuZQG/drc.json (KiCad 10.0.5, 24 schematic components)
+{"schematicParity":0,"errorViolations":0,"warningViolations":1,"exclusionViolations":0,"requiredCheckViolations":0,"unconnectedItems":0}
+
+EXIT=0

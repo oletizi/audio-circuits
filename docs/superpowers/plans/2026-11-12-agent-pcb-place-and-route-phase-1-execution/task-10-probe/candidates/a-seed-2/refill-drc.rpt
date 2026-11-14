@@ -1,0 +1,345 @@
+** Drc report for pt2399-core.kicad_pcb **
+** Created on 2026-11-14T03:45:02 **
+** Report includes: Errors, Warnings **
+
+** Found 82 DRC violations **
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.0100 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(85.0000 mm, 60.0000 mm): Footprint U1
+    @(85.0000 mm, 81.8000 mm): Footprint C5
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 0.6100 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(85.0000 mm, 60.0000 mm): Footprint U1
+    @(92.6000 mm, 81.4000 mm): Footprint C12
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.4500 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(85.0000 mm, 60.0000 mm): Footprint U1
+    @(81.0000 mm, 76.2000 mm): Footprint C4
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.4400 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(85.0000 mm, 60.0000 mm): Footprint U1
+    @(96.6000 mm, 73.7000 mm): Footprint C13
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.8000 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(85.0000 mm, 60.0000 mm): Footprint U1
+    @(80.0000 mm, 61.5000 mm): Footprint C3
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.9900 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(85.0000 mm, 60.0000 mm): Footprint U1
+    @(83.0000 mm, 55.0000 mm): Footprint C1
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.4400 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(85.0000 mm, 60.0000 mm): Footprint U1
+    @(96.6000 mm, 66.6000 mm): Footprint C11
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.4400 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(85.0000 mm, 60.0000 mm): Footprint U1
+    @(96.6000 mm, 60.5000 mm): Footprint C6
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.4400 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(85.0000 mm, 60.0000 mm): Footprint U1
+    @(96.6000 mm, 77.8000 mm): Footprint C14
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 0.3500 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(85.0000 mm, 60.0000 mm): Footprint U1
+    @(82.1000 mm, 71.8000 mm): Footprint C9
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 0.5900 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(85.0000 mm, 60.0000 mm): Footprint U1
+    @(92.2000 mm, 56.4000 mm): Footprint R3
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.3625 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(79.3000 mm, 80.5000 mm): Footprint C2
+    @(86.7000 mm, 87.1000 mm): Footprint R4
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.4600 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(79.3000 mm, 80.5000 mm): Footprint C2
+    @(85.0000 mm, 81.8000 mm): Footprint C5
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.0625 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(79.3000 mm, 80.5000 mm): Footprint C2
+    @(81.0000 mm, 76.2000 mm): Footprint C4
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.7125 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(92.6000 mm, 81.4000 mm): Footprint C12
+    @(99.8000 mm, 83.3000 mm): Footprint C7
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.1799 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(92.6000 mm, 81.4000 mm): Footprint C12
+    @(96.6000 mm, 77.8000 mm): Footprint C14
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.4100 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(81.0000 mm, 76.2000 mm): Footprint C4
+    @(82.1000 mm, 71.8000 mm): Footprint C9
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.5130 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(99.8000 mm, 83.3000 mm): Footprint C7
+    @(97.1000 mm, 88.9000 mm): Footprint C10
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.9100 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(99.8000 mm, 83.3000 mm): Footprint C7
+    @(104.7000 mm, 75.5000 mm): Footprint R6
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.2625 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(99.8000 mm, 83.3000 mm): Footprint C7
+    @(96.6000 mm, 77.8000 mm): Footprint C14
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.7600 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(96.6000 mm, 73.7000 mm): Footprint C13
+    @(100.9000 mm, 71.4000 mm): Footprint R8
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.6100 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(96.6000 mm, 73.7000 mm): Footprint C13
+    @(96.6000 mm, 66.6000 mm): Footprint C11
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.1100 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(96.6000 mm, 73.7000 mm): Footprint C13
+    @(96.6000 mm, 77.8000 mm): Footprint C14
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.6190 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(80.0000 mm, 61.5000 mm): Footprint C3
+    @(83.0000 mm, 55.0000 mm): Footprint C1
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.5075 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(80.0000 mm, 61.5000 mm): Footprint C3
+    @(77.4000 mm, 67.9000 mm): Footprint C8
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.1100 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(90.7000 mm, 52.7000 mm): Footprint R2
+    @(90.7000 mm, 48.6000 mm): Footprint R1
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 0.7100 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(90.7000 mm, 52.7000 mm): Footprint R2
+    @(92.2000 mm, 56.4000 mm): Footprint R3
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.8100 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(100.9000 mm, 71.4000 mm): Footprint R8
+    @(96.6000 mm, 66.6000 mm): Footprint C11
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.5600 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(100.9000 mm, 71.4000 mm): Footprint R8
+    @(104.7000 mm, 75.5000 mm): Footprint R6
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.6100 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(100.9000 mm, 71.4000 mm): Footprint R8
+    @(103.2000 mm, 66.8000 mm): Footprint R7
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 0.6100 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(96.6000 mm, 66.6000 mm): Footprint C11
+    @(96.6000 mm, 60.5000 mm): Footprint C6
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.5600 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(96.6000 mm, 66.6000 mm): Footprint C11
+    @(103.2000 mm, 66.8000 mm): Footprint R7
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.5600 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(96.6000 mm, 60.5000 mm): Footprint C6
+    @(100.7000 mm, 61.6000 mm): Footprint R5
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 1.1100 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(96.6000 mm, 60.5000 mm): Footprint C6
+    @(92.2000 mm, 56.4000 mm): Footprint R3
+[courtyards_overlap]: Courtyards overlap (rule 'hand assembly courtyard clearance' clearance 2.0000 mm; actual 0.9100 mm)
+    Rule: hand assembly courtyard clearance; error
+    @(82.1000 mm, 71.8000 mm): Footprint C9
+    @(77.4000 mm, 67.9000 mm): Footprint C8
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(86.2500 mm, 79.3000 mm): Reference field of C5
+    @(86.1600 mm, 58.6700 mm): Segment of U1 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(86.1600 mm, 79.1100 mm): Segment of U1 on F.Silkscreen
+    @(86.2500 mm, 79.3000 mm): Reference field of C5
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(79.7500 mm, 78.7000 mm): Reference field of C4
+    @(81.0250 mm, 78.9452 mm): Segment of C2 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(83.0500 mm, 81.5000 mm): Reference field of C2
+    @(83.6300 mm, 83.1700 mm): Segment of C5 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(95.1000 mm, 82.6500 mm): Reference field of C12
+    @(93.9700 mm, 80.0300 mm): Segment of C12 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(95.2300 mm, 75.0700 mm): Segment of C13 on F.Silkscreen
+    @(94.1000 mm, 72.4500 mm): Reference field of C13
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(97.8500 mm, 75.3000 mm): Reference field of C14
+    @(97.9700 mm, 69.8300 mm): Segment of C13 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(97.8500 mm, 75.3000 mm): Reference field of C14
+    @(97.9700 mm, 75.0700 mm): Segment of C13 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(77.1300 mm, 74.8300 mm): Segment of C4 on F.Silkscreen
+    @(80.8500 mm, 74.3000 mm): Reference field of C9
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(79.7500 mm, 78.7000 mm): Reference field of C4
+    @(79.3000 mm, 81.5000 mm): Circle of C2 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(95.1000 mm, 82.6500 mm): Reference field of C12
+    @(96.2700 mm, 82.2600 mm): Segment of C7 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(95.1000 mm, 82.6500 mm): Reference field of C12
+    @(96.2300 mm, 84.4770 mm): Segment of C7 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(95.1000 mm, 82.6500 mm): Reference field of C12
+    @(98.5500 mm, 83.3000 mm): Circle of C7 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(95.1000 mm, 82.6500 mm): Reference field of C12
+    @(96.1900 mm, 84.3980 mm): Segment of C7 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(95.1000 mm, 82.6500 mm): Reference field of C12
+    @(96.3900 mm, 82.2600 mm): Segment of C7 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(95.1000 mm, 82.6500 mm): Reference field of C12
+    @(96.3500 mm, 82.2600 mm): Segment of C7 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(95.1000 mm, 82.6500 mm): Reference field of C12
+    @(96.3100 mm, 82.2600 mm): Segment of C7 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(95.1000 mm, 82.6500 mm): Reference field of C12
+    @(96.4300 mm, 82.2600 mm): Segment of C7 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(95.1000 mm, 82.6500 mm): Reference field of C12
+    @(96.4700 mm, 82.2600 mm): Segment of C7 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(95.1000 mm, 82.6500 mm): Reference field of C12
+    @(95.9900 mm, 83.8170 mm): Segment of C7 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(95.1000 mm, 82.6500 mm): Reference field of C12
+    @(96.1500 mm, 84.3110 mm): Segment of C7 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(95.1000 mm, 82.6500 mm): Reference field of C12
+    @(96.1100 mm, 84.2140 mm): Segment of C7 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(95.1000 mm, 82.6500 mm): Reference field of C12
+    @(96.0700 mm, 84.1050 mm): Segment of C7 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(95.1000 mm, 82.6500 mm): Reference field of C12
+    @(96.0300 mm, 83.9770 mm): Segment of C7 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(95.1000 mm, 82.6500 mm): Reference field of C12
+    @(95.9500 mm, 83.5830 mm): Segment of C7 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(98.5500 mm, 87.0500 mm): Reference field of C7
+    @(98.8250 mm, 87.5952 mm): Segment of C10 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(78.7500 mm, 65.9000 mm): Reference field of C3
+    @(78.6500 mm, 65.4000 mm): Reference field of C8
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(92.5100 mm, 47.2300 mm): Rectangle of R1 on F.Silkscreen
+    @(95.7800 mm, 50.3300 mm): Reference field of R2
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(92.5100 mm, 51.3300 mm): Rectangle of R2 on F.Silkscreen
+    @(97.2800 mm, 54.0300 mm): Reference field of R3
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(97.9700 mm, 59.1300 mm): Segment of C6 on F.Silkscreen
+    @(97.8500 mm, 64.1000 mm): Reference field of C11
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(97.9700 mm, 64.3700 mm): Segment of C6 on F.Silkscreen
+    @(97.8500 mm, 64.1000 mm): Reference field of C11
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(99.6550 mm, 90.5100 mm): Segment of C10 on F.Silkscreen
+    @(100.8500 mm, 90.1500 mm): Reference field of C10
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(100.8500 mm, 90.1500 mm): Reference field of C10
+    @(99.6490 mm, 90.5500 mm): Segment of C10 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(100.8500 mm, 90.1500 mm): Reference field of C10
+    @(99.6690 mm, 90.3900 mm): Segment of C10 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(99.6650 mm, 90.4300 mm): Segment of C10 on F.Silkscreen
+    @(100.8500 mm, 90.1500 mm): Reference field of C10
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(99.6600 mm, 90.4700 mm): Segment of C10 on F.Silkscreen
+    @(100.8500 mm, 90.1500 mm): Reference field of C10
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(100.8500 mm, 90.1500 mm): Reference field of C10
+    @(99.6430 mm, 90.5900 mm): Segment of C10 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(99.6720 mm, 90.3500 mm): Segment of C10 on F.Silkscreen
+    @(100.8500 mm, 90.1500 mm): Reference field of C10
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(97.1000 mm, 90.1500 mm): Circle of C10 on F.Silkscreen
+    @(100.8500 mm, 90.1500 mm): Reference field of C10
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(100.8500 mm, 90.1500 mm): Reference field of C10
+    @(99.6770 mm, 90.2700 mm): Segment of C10 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(100.8500 mm, 90.1500 mm): Reference field of C10
+    @(99.6750 mm, 90.3100 mm): Segment of C10 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(99.6800 mm, 90.1500 mm): Segment of C10 on F.Silkscreen
+    @(100.8500 mm, 90.1500 mm): Reference field of C10
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(99.6800 mm, 90.1900 mm): Segment of C10 on F.Silkscreen
+    @(100.8500 mm, 90.1500 mm): Reference field of C10
+[silk_overlap]: Silkscreen clearance
+    Rule: board setup constraints silk; warning
+    @(99.6790 mm, 90.2300 mm): Segment of C10 on F.Silkscreen
+    @(100.8500 mm, 90.1500 mm): Reference field of C10
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(94.1000 mm, 72.4500 mm): Reference field of C13
+    @(92.6200 mm, 72.7000 mm): PTH pad 11 [Net-(U1-OP2-IN)] of U1
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(97.8500 mm, 64.1000 mm): Reference field of C11
+    @(96.6000 mm, 63.0000 mm): PTH pad 2 [Net-(U1-LPF1-OUT)] of C6
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(99.1000 mm, 61.7500 mm): Reference field of C6
+    @(100.7000 mm, 61.6000 mm): PTH pad 1 [Net-(C10-Pad1)] of R5
+
+** Found 0 unconnected pads **
+
+** Found 0 Footprint errors **
+
+** Ignored checks **
+    - Track endpoint not centered on via
+    - Tuning profile track geometries
+    - Footprint doesn't match symbol's footprint filters
+    - Footprint component type doesn't match footprint pads
+
+** End of Report **

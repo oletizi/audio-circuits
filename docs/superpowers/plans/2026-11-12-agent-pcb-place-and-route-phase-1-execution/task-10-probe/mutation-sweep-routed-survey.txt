@@ -1,0 +1,22 @@
+rotation: drop the double modulo, leaving a negative angle negative                     killed       14 pass /  2 fail
+rotation: shift the window, so 0 and 360 differ                                         killed       15 pass /  1 fail
+belowFloor: report copper exactly AT the floor as below it                              killed       14 pass /  2 fail
+belowFloor: drop the no-figure guard, so an absent figure coerces to 0                  killed       15 pass /  1 fail
+belowFloor: drop the no-floor guard                                                     SURVIVED     16 pass /  0 fail
+movedParts: compare only x, not y                                                       killed       15 pass /  1 fail
+movedParts: compare rotation raw, not normalised                                        killed       15 pass /  1 fail
+movedParts: stop reporting a part the candidate does not have                           killed       15 pass /  1 fail
+movedParts: stop consuming the matched ref, so every match also reads as an extra part  killed       12 pass /  4 fail
+movedParts: stop comparing the layer                                                    killed       15 pass /  1 fail
+copperGeometry: count segments only, not arcs                                           killed       15 pass /  1 fail
+copperGeometry: take the WIDEST width per layer as the narrowest                        killed       15 pass /  1 fail
+copperGeometry: take the first layer's narrowest as the board's, not the minimum        killed       15 pass /  1 fail
+copperGeometry: key vias by drill/diameter instead of diameter/drill                    killed       15 pass /  1 fail
+copperGeometry: track the widest via rather than the narrowest                          killed       15 pass /  1 fail
+partPoses: default an absent rotation to 90 rather than 0                               killed       15 pass /  1 fail
+readFabFloor: stop stripping trailing comments                                          killed       11 pass /  5 fail
+readFabFloor: accept a line that is not a key-value pair                                killed       15 pass /  1 fail
+readFabFloor: accept a floor file that declares nothing                                 killed       15 pass /  1 fail
+
+19 mutation(s), 18 killed, 1 not killed
+  SURVIVED: belowFloor: drop the no-floor guard

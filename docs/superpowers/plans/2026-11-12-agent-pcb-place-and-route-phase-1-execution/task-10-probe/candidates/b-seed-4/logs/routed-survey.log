@@ -1,0 +1,39 @@
+$ bun /Users/orion/work/audio-circuits-work/pt2399-core/tools/pcb/routed-survey.ts /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-4/final/pt2399-core.kicad_pcb --floor /Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/route-fab-floor.txt --against /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-4/gen/seeded.kicad_pcb --json
+(cwd /Users/orion/work/audio-circuits-work/pt2399-core)
+
+{
+  "board": "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-4/final/pt2399-core.kicad_pcb",
+  "tracks_by_layer": {
+    "F.Cu": {
+      "segments": 163,
+      "narrowest_mm": 0.3,
+      "by_width_mm": {
+        "0.5": 8,
+        "0.3": 155
+      }
+    },
+    "B.Cu": {
+      "segments": 25,
+      "narrowest_mm": 0.3,
+      "by_width_mm": {
+        "0.5": 3,
+        "0.3": 22
+      }
+    }
+  },
+  "narrowest_track_mm": 0.3,
+  "vias": {
+    "count": 18,
+    "narrowest_diameter_mm": 0.8,
+    "narrowest_drill_mm": 0.4,
+    "by_size_mm": {
+      "0.8/0.4": 18
+    }
+  },
+  "floor_file": "/Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/route-fab-floor.txt",
+  "below_floor": [],
+  "compared_against": "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-4/gen/seeded.kicad_pcb",
+  "moved_parts": []
+}
+
+EXIT=0

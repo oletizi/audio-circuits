@@ -1,0 +1,9 @@
+$ bun /Users/orion/work/audio-circuits-work/pt2399-core/tools/pcb/drc-cli.ts /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/final/pt2399-core.kicad_pcb /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-a-seed-2/final/pt2399-core.kicad_sch drc --routed
+(cwd /Users/orion/work/audio-circuits-work/pt2399-core)
+
+report: /var/folders/sk/jzwspmzn1g17x97x7s7l_dch0000gn/T/pcb-drc-SOMHlK/drc.json (KiCad 10.0.5, 24 schematic components)
+{"schematicParity":0,"errorViolations":35,"warningViolations":47,"exclusionViolations":0,"requiredCheckViolations":35,"unconnectedItems":0}
+  FAIL: 35 DRC violation(s) at error severity
+  FAIL: 35 violation(s) of a gate-critical check, which fail at ANY severity: courtyards_overlap (error). items_not_allowed, courtyards_overlap and missing_courtyard are what the hardware-envelope gate is built on, so a warning-severity one of these is the vacuous pass REQUIRED_ACTIVE_CHECKS exists to prevent - not a finding to note and route past.
+
+EXIT=1

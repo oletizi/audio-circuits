@@ -1,0 +1,9 @@
+$ /Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli pcb drc --refill-zones --save-board --output /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-1/final/refill-drc.rpt /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-1/final/pt2399-core.kicad_pcb
+(cwd /Users/orion/work/audio-circuits-work/pt2399-core)
+
+Found 1 violations
+Found 0 unconnected items
+Saved DRC Report to /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-1/final/refill-drc.rpt
+Saved board
+
+EXIT=0

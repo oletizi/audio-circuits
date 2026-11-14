@@ -1,0 +1,16 @@
+$ /Users/orion/work/audio-circuits-work/pt2399-core/.tools/krt/.venv/bin/python py_router/check_connected.py /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-1/final/pt2399-core.kicad_pcb
+(cwd /Users/orion/work/audio-circuits-work/pt2399-core/.tools/krt)
+
+CMD: Python py_router/check_connected.py /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-1/final/pt2399-core.kicad_pcb
+ENV KNOBS: none
+Loading /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-1/final/pt2399-core.kicad_pcb...
+Found 129 segments, 9 vias, 69 pads, 1 zones
+Checking 19 routed nets
+  KiCad refill cross-check: ran, 0 KiCad link(s), agrees with copper grading
+
+============================================================
+ALL NETS FULLY CONNECTED!
+============================================================
+EXIT=0
+
+EXIT=0

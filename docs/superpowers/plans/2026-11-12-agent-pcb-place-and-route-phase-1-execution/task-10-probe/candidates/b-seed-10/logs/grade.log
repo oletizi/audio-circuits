@@ -1,0 +1,20 @@
+$ bun /Users/orion/work/audio-circuits-work/pt2399-core/tools/pcb/grade-cli.ts /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-10/gen/seeded.kicad_pcb /Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/floorplan-intent.json /Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/placement-rules.json /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-10/grade
+(cwd /Users/orion/work/audio-circuits-work/pt2399-core)
+
+CMD: Python py_tools/check_floorplan.py /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-10/gen/seeded.kicad_pcb --intent /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-10/grade/resolved-intent.json --require-rules 1
+ENV KNOBS: none
+grading at clearance 0.25 (board netclass), edge 0.5 (board constraint)
+Floorplan: seeded.kicad_pcb vs resolved-intent.json
+  28 footprints, 9 block(s), 24 part(s) covered
+  outline: 0 ring(s), 0 cutout(s), 0 milled contour(s)
+  1 error(s), 0 warning(s) from 6 rule(s)
+    [ERROR] decap_distance: C1 is 11.43mm from U1, the IC it decouples (limit 10.00mm)
+  3 rule(s) did not run:
+    - envelope: the intent declares no envelope.rect
+    - zone_exclusive: no block is marked exclusive
+    - zone_side: no block declares a side
+JSON_SUMMARY: {"blocks": 9, "blocks_resolved": 9, "board": "seeded.kicad_pcb", "budget_abstained": 0, "budget_abstained_keys": [], "clearance_used": {"source": "board netclass", "value": 0.25}, "cutouts": 0, "edge_clearance_used": {"source": "board constraint", "value": 0.5}, "edge_contours": 0, "errors": 1, "hole_shortfall": 0.0, "hpwl": 581.561, "intent": "resolved-intent.json", "locked_contact_pairs": 0, "oob_amount": 0.0, "oob_area": 0.0, "oob_count": 0, "overlap_area": 0.0, "pad_conflict_pairs": 0, "pad_intersection_pairs": 0, "pad_overlap_pairs": 0, "pad_shortfall": 0.0, "parts_covered": 24, "parts_total": 28, "pass": false, "rules_run": 6, "rules_skipped": 3, "state_duplicate_fraction": 0.0, "state_has_copper": false, "state_outside_fraction": 0.0, "state_partially_unplaced": false, "state_spread_ratio": 0.9385, "state_unplaced": false, "violations": 1, "violations_by_rule": {"decap_distance": 1}, "warnings": 0}
+EXIT=4
+check_floorplan exit 4: graded successfully, error-severity violations found
+
+EXIT=4

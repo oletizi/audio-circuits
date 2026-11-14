@@ -1,0 +1,280 @@
+$ bun /Users/orion/work/audio-circuits-work/pt2399-core/tools/pcb/pour-cli.ts /Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-adopted/final/pt2399-core.kicad_pcb --json
+(cwd /Users/orion/work/audio-circuits-work/pt2399-core)
+
+{
+  "resolution_mm": 0.05,
+  "noise_floor_mm": 0.1,
+  "regions_by_layer": {
+    "B.Cu": 1
+  },
+  "narrowest_bridge_mm": {
+    "unavailable": "every pour layer is one connected piece of fill, so there are no separate regions to bridge."
+  },
+  "region_joins": [],
+  "via_links": [],
+  "narrowest_neck_mm": 2.85,
+  "neck_by_layer": {
+    "B.Cu": 2.85
+  },
+  "continuity_around_ic": {
+    "measured": {
+      "B.Cu": {
+        "band_mm": {
+          "from_mm": 0,
+          "to_mm": 3,
+          "step_mm": 0.25
+        },
+        "least_uncovered": {
+          "offset_mm": 0.5,
+          "covered_fraction": 1,
+          "uncovered_mm": 0,
+          "breaks_mm": [],
+          "fill_pieces_touched": 1,
+          "connected_groups_touched": 1
+        },
+        "profile": [
+          {
+            "offset_mm": 0,
+            "covered_fraction": 0.5550699300699301,
+            "uncovered_mm": 25.43759135662957,
+            "breaks_mm": [
+              3.548269128331432,
+              1.399317402722255,
+              1.399317402722255,
+              1.399317402722255,
+              1.399317402722255,
+              1.399317402722255,
+              1.399317402722255,
+              1.34934178119646,
+              1.34934178119646,
+              1.34934178119646,
+              1.34934178119646,
+              1.34934178119646,
+              1.34934178119646,
+              1.34934178119646,
+              1.34934178119646,
+              1.34934178119646,
+              1.34934178119646
+            ],
+            "fill_pieces_touched": 1,
+            "connected_groups_touched": 1
+          },
+          {
+            "offset_mm": 0.25,
+            "covered_fraction": 0.9003378378378378,
+            "uncovered_mm": 5.897220524501768,
+            "breaks_mm": [
+              1.2494111280724085,
+              1.2494111280724085,
+              0.2498822256144817,
+              0.2498822256144817,
+              0.2498822256144817,
+              0.2498822256144817,
+              0.19990578049158536,
+              0.19990578049158536,
+              0.19990578049158536,
+              0.19990578049158536,
+              0.19990578049158536,
+              0.19990578049158536,
+              0.19990578049158536,
+              0.19990578049158536,
+              0.19990578049158536,
+              0.19990578049158536,
+              0.19990578049158536,
+              0.19990578049158536
+            ],
+            "fill_pieces_touched": 1,
+            "connected_groups_touched": 1
+          },
+          {
+            "offset_mm": 0.5,
+            "covered_fraction": 1,
+            "uncovered_mm": 0,
+            "breaks_mm": [],
+            "fill_pieces_touched": 1,
+            "connected_groups_touched": 1
+          },
+          {
+            "offset_mm": 0.75,
+            "covered_fraction": 1,
+            "uncovered_mm": 0,
+            "breaks_mm": [],
+            "fill_pieces_touched": 1,
+            "connected_groups_touched": 1
+          },
+          {
+            "offset_mm": 1,
+            "covered_fraction": 1,
+            "uncovered_mm": 0,
+            "breaks_mm": [],
+            "fill_pieces_touched": 1,
+            "connected_groups_touched": 1
+          },
+          {
+            "offset_mm": 1.25,
+            "covered_fraction": 1,
+            "uncovered_mm": 0,
+            "breaks_mm": [],
+            "fill_pieces_touched": 1,
+            "connected_groups_touched": 1
+          },
+          {
+            "offset_mm": 1.5,
+            "covered_fraction": 1,
+            "uncovered_mm": 0,
+            "breaks_mm": [],
+            "fill_pieces_touched": 1,
+            "connected_groups_touched": 1
+          },
+          {
+            "offset_mm": 1.75,
+            "covered_fraction": 1,
+            "uncovered_mm": 0,
+            "breaks_mm": [],
+            "fill_pieces_touched": 1,
+            "connected_groups_touched": 1
+          },
+          {
+            "offset_mm": 2,
+            "covered_fraction": 1,
+            "uncovered_mm": 0,
+            "breaks_mm": [],
+            "fill_pieces_touched": 1,
+            "connected_groups_touched": 1
+          },
+          {
+            "offset_mm": 2.25,
+            "covered_fraction": 1,
+            "uncovered_mm": 0,
+            "breaks_mm": [],
+            "fill_pieces_touched": 1,
+            "connected_groups_touched": 1
+          },
+          {
+            "offset_mm": 2.5,
+            "covered_fraction": 1,
+            "uncovered_mm": 0,
+            "breaks_mm": [],
+            "fill_pieces_touched": 1,
+            "connected_groups_touched": 1
+          },
+          {
+            "offset_mm": 2.75,
+            "covered_fraction": 1,
+            "uncovered_mm": 0,
+            "breaks_mm": [],
+            "fill_pieces_touched": 1,
+            "connected_groups_touched": 1
+          },
+          {
+            "offset_mm": 3,
+            "covered_fraction": 1,
+            "uncovered_mm": 0,
+            "breaks_mm": [],
+            "fill_pieces_touched": 1,
+            "connected_groups_touched": 1
+          }
+        ]
+      }
+    }
+  },
+  "spokes_by_ground_pad": {
+    "measured": {
+      "U1-3": {
+        "B.Cu": {
+          "spokes": 0,
+          "covered_fraction": 1,
+          "declared_connection": "yes"
+        }
+      },
+      "U1-4": {
+        "B.Cu": {
+          "spokes": 0,
+          "covered_fraction": 1,
+          "declared_connection": "yes"
+        }
+      },
+      "C2-2": {
+        "B.Cu": {
+          "spokes": 0,
+          "covered_fraction": 1,
+          "declared_connection": "yes"
+        }
+      },
+      "R4-2": {
+        "B.Cu": {
+          "spokes": 0,
+          "covered_fraction": 1,
+          "declared_connection": "yes"
+        }
+      },
+      "C5-2": {
+        "B.Cu": {
+          "spokes": 0,
+          "covered_fraction": 1,
+          "declared_connection": "yes"
+        }
+      },
+      "C12-2": {
+        "B.Cu": {
+          "spokes": 0,
+          "covered_fraction": 1,
+          "declared_connection": "yes"
+        }
+      },
+      "C4-2": {
+        "B.Cu": {
+          "spokes": 0,
+          "covered_fraction": 1,
+          "declared_connection": "yes"
+        }
+      },
+      "C3-2": {
+        "B.Cu": {
+          "spokes": 0,
+          "covered_fraction": 1,
+          "declared_connection": "yes"
+        }
+      },
+      "J1-2": {
+        "B.Cu": {
+          "spokes": 0,
+          "covered_fraction": 1,
+          "declared_connection": "yes"
+        }
+      },
+      "C1-2": {
+        "B.Cu": {
+          "spokes": 0,
+          "covered_fraction": 1,
+          "declared_connection": "yes"
+        }
+      },
+      "C9-2": {
+        "B.Cu": {
+          "spokes": 0,
+          "covered_fraction": 1,
+          "declared_connection": "yes"
+        }
+      },
+      "C8-1": {
+        "B.Cu": {
+          "spokes": 0,
+          "covered_fraction": 1,
+          "declared_connection": "yes"
+        }
+      }
+    }
+  },
+  "bypass_return": {
+    "measured": {
+      "overall": "pour",
+      "by_cap": {
+        "C2": "pour",
+        "C1": "pour"
+      }
+    }
+  }
+}
+
+EXIT=0

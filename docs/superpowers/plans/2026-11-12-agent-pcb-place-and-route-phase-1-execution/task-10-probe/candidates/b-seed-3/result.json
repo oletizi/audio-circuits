@@ -1,0 +1,97 @@
+{
+  "candidate": "b-seed-3",
+  "started": "2026-11-14T03:46:37",
+  "checks": {
+    "grade_exit": 4
+  },
+  "board_failures": [
+    "the placement does not satisfy the approved intent: grade-cli exited 4 (see the grade log for which rule)"
+  ],
+  "policy_findings": [],
+  "placement_source": "place_seed arm b seed 3 from b926f69",
+  "place_seed_exit": 4,
+  "steps": [
+    {
+      "name": "outline",
+      "argv": [
+        "bun",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/tools/pcb/board-outline.ts",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-3/gen/pt2399-core.kicad_pcb",
+        "--write-declared",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/floorplan-intent.json",
+        "10",
+        "10",
+        "7a110000-0000-4000-8000-00000000ed9e"
+      ],
+      "cwd": "/Users/orion/work/audio-circuits-work/pt2399-core",
+      "log": "cand-b-seed-3/logs/outline.log",
+      "exit": 0
+    },
+    {
+      "name": "mounting-holes",
+      "argv": [
+        "bun",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/tools/pcb/place-mounting-holes.ts",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-3/gen/pt2399-core.kicad_pcb",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/placement-rules.json",
+        "--write"
+      ],
+      "cwd": "/Users/orion/work/audio-circuits-work/pt2399-core",
+      "log": "cand-b-seed-3/logs/mounting-holes.log",
+      "exit": 0
+    },
+    {
+      "name": "resolve-intent",
+      "argv": [
+        "bun",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/tools/pcb/resolved-intent.ts",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-3/gen/pt2399-core.kicad_pcb",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/floorplan-intent.json",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-3/gen/resolved-intent.json",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/placement-rules.json"
+      ],
+      "cwd": "/Users/orion/work/audio-circuits-work/pt2399-core",
+      "log": "cand-b-seed-3/logs/resolve-intent.log",
+      "exit": 0
+    },
+    {
+      "name": "place-seed",
+      "argv": [
+        "/Users/orion/work/audio-circuits-work/pt2399-core/.tools/krt/.venv/bin/python",
+        "py_placer/place_seed.py",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-3/gen/pt2399-core.kicad_pcb",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-3/gen/seeded.kicad_pcb",
+        "--intent",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-3/gen/resolved-intent.json",
+        "--force",
+        "--seed",
+        "3",
+        "--clearance",
+        "2.0"
+      ],
+      "cwd": "/Users/orion/work/audio-circuits-work/pt2399-core/.tools/krt",
+      "log": "cand-b-seed-3/logs/place-seed.log",
+      "exit": 4
+    },
+    {
+      "name": "grade",
+      "argv": [
+        "bun",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/tools/pcb/grade-cli.ts",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-3/gen/seeded.kicad_pcb",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/floorplan-intent.json",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/circuits/pt2399-core/placement-rules.json",
+        "/Users/orion/work/audio-circuits-work/pt2399-core/build/pcb/task-10/run2/cand-b-seed-3/grade"
+      ],
+      "cwd": "/Users/orion/work/audio-circuits-work/pt2399-core",
+      "log": "cand-b-seed-3/logs/grade.log",
+      "exit": 4
+    }
+  ],
+  "failures": [
+    "the placement does not satisfy the approved intent: grade-cli exited 4 (see the grade log for which rule)"
+  ],
+  "board_passed": false,
+  "passed": false,
+  "finished": "2026-11-14T03:46:38"
+}
