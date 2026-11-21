@@ -66,12 +66,25 @@ const FIXTURE_SHA256 = "493c8ffff6512d05c3c2ea1232ed542e45b8e9886e6d4a1401962374
  * KEY. MEASURED, by taking the difference against the populated board on
  * 2026-11-13 - not reasoned about and not a pattern.
  *
- * All of them are values KiCad previously left implicit and wrote out when
+ * Most of them are values KiCad previously left implicit and wrote out when
  * `pcbnew` loaded and saved the board; `tools/pcb/update-from-schematic.ts`'s R8
  * comment names that growth as expected. VALUES are not pinned for these,
  * because a plot parameter changing is not drift in the configuration the update
  * tests depend on; what is pinned is that no NEW kind of setup entry appears
  * without somebody adding it here.
+ *
+ * **THE `stackup/*` KEYS ARRIVED DIFFERENTLY AND ARE WORTH TELLING APART.** They
+ * are not implicit defaults being written out: they are a PHYSICAL STACKUP the
+ * owner set in Board Setup before exporting the fabrication package on
+ * 2026-11-21 - FR4, a 1.51 mm core, 0.035 mm copper, and the silk, mask and
+ * paste layers named - which is a thing a person decides and a fab house
+ * quotes against. They are listed here, by key and not by value, for the reason
+ * the whole list exists: the fixture is the board's configuration BEFORE
+ * population, and a stackup is not part of what the update tool is tested on.
+ * **What this file must not become is the place a real fabrication decision
+ * goes to be recorded** - if the stackup needs to bind something, it binds in
+ * `tools/pcb/fab-standard.ts` against `docs/standards/pcbway-fab-rules.md`,
+ * where the rest of this board's vendor-facing figures are checked.
  */
 const EXPECTED_SETUP_ADDITIONS: readonly string[] = [
   "capping",
@@ -112,6 +125,13 @@ const EXPECTED_SETUP_ADDITIONS: readonly string[] = [
   "pcbplotparams/usegerberextensions",
   "plugging/back",
   "plugging/front",
+  "stackup/copper_finish",
+  "stackup/dielectric_constraints",
+  "stackup/layer/epsilon_r",
+  "stackup/layer/loss_tangent",
+  "stackup/layer/material",
+  "stackup/layer/thickness",
+  "stackup/layer/type",
   "tenting/back",
   "tenting/front",
 ]
