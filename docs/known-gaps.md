@@ -4687,3 +4687,54 @@ SHAPE rather than its IDENTITY, so an all-non-plated heatsink or DIN-rail
 adapter was removed just as silently - which is a second argument for not
 naming defect states here: the sentence would have been wrong, then right
 again, then wrong.)
+
+### G315 - OWNER DECLINATION, 2026-11-21: he removed the `courtyard_clearance` rule from the board he hand-laid, so the judgement **G314** delegated to a DRC rule is one he makes himself when the layout is his
+
+**His words, verbatim:**
+
+> *"I removed the courtyard rule because I don't need it for hand layout. I can
+> make those judgements myself."*
+
+Said after he adopted the routed candidate on 2026-11-17 to edit by hand -
+*"some of the layout choices are a little odd, so I want to start with one of
+them and make manual edits"* - and after the board he hand-laid went to PCBWay
+for fabrication.
+
+**WHAT THIS WITHDRAWS, AND WHAT IT LEAVES STANDING.** **G314** is the directive -
+he assembles these boards by hand, so parts need room between them - and it is
+NOT withdrawn. What he removed is one of the two mechanisms
+`circuits/pt2399-core/placement-rules.json` `separation.part_to_part.enforced_by`
+names at that one figure: the KiCad `(constraint courtyard_clearance (min 2mm))`
+custom design rule, on a board he placed himself. The figure stays in the
+approved rules and the PLACER is still held to it, which is the case the
+directive was recorded for - **an agent cannot see whether two parts leave room
+for fingers, and he can.** The claim to retire is not the spacing; it is the
+assumption that the shipped board's spacing needs checking independently of the
+person who placed it when that person is the one who will solder it.
+
+**THE TOOLING HAD IT THE OTHER WAY ROUND, AND THAT IS THE DEFECT HIS SENTENCE
+EXPOSED.** `tools/pcb/courtyard-rule.ts` verifies the `.kicad_dru` beside the
+BOARD, and `make/pcb.mk` made that verification a prerequisite of
+`parity-pt2399-core`, `drc-pt2399-core` and `drc-unrouted-pt2399-core`. So
+emptying that file did not loosen a check: it stopped three unrelated checks
+from running at all, each exiting non-zero while naming a drift the owner had
+authored. The mechanism was built to catch an agent or a tool quietly loosening
+the rule - a real failure, and the one `./fab-standard.ts` exists to catch in
+the `.kicad_pro` - and it could not tell that case from the owner withdrawing
+his own criterion. The dividing line it needed is the one
+`tests/pcb/placed-board.ts` already states for the board file itself: a check on
+the TOOLING takes the committed agent-produced placement, and a check on the
+DELIVERABLE takes his live board. The 2 mm rule is a check on the tooling.
+
+**WHAT IS OPEN, AND IS HIS.** `circuits/pt2399-core/floorplan-intent.json`
+`envelope.size_mm` is 150 x 100 mm, from his *"increase the board size to 150mm
+x 100mm"*. The board he sent to fabrication is a 45 x 100 mm rectangle, so
+`make grade-pt2399-core` refuses to resolve the intent rather than grading
+against a rectangle the intent does not declare - correctly, because every zone
+in that file is a fraction OF the outline, and resolving against a different
+rectangle would silently move the criteria. **Whether the floorplan criteria
+apply at all to a board he laid out himself is his call and not an agent's**, so
+that file is untouched and the grade target is left refusing rather than quietly
+repointed. What would settle it: a ruling from him, either that the declared
+envelope now follows his hand layout, or that grading is for agent-produced
+placements only.
