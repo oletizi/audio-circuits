@@ -16,7 +16,7 @@ PT2399_INTENT := $(PCB_REPO_ROOT)/circuits/pt2399-core/floorplan-intent.json
 PT2399_RULES := $(PCB_REPO_ROOT)/circuits/pt2399-core/placement-rules.json
 
 .PHONY: parity-pt2399-core drc-pt2399-core drc-unrouted-pt2399-core update-pt2399-core
-.PHONY: courtyard-rule-pt2399-core geometry-pt2399-core resolve-pt2399-core grade-pt2399-core
+.PHONY: geometry-pt2399-core resolve-pt2399-core grade-pt2399-core
 
 # The headless Tools > Update PCB from Schematic (tools/pcb/update-from-schematic.ts):
 # puts every schematic component on the board, with its fields, its schematic
@@ -41,36 +41,48 @@ PT2399_RULES := $(PCB_REPO_ROOT)/circuits/pt2399-core/placement-rules.json
 update-pt2399-core:
 	@bun "$(PCB_REPO_ROOT)/tools/pcb/update-cli.ts" "$(PT2399_BOARD)" "$(PT2399_SCH)"
 
-# THE CUSTOM DESIGN RULE FILE IS A PREREQUISITE OF EVERY DRC TARGET, AND THAT
-# IS THE POINT. The owner's hand-assembly spacing - "Use 2mm min spacing", with
-# "remember that I have fingers... I'm not a pick and place machine" behind it -
-# is enforced by two mechanisms at one number: the placer's --clearance while a
-# placement is made, and a KiCad `(constraint courtyard_clearance (min 2mm))` so
-# the shipped board is checkable independently of the placer that produced it.
-# That second mechanism is a hand-editable .kicad_dru that nothing else here
-# reads: tools/pcb/fab-standard.ts checks the .kicad_pro and says in its own
-# header what it does not cover. Deleted, renamed or quietly loosened, the file
-# would leave a DRC run passing with the spacing unchecked - so the check runs
-# BEFORE the DRC rather than beside it, and a drift refuses instead of being
-# reported after a clean-looking result.
+# THERE IS NO CUSTOM-DESIGN-RULE PREREQUISITE ON THESE TARGETS, AND THE OWNER
+# IS WHY. Until 2026-11-21 all three depended on a `courtyard-rule-pt2399-core`
+# target that refused unless $(PT2399_BOARD)'s .kicad_dru was exactly what
+# $(PT2399_RULES)'s 2 mm figure generates. He emptied that file on the board he
+# hand-laid and sent to fabrication:
 #
-# THIS GATES ONE BOARD, BY THIS PREREQUISITE AND NOTHING ELSE. A second board
-# that gains a .kicad_dru gets no check until someone adds the same
-# prerequisite for it; the generic mechanism is deliberately not built, since
-# there is no second board. tools/pcb/fab-standard.ts's header carries the
-# whole limitation, in the file a second board's author would read.
-courtyard-rule-pt2399-core:
-	@bun "$(PCB_REPO_ROOT)/tools/pcb/courtyard-rule.ts" "$(PT2399_BOARD)" "$(PT2399_RULES)"
-
-parity-pt2399-core: courtyard-rule-pt2399-core
+#     "I removed the courtyard rule because I don't need it for hand layout.
+#      I can make those judgements myself."
+#
+# docs/known-gaps.md G315 records the declination, and what it does and does not
+# withdraw from G314's directive. The FIGURE is untouched and still binds the
+# placer; what he withdrew is the KiCad rule on a board he placed himself.
+#
+# SO THE PREREQUISITE WAS NOT A LOOSENED CHECK - IT WAS THREE CHECKS THAT
+# STOPPED RUNNING. Emptying the .kicad_dru made `make parity-pt2399-core`,
+# `make drc-pt2399-core` and `make drc-unrouted-pt2399-core` all exit non-zero
+# before reaching KiCad, naming a drift he had authored. The gate was built to
+# catch an agent or a tool quietly loosening the rule, which is a real failure
+# and the one tools/pcb/fab-standard.ts exists to catch in the .kicad_pro, and
+# it could not tell that case from the owner withdrawing his own criterion.
+#
+# WHERE THE 2 mm RULE IS CHECKED NOW, since removing a gate without saying what
+# replaced it is how a skipped check comes to look like a passing one:
+# tests/pcb/courtyard-rule.test.ts, against the COMMITTED PLACEMENT FIXTURE at
+# tests/fixtures/pcb/pt2399-core-placed/ rather than against his live board.
+# That is the dividing line tests/pcb/placed-board.ts states - a check on the
+# TOOLING takes a fixture, a check on the DELIVERABLE takes his file - and the
+# 2 mm rule is a check on the tooling, because it exists for a placement no
+# person looked at. The target itself is DELETED rather than left as a stub
+# that always fails; tools/pcb/courtyard-rule.ts still generates and verifies a
+# .kicad_dru for a board that declares one, and is run by hand:
+#
+#     bun tools/pcb/courtyard-rule.ts <board.kicad_pcb> $(PT2399_RULES)
+parity-pt2399-core:
 	@bun "$(PCB_REPO_ROOT)/tools/pcb/drc-cli.ts" "$(PT2399_BOARD)" "$(PT2399_SCH)" parity
 
 # An unrouted candidate: unconnected items are counted, not failed.
-drc-unrouted-pt2399-core: courtyard-rule-pt2399-core
+drc-unrouted-pt2399-core:
 	@bun "$(PCB_REPO_ROOT)/tools/pcb/drc-cli.ts" "$(PT2399_BOARD)" "$(PT2399_SCH)" drc --unrouted
 
 # A board declared fully routed: any unconnected item fails.
-drc-pt2399-core: courtyard-rule-pt2399-core
+drc-pt2399-core:
 	@bun "$(PCB_REPO_ROOT)/tools/pcb/drc-cli.ts" "$(PT2399_BOARD)" "$(PT2399_SCH)" drc --routed
 
 # THE GEOMETRY, WRITTEN FROM THE APPROVED CRITERIA AND NOT FROM A MEASUREMENT.

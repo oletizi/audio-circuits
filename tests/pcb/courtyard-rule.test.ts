@@ -11,11 +11,28 @@
  *
  * This file is the second mechanism. `tools/pcb/courtyard-rule.ts`'s header
  * names this path as the place that *"measures it both ways on every run"*, and
- * that is what the last test does: at the declared minimum the settled board
+ * that is what the last test does: at the declared minimum the placement
  * reports zero `courtyards_overlap`, and at a tightened minimum it reports one
  * per offending pair. The second half is the one that matters - a `.kicad_dru`
  * KiCad cannot parse is not an error, so without it the rule would silently not
  * exist.
+ *
+ * **THE SUBJECT IS THE AGENT-PRODUCED PLACEMENT AND NOT THE OWNER'S BOARD,
+ * SINCE 2026-11-21.** He emptied his board's `.kicad_dru` before sending it to
+ * fabrication - *"I removed the courtyard rule because I don't need it for hand
+ * layout. I can make those judgements myself."* - so every assertion here that
+ * read his file has moved to `./placed-board.ts`'s committed fixture, and
+ * `make/pcb.mk` no longer gates any DRC target on the rule. `docs/known-gaps.md`
+ * **G315** records the declination; **G314**'s own amendment named this file and
+ * `make drc-unrouted-pt2399-core` as the two authorities for the floor being
+ * met, and only the first of those is still one.
+ *
+ * WHAT THAT LEAVES THIS FILE MEASURING, and it is the half that was always the
+ * point: the rule is enforced AT ALL by KiCad rather than being a text file
+ * nothing reads, and the figure it is enforced at is read from the approved
+ * rules rather than defaulted. What it no longer claims is anything about the
+ * spacing on the board being shipped - a board the owner placed himself, by his
+ * own judgement, which is what he withdrew the rule in order to use.
  */
 import { afterAll, test, expect } from "bun:test"
 import fs from "node:fs"
@@ -30,21 +47,40 @@ import {
   RULE_NAME, courtyardRuleText, druPathFor, minPartGapMm, verifyCourtyardRule,
 } from "../../tools/pcb/courtyard-rule.ts"
 import { BOARD, CIRCUIT, LIBRARY, RULES, rules } from "./settled-board.ts"
+import { PLACED_BOARD } from "./placed-board.ts"
 
 afterAll(cleanUpTempScratch)
 
 // ---- the 2 mm spacing's second mechanism ------------------------------------
 
-test("the committed .kicad_dru is what the approved figure generates", () => {
-  expect(() => verifyCourtyardRule(BOARD, RULES)).not.toThrow()
+test("the approved figure generates the rule, and the owner's withdrawal of it from his own board is intact", () => {
+  // THE GENERATOR, WITH NO BOARD IN IT. What a `.kicad_dru` must say is a
+  // property of the approved figure alone, so this reads `placement-rules.json`
+  // and nothing else - which is also why it survived the owner emptying his
+  // board's copy.
   const gap = minPartGapMm(rules(), RULES)
-  const text = fs.readFileSync(druPathFor(BOARD), "utf8")
-  console.log(`  ${path.basename(druPathFor(BOARD))} at ${gap} mm:\n${text.replace(/^/gm, "    ")}`)
+  const text = courtyardRuleText(rules(), RULES)
+  console.log(`  generated at ${gap} mm:\n${text.replace(/^/gm, "    ")}`)
   expect(gap).toBe(2.0)
-  expect(text).toBe(courtyardRuleText(rules(), RULES))
   expect(text).toContain("courtyard_clearance")
   expect(text).toContain("(min 2mm)")
   expect(text).toContain("(severity error)")
+
+  // AND HIS BOARD DOES NOT CARRY IT, which is an assertion about a DECISION and
+  // not about a measurement. He withdrew the rule from the board he hand-laid,
+  // and a tool writing it back - `courtyard-rule.ts --write` is one keystroke
+  // from the verify it used to sit behind - would re-impose a criterion he
+  // declined, quietly, on a file nothing else here is allowed to touch.
+  const his = druPathFor(BOARD)
+  const onHisBoard = fs.existsSync(his) ? fs.readFileSync(his, "utf8") : ""
+  expect(
+    onHisBoard,
+    `${path.basename(his)} carries a courtyard_clearance rule again. The owner removed it on ` +
+      '2026-11-21 - "I removed the courtyard rule because I don\'t need it for hand layout. I can ' +
+      'make those judgements myself." - and docs/known-gaps.md G315 records that. If he has asked ' +
+      "for it back, restore the make prerequisite in make/pcb.mk with it and change this test " +
+      "deliberately; do not let a --write run be what re-imposes it.",
+  ).not.toContain("courtyard_clearance")
 })
 
 test("a MISSING or LOOSENED .kicad_dru refuses, naming how to write it", () => {
@@ -90,7 +126,13 @@ test("INTEGRATION, real kicad-cli: the rule FIRES, and it fires as a type the ga
     )
   }
   const dir = freshTempScratch("pcb-dru-fires-")
-  for (const file of ["pt2399-core.kicad_pcb", "pt2399-core.kicad_pro", "fp-lib-table"]) {
+  // THE BOARD IS THE COMMITTED PLACEMENT FIXTURE, NOT `circuits/`. The owner's
+  // live board is his hand layout with the rule withdrawn, so running this
+  // against it would assert his spacing against a criterion he declined. The
+  // project file and the library still come from the circuit, because they are
+  // what KiCad needs to load a board at all and neither is in question here.
+  fs.copyFileSync(PLACED_BOARD, path.join(dir, "p.kicad_pcb"))
+  for (const file of ["pt2399-core.kicad_pro", "fp-lib-table"]) {
     fs.copyFileSync(path.join(CIRCUIT, file), path.join(dir, file.replace("pt2399-core", "p")))
   }
   fs.mkdirSync(path.join(dir, "pt2399-core.pretty"), { recursive: true })
@@ -112,8 +154,10 @@ test("INTEGRATION, real kicad-cli: the rule FIRES, and it fires as a type the ga
     return parseReport(fs.readFileSync(report, "utf8"), report)
   }
 
-  // AT THE APPROVED FIGURE the settled board is clean, which is the half that
-  // says the placement honours the owner's ruling.
+  // AT THE APPROVED FIGURE the agent-produced placement is clean, which is the
+  // half that says the PLACER honours the owner's ruling. That is the claim
+  // G314's directive was recorded for, and it is unaffected by G315: what he
+  // withdrew was the rule on a board he placed himself.
   const atLimit = run("2mm")
   const overlapsAtLimit = atLimit.violations.filter((v) => v.type === "courtyards_overlap")
   console.log(`  at 2mm: ${overlapsAtLimit.length} courtyards_overlap`)
