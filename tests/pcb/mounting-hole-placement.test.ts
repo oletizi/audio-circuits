@@ -45,6 +45,7 @@ import { REFERENCES, withMountingHardware } from "../../tools/pcb/place-mounting
 import { footprintFile } from "../kicad/footprint-library.ts"
 import { LIBRARY_ROOT } from "../../lib/kicad/pin-pattern-sources.ts"
 import { BOARD, LIBRARY, RULES, boardText } from "./settled-board.ts"
+import { PLACED_BOARD, placedBoardText } from "./placed-board.ts"
 
 afterAll(cleanUpTempScratch)
 
@@ -227,26 +228,37 @@ test("a STALE hole at a wrong position IS removed, so the predicate still does i
 
 // ---- M2: the documented regeneration path is byte-idempotent ----------------
 
-test("running the tool on the COMMITTED board reproduces it byte for byte", () => {
+test("running the tool on the AGENT-PRODUCED board reproduces it byte for byte", () => {
   // `make geometry-pt2399-core` is the documented way to rewrite the outline
   // and the holes, and a later agent who follows it must not get a dirty tree
-  // and a red test for their trouble. Compared BY CONTENT against the committed
+  // and a red test for their trouble. Compared BY CONTENT against the fixture's
   // bytes - the only comparison that establishes it, since the tool is
   // idempotent against its own output either way.
-  const committed = boardText()
-  const result = withMountingHardware(committed, BOARD, RULES, LIBRARY)
+  //
+  // THE FIXTURE AND NOT THE OWNER'S BOARD, since 2026-11-17. Byte-for-byte
+  // reproducibility is a property of what this tool writes, and the live board
+  // is hand-edited: the routing engine alone expanded the keepout Rule Areas
+  // into explicit vertex lists and re-spelled 14.000000 as 14, which failed
+  // this assertion on formatting while the geometry was untouched. KiCad
+  // reformats on every save, so re-pinning the bytes would buy one green run.
+  // See `./placed-board.ts`.
+  const committed = placedBoardText()
+  const result = withMountingHardware(committed, PLACED_BOARD, RULES, LIBRARY)
   expect(result.removed.length).toBe(REFERENCES.length)
   expect(result.removedZones).toBe(REFERENCES.length)
   expect(result.text).toBe(committed)
 })
 
-test("the origin is written in the board's own six-decimal spelling", () => {
+test("the origin is written in the agent-produced board's own six-decimal spelling", () => {
   // The format is the engine's and KiCad's, not this tool's preference: the
   // engine rewrites every footprint origin when it re-places a board, so a
   // tool that wrote `(at 14 14)` would see its own output reformatted and then
   // rewrite it back on the next run. If a release changes the format, the
   // idempotence test above goes red and this line says what to look at.
-  const text = boardText()
+  //
+  // ON THE FIXTURE, for the reason above it - and the router demonstrated the
+  // point by writing MH1's origin back as `14`.
+  const text = placedBoardText()
   for (const ref of REFERENCES) {
     const i = text.indexOf(`"Reference" "${ref}"`)
     const start = text.lastIndexOf("(footprint ", i)

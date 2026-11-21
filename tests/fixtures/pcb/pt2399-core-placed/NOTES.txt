@@ -1,0 +1,52 @@
+The pt2399-core board AS THE AGENT TOOLING PRODUCED IT, placed and unrouted:
+the bytes committed by f3b295b, "pcb: stop the hole placer deleting real parts,
+and make its output idempotent", which is the last commit that wrote this board
+while it was still an agent artifact. Not re-authored.
+
+THAT CLAIM IS PINNED IN CODE, NOT HERE. tests/pcb/placed-board-fixture.test.ts
+holds the file's sha256 and fails if these bytes change, because a provenance
+claim in prose is a transcription with a date on it. This file says where the
+bytes came from; that one is what keeps the statement true.
+
+WHY A COPY EXISTS AT ALL, and it is a different reason from the empty fixture's
+next door. On 2026-11-17 the owner looked at the two candidates the Phase 1
+probe routed, said both were acceptable but that "some of the layout choices are
+a little odd", and asked to start from one and make manual edits in KiCad.
+circuits/pt2399-core/pt2399-core.kicad_pcb is therefore HIS file from that point
+on, hand-edited, and no longer the output of any tool here.
+
+Eight tests had been reading it as though it were. They broke the moment the
+routed candidate was adopted, in two groups, and both were reading the live
+board for a property only the agent-produced board has:
+
+  - tests/pcb/mounting-hole-placement.test.ts asserted that running the
+    mounting-hole placer on the committed board reproduces it BYTE FOR BYTE, and
+    that its origins carry the board's own six-decimal spelling. The routing
+    engine rewrote both - it expanded the keepout Rule Areas into explicit
+    vertex lists and re-spelled 14.000000 as 14 - so the assertions failed on
+    formatting, not on geometry.
+
+  - the five pour-refill configuration tests and one pour-refill test build a
+    fixture by COPYING the real board and adding one full-board ground zone,
+    with "the real board is only COPIED, into scratch; it has no pour and is not
+    changed" written in the file. The adopted board brought the router's own
+    ground zone with it, so each fixture ended up with two ground zones on B.Cu
+    declaring different thermal gaps, and readGroundPour refused them - which is
+    that guard working correctly on a board the test did not expect.
+
+KICAD WOULD HAVE BROKEN THEM AGAIN ANYWAY, which is the argument for a fixture
+rather than for re-baselining the numbers. Both groups rest on byte-level and
+zone-level properties of a file a person is now going to open and save, and
+KiCad rewrites formatting throughout on every save. Re-pinning them against the
+adopted board would buy one green run and go red on the owner's first edit.
+
+WHAT IS AND IS NOT CHECKED AGAINST THE LIVE BOARD AFTER THIS. Checks of the
+DELIVERABLE still read the owner's board and are meant to: schematic parity, DRC
+(including his 2 mm courtyard rule), the floorplan grade, and the silkscreen
+widths. Those SHOULD fail if a hand edit breaks a fab rule or his own spacing
+rule - that is the safety net he asked for. What moved here is only the tests of
+the TOOLING, whose subject is what the tool produces.
+
+This is not a reduced or synthetic board. It is the real 150 x 100 mm board with
+all 28 footprints at the settled positions, the four M3 holes and their keepout
+Rule Areas, no tracks and no pour.

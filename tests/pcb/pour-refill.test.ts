@@ -22,6 +22,7 @@ import path from "node:path"
 import { spawnSync } from "node:child_process"
 import { defaultKicadCli } from "../../lib/kicad/install.ts"
 import { measurePour, PourRefusal, PT2399_CORE } from "../../tools/pcb/pour.ts"
+import { placedBoardText } from "./placed-board.ts"
 import { cleanUpTempScratch, freshTempScratch } from "../support/temp-scratch.ts"
 import { OPEN_PLACE, fixtureBoard } from "./pour-fixtures.ts"
 import { valueOf } from "./pour-helpers.ts"
@@ -114,13 +115,22 @@ test("an oval pad turned 0, 90 and 270 degrees reads the four spokes KiCad cut r
  * walked the courtyard's bounding box, which sits 1.055 mm from U1's pad centres
  * inside the 1.3 mm void round each, and read 0.593.
  *
- * The real board is only COPIED, into scratch; it has no pour and is not changed.
+ * THE BOARD IS THE COMMITTED FIXTURE, NOT `circuits/`, SINCE 2026-11-17. This
+ * sentence read "the real board is only COPIED, into scratch; it has no pour and
+ * is not changed" - true when written, and false the moment the owner adopted
+ * the routed candidate to hand-edit. His board carries the router's ground zone,
+ * so adding the one below made two ground zones on a layer declaring different
+ * thermal gaps, and `readGroundPour` refused the fixture at `board-shape`. The
+ * guard was right; the input was wrong. `./placed-board.ts` holds the dividing
+ * line between a test of the tooling and a test of the deliverable.
+ *
+ * The fixture is only COPIED, into scratch, and is not changed.
  */
 test("the real board with an unbroken full-board pour reads full coverage round U1 on both layers, one region, and no bridge", () => {
   const circuit = path.resolve(import.meta.dir, "../../circuits/pt2399-core")
   const dir = freshTempScratch("pcb-pour-refill-")
   const board = path.join(dir, "pt2399-core.kicad_pcb")
-  const source = fs.readFileSync(path.join(circuit, "pt2399-core.kicad_pcb"), "utf8")
+  const source = placedBoardText()
   const zone = [
     "\t(zone",
     '\t\t(net "GND")',

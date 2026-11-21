@@ -20,6 +20,7 @@ import { spawnSync } from "node:child_process"
 import { defaultKicadCli } from "../../lib/kicad/install.ts"
 import { measurePour, PT2399_CORE } from "../../tools/pcb/pour.ts"
 import { cleanUpTempScratch, freshTempScratch } from "../support/temp-scratch.ts"
+import { placedBoardText } from "./placed-board.ts"
 import { valueOf } from "./pour-helpers.ts"
 
 afterAll(cleanUpTempScratch)
@@ -55,7 +56,12 @@ interface Configuration {
 function filledCopy(config: Configuration): string {
   const dir = freshTempScratch("pcb-pour-config-")
   const board = path.join(dir, "pt2399-core.kicad_pcb")
-  const source = (config.edit ?? ((t: string) => t))(fs.readFileSync(path.join(CIRCUIT, "pt2399-core.kicad_pcb"), "utf8"))
+  // THE FIXTURE, NOT THE LIVE BOARD. This builds its subject by adding ONE
+  // full-board ground zone, so its input must have none: the owner's board
+  // carries the router's own ground zone and two zones on a layer declaring
+  // different thermal gaps are refused at `board-shape`, correctly. See
+  // `./placed-board.ts`.
+  const source = (config.edit ?? ((t: string) => t))(placedBoardText())
   const zones = [ZONE("aaaaaaaa-0000-4000-8000-000000000001", 0.5, FULL), ...(config.extraZones ?? [])].join("\n")
   const end = source.lastIndexOf(")")
   fs.writeFileSync(board, `${source.slice(0, end)}${zones}\n${source.slice(end)}`)

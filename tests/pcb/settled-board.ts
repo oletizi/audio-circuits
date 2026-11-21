@@ -1,6 +1,28 @@
 /**
- * THE COMMITTED pt2399-core BOARD AND ITS APPROVED CRITERIA, for the three test
+ * THE SETTLED pt2399-core BOARD AND ITS APPROVED CRITERIA, for the three test
  * files that check the settled geometry.
+ *
+ * `BOARD` IS THE OWNER'S LIVE BOARD, AND DELIBERATELY SO. He adopted the routed
+ * candidate on 2026-11-17 to hand-edit it in KiCad, and the assertions reached
+ * through here are about THE DELIVERABLE: that the board being sent out grades
+ * clean against the engine's own `oob_count`, and that its `.kicad_dru` is what
+ * the approved 2 mm figure generates. Those have to fail when a hand edit breaks
+ * a rule, so they must read his file and not a copy of it.
+ *
+ * A TEST THAT ASKS ABOUT THE TOOLING TAKES `./placed-board.ts`'s FIXTURE
+ * INSTEAD, and `tests/pcb/mounting-hole-placement.test.ts` is the worked
+ * example: byte-for-byte idempotence and the six-decimal coordinate spelling are
+ * properties of what the placer writes, and a person saving in KiCad reformats
+ * both without changing anything that matters. That module states the dividing
+ * line; `../fixtures/pcb/pt2399-core-placed/NOTES.txt` records the eight tests
+ * that had it the wrong way round and what broke them.
+ *
+ * `BOARD` WAS POINTED AT THE FIXTURE FOR ONE REVISION OF THIS FILE AND THAT WAS
+ * TOO BROAD - it took the three engine-integration tests and the `.kicad_dru`
+ * check off the deliverable with them, and the fixture has no project or rules
+ * file beside it, so all four went red and said so immediately. Left recorded
+ * because the handle being shared is exactly what makes the mistake easy: the
+ * four files below do not all ask the same kind of question.
  *
  * It exists because `tests/pcb/settled-geometry.test.ts` passed this project's
  * 300-500 line ceiling at 540, holding three separable responsibilities. Those
@@ -19,6 +41,7 @@ import type { Bounds } from "../../tools/pcb/resolve-intent-zones.ts"
 import { placedCourtyards } from "../../tools/pcb/board-outline.ts"
 
 export const CIRCUIT = path.resolve(import.meta.dir, "../../circuits/pt2399-core")
+/** The owner's live board, which is the deliverable. See this file's header. */
 export const BOARD = path.join(CIRCUIT, "pt2399-core.kicad_pcb")
 export const INTENT = path.join(CIRCUIT, "floorplan-intent.json")
 export const RULES = path.join(CIRCUIT, "placement-rules.json")
