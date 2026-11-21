@@ -101,3 +101,12 @@ draughting/venv-akcli
 # The host-side test venv for the SchGen drawing trial, created with
 # `python3 -m venv` from tools/schgen-drawing-trial/host-requirements.txt.
 tools/schgen-drawing-trial/.venv
+
+# KiCad 10's Local History: its own git-backed snapshot store, written beside a
+# project the moment someone opens and edits it in the GUI, and reachable from
+# File > Local History. It is per-user editing state in the same class as a
+# `.kicad_prl` - a second, nested `.git` inside this one, holding whatever that
+# person's session happened to save - and it is a safety net for THEM, not
+# repository content. No trailing slash, for the reason the two entries above
+# give: a directory-only pattern reports NOT ignored until the directory exists.
+circuits/*/.history
